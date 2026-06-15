@@ -60,6 +60,8 @@ export const hive = pgTable("hive", {
     type: text("type"),
     frameCount: integer("frame_count"),
     status: text("status").notNull().default("active"),
+    x: integer("x"),
+    y: integer("y"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),

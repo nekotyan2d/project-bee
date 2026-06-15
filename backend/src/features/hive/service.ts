@@ -12,6 +12,8 @@ function toDto(row: HiveRow): HiveDto {
         type: row.type,
         frameCount: row.frameCount,
         status: row.status,
+        x: row.x ?? null,
+        y: row.y ?? null,
         createdAt: row.createdAt.toISOString(),
         updatedAt: row.updatedAt.toISOString(),
         deletedAt: row.deletedAt?.toISOString() ?? null,

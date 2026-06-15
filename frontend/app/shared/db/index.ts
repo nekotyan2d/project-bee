@@ -31,6 +31,8 @@ export interface LocalHive {
     type?: string;
     frameCount?: number;
     status: string;
+    x?: number;
+    y?: number;
     updatedAt: Date;
     deletedAt?: Date;
 }

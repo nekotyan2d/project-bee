@@ -79,6 +79,137 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: email */
+                        email: string;
+                        password: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            token: string;
+                            email: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: email */
+                        email: string;
+                        password: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            token: string;
+                            email: string;
+                        };
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Default Response */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            id: string;
+                            email: string | null;
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/apiaries": {
         parameters: {
             query?: never;
@@ -280,6 +411,8 @@ export interface paths {
                             type: string | null;
                             frameCount: number | null;
                             status: string;
+                            x: number | null;
+                            y: number | null;
                             /** Format: date-time */
                             createdAt: string;
                             /** Format: date-time */
@@ -332,6 +465,8 @@ export interface paths {
                             type: string | null;
                             frameCount: number | null;
                             status: string;
+                            x: number | null;
+                            y: number | null;
                             /** Format: date-time */
                             createdAt: string;
                             /** Format: date-time */
@@ -364,6 +499,10 @@ export interface paths {
                         frameCount?: number | null;
                         /** @default active */
                         status?: string;
+                        /** @default null */
+                        x?: number | null;
+                        /** @default null */
+                        y?: number | null;
                     };
                 };
             };
@@ -383,6 +522,8 @@ export interface paths {
                             type: string | null;
                             frameCount: number | null;
                             status: string;
+                            x: number | null;
+                            y: number | null;
                             /** Format: date-time */
                             createdAt: string;
                             /** Format: date-time */

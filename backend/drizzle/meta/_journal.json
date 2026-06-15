@@ -29,6 +29,13 @@
       "when": 1781541735135,
       "tag": "0003_shiny_firebrand",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1781559868355,
+      "tag": "0004_curved_jetstream",
+      "breakpoints": true
     }
   ]
 }

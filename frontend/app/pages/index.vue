@@ -48,6 +48,7 @@ function resolveQueen(colony: LocalColony | undefined): LocalQueen | undefined {
 }
 
 const showCreateSheet = ref(false);
+const viewMode = ref<"list" | "map">("list");
 </script>
 
 <template>
@@ -56,21 +57,38 @@ const showCreateSheet = ref(false);
         icon="lucide:hexagon"
         variant="list">
         <template #actions>
+            <button
+                v-if="data.hives.length > 0"
+                type="button"
+                class="view-toggle"
+                :aria-label="viewMode === 'list' ? 'Схема' : 'Список'"
+                @click="viewMode = viewMode === 'list' ? 'map' : 'list'">
+                <Icon
+                    :name="viewMode === 'list' ? 'lucide:layout-grid' : 'lucide:list'"
+                    size="20" />
+            </button>
             <ThemeToggle />
         </template>
 
-        <ul
-            v-if="data.hives.length > 0"
-            class="hive-list">
-            <li
-                v-for="hive in data.hives"
-                :key="hive.id">
-                <HiveCard
-                    :hive="hive"
-                    :colony="data.colonyByHiveId[hive.id]"
-                    :queen="resolveQueen(data.colonyByHiveId[hive.id])" />
-            </li>
-        </ul>
+        <template v-if="data.hives.length > 0">
+            <HiveMap
+                v-if="viewMode === 'map'"
+                :hives="data.hives"
+                :colony-by-hive-id="data.colonyByHiveId"
+                :queen-by-id="data.queenById" />
+            <ul
+                v-else
+                class="hive-list">
+                <li
+                    v-for="hive in data.hives"
+                    :key="hive.id">
+                    <HiveCard
+                        :hive="hive"
+                        :colony="data.colonyByHiveId[hive.id]"
+                        :queen="resolveQueen(data.colonyByHiveId[hive.id])" />
+                </li>
+            </ul>
+        </template>
 
         <EmptyState
             v-else
@@ -135,6 +153,27 @@ const showCreateSheet = ref(false);
 </template>
 
 <style scoped lang="scss">
+.view-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: var(--radius-md);
+    background: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition:
+        color var(--transition-fast),
+        background-color var(--transition-fast);
+
+    &:active {
+        background: var(--color-surface-2);
+        color: var(--color-text);
+    }
+}
+
 .hive-list {
     list-style: none;
     display: flex;
@@ -223,6 +262,7 @@ const showCreateSheet = ref(false);
     box-shadow: var(--shadow-lg);
     transition: background-color var(--transition-fast);
     cursor: pointer;
+    z-index: 10;
 
     &:active {
         background: var(--color-primary-hover);

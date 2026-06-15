@@ -11,14 +11,16 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "nuxt typecheck",
-    "gen:api": "openapi-typescript http://localhost:3000/docs/json -o app/shared/api/schema.d.ts"
+    "gen:api": "openapi-typescript http://localhost:8000/docs/json -o app/shared/api/schema.d.ts"
   },
   "dependencies": {
     "dexie": "^4.4.3",
+    "konva": "^10.3.0",
     "nuxt": "^4.4.8",
     "openapi-fetch": "^0.17.0",
     "uuidv7": "^1.2.1",
     "vue": "^3.5.35",
+    "vue-konva": "^3.4.0",
     "vue-router": "^5.1.0"
   },
   "devDependencies": {

@@ -15,6 +15,8 @@ export interface UpsertHiveValues {
     type: string | null;
     frameCount: number | null;
     status: string;
+    x: number | null;
+    y: number | null;
 }
 
 export function findAll(ownerId: string, apiaryId?: string, since?: Date): Promise<HiveRow[]> {
