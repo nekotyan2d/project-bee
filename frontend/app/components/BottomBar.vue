@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const TABS = [
     { to: "/", icon: "lucide:hexagon", label: "Пасека" },
+    { to: "/analytics", icon: "lucide:chart-column-big", label: "Аналитика" },
     { to: "/account", icon: "lucide:user", label: "Аккаунт" },
 ] as const;
 
