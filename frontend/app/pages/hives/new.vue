@@ -6,7 +6,7 @@ import type { LocalHive } from "~/shared/db";
 useHead({ title: "Новый улей — Пасека" });
 
 const db = useDb();
-const api = useApi();
+const { enqueue } = useSync();
 
 const label = ref("");
 const type = ref("");
@@ -51,16 +51,7 @@ async function submit(): Promise<void> {
         return;
     }
 
-    void api.PUT("/hives/{id}", {
-        params: { path: { id: hive.id } },
-        body: {
-            apiaryId: hive.apiaryId,
-            label: hive.label,
-            type: hive.type ?? null,
-            frameCount: hive.frameCount ?? null,
-            status: hive.status,
-        },
-    });
+    void enqueue("hive", hive.id, "upsert");
 
     await navigateTo("/");
 }

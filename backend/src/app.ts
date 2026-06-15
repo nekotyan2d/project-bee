@@ -4,8 +4,8 @@ import { colonyRoutes } from "@/features/colony/handler";
 import { eventRoutes } from "@/features/events/handler";
 import { hiveRoutes } from "@/features/hive/handler";
 import { queenRoutes } from "@/features/queens/handler";
-import { createServer } from "@/shared/http/server";
 import { env } from "@/shared/config/env";
+import { createServer } from "@/shared/http/server";
 
 const app = await createServer();
 

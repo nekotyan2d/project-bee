@@ -5,7 +5,7 @@ const route = useRoute();
 const id = route.params.id as string;
 
 const db = useDb();
-const api = useApi();
+const { enqueue } = useSync();
 
 useHead({ title: "Редактировать семью — Пасека" });
 
@@ -51,16 +51,7 @@ async function submit(): Promise<void> {
         return;
     }
 
-    void api.PUT("/colonies/{id}", {
-        params: { path: { id } },
-        body: {
-            apiaryId: colony.value.apiaryId,
-            label: trimmedLabel,
-            establishedAt: updates.establishedAt ?? null,
-            origin: updates.origin ?? null,
-            status: updates.status ?? "active",
-        },
-    });
+    void enqueue("colony", id, "upsert");
 
     await navigateTo(`/colonies/${id}`);
 }

@@ -125,7 +125,13 @@ const QUICK_ACTIONS = [
                             {{ STATUS_LABEL[data.colony.status] ?? data.colony.status }}
                         </span>
                     </InfoRow>
-                    <InfoRow label="Улей">{{ data.hive?.label ?? "—" }}</InfoRow>
+                    <InfoRow label="Улей">
+                        <NuxtLink v-if="data.hive" :to="`/hives/${data.hive.id}`" class="hive-ref">
+                            {{ data.hive.label }}
+                            <Icon name="lucide:chevron-right" size="16" />
+                        </NuxtLink>
+                        <template v-else>—</template>
+                    </InfoRow>
                     <InfoRow label="Основана">{{ formatDate(data.colony.establishedAt) }}</InfoRow>
                     <InfoRow
                         v-if="data.colony.origin"
@@ -348,6 +354,15 @@ const QUICK_ACTIONS = [
         background: color-mix(in srgb, var(--color-text-muted) 15%, transparent);
         color: var(--color-text-muted);
     }
+}
+
+.hive-ref {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    color: var(--color-primary);
+    font-weight: 600;
+    text-decoration: none;
 }
 
 .metrics {

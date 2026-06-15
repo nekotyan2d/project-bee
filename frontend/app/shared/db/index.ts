@@ -78,6 +78,16 @@ export interface SyncMeta {
     lastPulledAt: Date;
 }
 
+export type SyncTable = "apiary" | "hive" | "colony" | "queen" | "event";
+
+export interface OutboxItem {
+    key: string; // `${table}:${entityId}`
+    table: SyncTable;
+    entityId: string;
+    op: "upsert" | "delete";
+    queuedAt: Date;
+}
+
 class BeeDb extends Dexie {
     apiary!: EntityTable<LocalApiary, "id">;
     hive!: EntityTable<LocalHive, "id">;
@@ -85,6 +95,7 @@ class BeeDb extends Dexie {
     queen!: EntityTable<LocalQueen, "id">;
     event!: EntityTable<LocalEvent, "id">;
     syncMeta!: EntityTable<SyncMeta, "entity">;
+    outbox!: EntityTable<OutboxItem, "key">;
 
     constructor() {
         super("bee");
@@ -95,6 +106,9 @@ class BeeDb extends Dexie {
             queen: "id, colonyId, updatedAt, deletedAt",
             event: "id, apiaryId, colonyId, [colonyId+occurredAt], type, updatedAt, deletedAt",
             syncMeta: "entity",
+        });
+        this.version(2).stores({
+            outbox: "key, table, queuedAt",
         });
     }
 }

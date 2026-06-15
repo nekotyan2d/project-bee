@@ -10,7 +10,7 @@ const colonyId = ref(route.query.colonyId as string | undefined);
 const type = ref(route.query.type as string | undefined);
 
 const db = useDb();
-const api = useApi();
+const { enqueue } = useSync();
 
 const TITLES: Record<string, string> = {
     inspection: "Осмотр",
@@ -174,194 +174,6 @@ function isValid(): boolean {
     return true;
 }
 
-function syncToServer(event: LocalEvent, cid: string, occurredAtStr: string): void {
-    const base = { id: event.id, apiaryId: event.apiaryId, colonyId: cid, occurredAt: occurredAtStr };
-    const p = event.payload;
-
-    switch (event.type) {
-        case "inspection":
-            void api.POST("/events/batch", {
-                body: {
-                    events: [
-                        {
-                            ...base,
-                            type: "inspection" as const,
-                            payload: {
-                                framesTotal: p.framesTotal as number | undefined,
-                                framesBrood: p.framesBrood as number | undefined,
-                                framesStores: p.framesStores as number | undefined,
-                                queenSeen: p.queenSeen as boolean | undefined,
-                                queenCells: p.queenCells as number | undefined,
-                                storesLevel: p.storesLevel as "low" | "medium" | "high" | undefined,
-                                temperament: p.temperament as "calm" | "nervous" | "aggressive" | undefined,
-                                notes: p.notes as string | undefined,
-                            },
-                        },
-                    ],
-                },
-            });
-            break;
-        case "super_change":
-            void api.POST("/events/batch", {
-                body: {
-                    events: [
-                        {
-                            ...base,
-                            type: "super_change" as const,
-                            payload: {
-                                delta: p.delta as number,
-                                reason: p.reason as string | undefined,
-                            },
-                        },
-                    ],
-                },
-            });
-            break;
-        case "treatment":
-            void api.POST("/events/batch", {
-                body: {
-                    events: [
-                        {
-                            ...base,
-                            type: "treatment" as const,
-                            payload: {
-                                product: p.product as string,
-                                dose: p.dose as string | undefined,
-                                method: p.method as string | undefined,
-                                withdrawalDays: p.withdrawalDays as number | undefined,
-                            },
-                        },
-                    ],
-                },
-            });
-            break;
-        case "feeding":
-            void api.POST("/events/batch", {
-                body: {
-                    events: [
-                        {
-                            ...base,
-                            type: "feeding" as const,
-                            payload: {
-                                feedType: p.feedType as "syrup" | "candy" | "honey" | "pollen_substitute" | "water",
-                                amountKg: p.amountKg as number | undefined,
-                                concentration: p.concentration as string | undefined,
-                            },
-                        },
-                    ],
-                },
-            });
-            break;
-        case "harvest":
-            void api.POST("/events/batch", {
-                body: {
-                    events: [
-                        {
-                            ...base,
-                            type: "harvest" as const,
-                            payload: {
-                                product: p.product as "honey" | "wax" | "propolis" | "pollen" | undefined,
-                                amountKg: p.amountKg as number,
-                            },
-                        },
-                    ],
-                },
-            });
-            break;
-        case "swarm":
-            void api.POST("/events/batch", {
-                body: {
-                    events: [
-                        {
-                            ...base,
-                            type: "swarm" as const,
-                            payload: {
-                                captured: p.captured as boolean | undefined,
-                                notes: p.notes as string | undefined,
-                            },
-                        },
-                    ],
-                },
-            });
-            break;
-        case "migration":
-            void api.POST("/events/batch", {
-                body: {
-                    events: [
-                        {
-                            ...base,
-                            type: "migration" as const,
-                            payload: {
-                                toHiveId: p.toHiveId as string,
-                            },
-                        },
-                    ],
-                },
-            });
-            break;
-        case "split":
-            void api.POST("/events/batch", {
-                body: {
-                    events: [
-                        {
-                            ...base,
-                            type: "split" as const,
-                            payload: {
-                                notes: p.notes as string | undefined,
-                            },
-                        },
-                    ],
-                },
-            });
-            break;
-        case "merge":
-            void api.POST("/events/batch", {
-                body: {
-                    events: [
-                        {
-                            ...base,
-                            type: "merge" as const,
-                            payload: {
-                                notes: p.notes as string | undefined,
-                            },
-                        },
-                    ],
-                },
-            });
-            break;
-        case "death":
-            void api.POST("/events/batch", {
-                body: {
-                    events: [
-                        {
-                            ...base,
-                            type: "death" as const,
-                            payload: {
-                                cause: p.cause as string | undefined,
-                            },
-                        },
-                    ],
-                },
-            });
-            break;
-        case "note":
-            void api.POST("/events/batch", {
-                body: {
-                    events: [
-                        {
-                            ...base,
-                            type: "note" as const,
-                            payload: {
-                                text: p.text as string,
-                            },
-                        },
-                    ],
-                },
-            });
-            break;
-    }
-}
-
 async function submitQueenChange(apiaryId: string, cid: string, occurredAtDate: Date, now: Date): Promise<void> {
     const action = queenAction.value;
     const needsQueen = queenNeedsNew.value;
@@ -411,49 +223,9 @@ async function submitQueenChange(apiaryId: string, cid: string, occurredAtDate: 
         return;
     }
 
-    // sync (queens before events)
-    if (newQueen) {
-        void api.PUT("/queens/{id}", {
-            params: { path: { id: newQueen.id } },
-            body: {
-                colonyId: newQueen.colonyId ?? null,
-                motherQueenId: null,
-                year: newQueen.year ?? null,
-                breed: newQueen.breed ?? null,
-                origin: null,
-                introducedAt: newQueen.introducedAt ?? null,
-                status: newQueen.status,
-            },
-        });
-    }
-    if (prevQueen) {
-        void api.PUT("/queens/{id}", {
-            params: { path: { id: prevQueen.id } },
-            body: {
-                colonyId: prevQueen.colonyId ?? null,
-                motherQueenId: prevQueen.motherQueenId ?? null,
-                year: prevQueen.year ?? null,
-                breed: prevQueen.breed ?? null,
-                origin: prevQueen.origin ?? null,
-                introducedAt: prevQueen.introducedAt ?? null,
-                status: action,
-            },
-        });
-    }
-    void api.POST("/events/batch", {
-        body: {
-            events: [
-                {
-                    id: event.id,
-                    apiaryId,
-                    colonyId: cid,
-                    occurredAt: occurredAtDate.toISOString(),
-                    type: "queen_change" as const,
-                    payload,
-                },
-            ],
-        },
-    });
+    if (newQueen) void enqueue("queen", newQueen.id, "upsert");
+    if (prevQueen) void enqueue("queen", prevQueen.id, "upsert");
+    void enqueue("event", event.id, "upsert");
 
     await navigateTo(backTo.value);
 }
@@ -518,23 +290,8 @@ async function submit(): Promise<void> {
         return;
     }
 
-    syncToServer(event, cid, occurredAtDate.toISOString());
-
-    if (STATUS_BY_TYPE[type.value ?? ""]) {
-        const colony = await db.colony.get(cid);
-        if (colony) {
-            void api.PUT("/colonies/{id}", {
-                params: { path: { id: cid } },
-                body: {
-                    apiaryId: colony.apiaryId,
-                    label: colony.label,
-                    establishedAt: colony.establishedAt ?? null,
-                    origin: colony.origin ?? null,
-                    status: colony.status,
-                },
-            });
-        }
-    }
+    void enqueue("event", event.id, "upsert");
+    if (STATUS_BY_TYPE[type.value ?? ""]) void enqueue("colony", cid, "upsert");
 
     await navigateTo(backTo.value);
 }

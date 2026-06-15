@@ -5,7 +5,7 @@ const route = useRoute();
 const id = route.params.id as string;
 
 const db = useDb();
-const api = useApi();
+const { enqueue } = useSync();
 
 type PageData = {
     event: LocalEvent | undefined;
@@ -87,7 +87,7 @@ async function deleteEvent(): Promise<void> {
         }
     });
 
-    void api.DELETE("/events/{id}", { params: { path: { id } } });
+    void enqueue("event", id, "delete");
 
     await navigateTo(colonyId ? `/colonies/${colonyId}` : "/");
 }

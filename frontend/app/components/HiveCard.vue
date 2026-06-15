@@ -43,7 +43,7 @@ const queenLabel = computed(() => {
 
     <NuxtLink
         v-else
-        :to="`/colonies/new?hiveId=${hive.id}`"
+        :to="`/hives/${hive.id}`"
         class="hive-card hive-card--empty"
     >
         <div class="hive-card__top">
@@ -52,7 +52,7 @@ const queenLabel = computed(() => {
         </div>
         <span class="hive-card__settle">
             <Icon name="lucide:plus" size="14" />
-            Заселить семью
+            Заселить или изменить
         </span>
     </NuxtLink>
 </template>

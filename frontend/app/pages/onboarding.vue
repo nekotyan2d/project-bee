@@ -7,7 +7,7 @@ definePageMeta({ middleware: [] });
 useHead({ title: "Добро пожаловать — Пасека" });
 
 const db = useDb();
-const api = useApi();
+const { enqueue } = useSync();
 
 const name = ref("");
 const notes = ref("");
@@ -36,11 +36,7 @@ async function submit(): Promise<void> {
         return;
     }
 
-    // fire-and-forget sync — app works offline if backend unavailable
-    void api.PUT("/apiaries/{id}", {
-        params: { path: { id: apiary.id } },
-        body: { name: apiary.name, notes: apiary.notes ?? null, latitude: null, longitude: null },
-    });
+    void enqueue("apiary", apiary.id, "upsert");
 
     await navigateTo("/");
 }

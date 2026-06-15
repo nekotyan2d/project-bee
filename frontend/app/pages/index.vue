@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { LocalApiary, LocalColony, LocalHive, LocalQueen } from "~/shared/db";
 
+definePageMeta({ layout: "tabs" });
 useHead({ title: "Пасека" });
 
 const db = useDb();
@@ -208,7 +209,7 @@ const showCreateSheet = ref(false);
 
 .fab {
     position: fixed;
-    bottom: calc(var(--space-5) + var(--safe-bottom));
+    bottom: calc(var(--space-3) + 56px + var(--safe-bottom));
     right: var(--space-5);
     width: 56px;
     height: 56px;

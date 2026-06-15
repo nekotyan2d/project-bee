@@ -10,5 +10,9 @@ export function useAuthToken() {
         localStorage.setItem(TOKEN_KEY, value);
     }
 
-    return { getToken, setToken };
+    function clearToken(): void {
+        localStorage.removeItem(TOKEN_KEY);
+    }
+
+    return { getToken, setToken, clearToken };
 }

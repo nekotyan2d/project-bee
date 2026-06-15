@@ -22,6 +22,13 @@
       "when": 1781433892498,
       "tag": "0002_drop_queen_marked_color",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1781541735135,
+      "tag": "0003_shiny_firebrand",
+      "breakpoints": true
     }
   ]
 }

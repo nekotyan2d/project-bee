@@ -5,7 +5,7 @@ const route = useRoute();
 const id = route.params.id as string;
 
 const db = useDb();
-const api = useApi();
+const { enqueue } = useSync();
 
 useHead({ title: "Редактировать матку — Пасека" });
 
@@ -54,18 +54,7 @@ async function submit(): Promise<void> {
         return;
     }
 
-    void api.PUT("/queens/{id}", {
-        params: { path: { id } },
-        body: {
-            colonyId: queen.value.colonyId ?? null,
-            motherQueenId: queen.value.motherQueenId ?? null,
-            year: updates.year ?? null,
-            breed: updates.breed ?? null,
-            origin: updates.origin ?? null,
-            introducedAt: updates.introducedAt ?? null,
-            status: updates.status ?? "active",
-        },
-    });
+    void enqueue("queen", id, "upsert");
 
     await navigateTo(`/queens/${id}`);
 }
@@ -79,7 +68,7 @@ async function deleteQueen(): Promise<void> {
 
     await db.queen.update(id, { deletedAt: now, updatedAt: now });
 
-    void api.DELETE("/queens/{id}", { params: { path: { id } } });
+    void enqueue("queen", id, "delete");
 
     await navigateTo(backTo);
 }

@@ -33,6 +33,7 @@ export type EventType = (typeof EVENT_TYPES)[number];
 export const users = pgTable("users", {
     id: uuid("id").defaultRandom().primaryKey(),
     email: text("email").unique(),
+    passwordHash: text("password_hash"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

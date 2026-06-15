@@ -7,7 +7,7 @@ const route = useRoute();
 const settleHiveId = route.query.hiveId as string | undefined;
 
 const db = useDb();
-const api = useApi();
+const { enqueue } = useSync();
 
 const isSettle = computed(() => !!settleHiveId);
 useHead({ title: isSettle.value ? "Заселить улей — Пасека" : "Новая семья — Пасека" });
@@ -127,70 +127,11 @@ async function submit(): Promise<void> {
         return;
     }
 
-    // sync (fire-and-forget): hive → colony → queen → events
-    if (hive) {
-        void api.PUT("/hives/{id}", {
-            params: { path: { id: hive.id } },
-            body: {
-                apiaryId: hive.apiaryId,
-                label: hive.label,
-                type: hive.type ?? null,
-                frameCount: hive.frameCount ?? null,
-                status: hive.status,
-            },
-        });
-    }
-
-    void api.PUT("/colonies/{id}", {
-        params: { path: { id: colony.id } },
-        body: {
-            apiaryId: colony.apiaryId,
-            label: colony.label,
-            establishedAt: colony.establishedAt ?? null,
-            origin: colony.origin ?? null,
-            status: colony.status,
-        },
-    });
-
-    if (queen) {
-        void api.PUT("/queens/{id}", {
-            params: { path: { id: queen.id } },
-            body: {
-                colonyId: queen.colonyId ?? null,
-                motherQueenId: null,
-                year: queen.year ?? null,
-                breed: queen.breed ?? null,
-                origin: null,
-                introducedAt: null,
-                status: queen.status,
-            },
-        });
-    }
-
-    const occurredAtStr = now.toISOString();
-    const events = [
-        {
-            id: migrationEvent.id,
-            apiaryId: apiary.id,
-            colonyId: colony.id,
-            occurredAt: occurredAtStr,
-            type: "migration" as const,
-            payload: { toHiveId: hiveId },
-        },
-        ...(queen && queenChangeEvent
-            ? [
-                  {
-                      id: queenChangeEvent.id,
-                      apiaryId: apiary.id,
-                      colonyId: colony.id,
-                      occurredAt: occurredAtStr,
-                      type: "queen_change" as const,
-                      payload: { action: "introduced" as const, queenId: queen.id },
-                  },
-              ]
-            : []),
-    ];
-    void api.POST("/events/batch", { body: { events } });
+    if (hive) void enqueue("hive", hive.id, "upsert");
+    void enqueue("colony", colony.id, "upsert");
+    if (queen) void enqueue("queen", queen.id, "upsert");
+    void enqueue("event", migrationEvent.id, "upsert");
+    if (queenChangeEvent) void enqueue("event", queenChangeEvent.id, "upsert");
 
     await navigateTo(`/colonies/${colony.id}`);
 }

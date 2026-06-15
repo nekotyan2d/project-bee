@@ -21,7 +21,10 @@ export async function createServer() {
     app.setSerializerCompiler(serializerCompiler);
     registerErrorHandler(app);
 
-    await app.register(cors, { origin: env.CORS_ORIGIN });
+    await app.register(cors, {
+        origin: env.CORS_ORIGIN,
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    });
     await app.register(authPlugin);
     await app.register(swaggerPlugin);
 

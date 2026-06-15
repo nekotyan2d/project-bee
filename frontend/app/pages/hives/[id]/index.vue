@@ -7,7 +7,7 @@ const route = useRoute();
 const id = route.params.id as string;
 
 const db = useDb();
-const api = useApi();
+const { enqueue } = useSync();
 
 type PageData = {
     hive: LocalHive | undefined;
@@ -74,20 +74,7 @@ async function assignColony(colony: LocalColony): Promise<void> {
 
     showPicker.value = false;
 
-    void api.POST("/events/batch", {
-        body: {
-            events: [
-                {
-                    id: event.id,
-                    apiaryId: event.apiaryId,
-                    colonyId: colony.id,
-                    occurredAt: now.toISOString(),
-                    type: "migration" as const,
-                    payload: { toHiveId: hive.id },
-                },
-            ],
-        },
-    });
+    void enqueue("event", event.id, "upsert");
 }
 </script>
 

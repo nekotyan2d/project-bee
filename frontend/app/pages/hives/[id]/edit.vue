@@ -5,7 +5,7 @@ const route = useRoute();
 const id = route.params.id as string;
 
 const db = useDb();
-const api = useApi();
+const { enqueue } = useSync();
 
 useHead({ title: "Редактировать улей — Пасека" });
 
@@ -59,16 +59,7 @@ async function submit(): Promise<void> {
         return;
     }
 
-    void api.PUT("/hives/{id}", {
-        params: { path: { id } },
-        body: {
-            apiaryId: hive.value.apiaryId,
-            label: trimmedLabel,
-            type: updates.type ?? null,
-            frameCount: updates.frameCount ?? null,
-            status: updates.status ?? "active",
-        },
-    });
+    void enqueue("hive", id, "upsert");
 
     await navigateTo(`/hives/${id}`);
 }
@@ -80,7 +71,7 @@ async function deleteHive(): Promise<void> {
     const now = new Date();
     await db.hive.update(id, { deletedAt: now, updatedAt: now });
 
-    void api.DELETE("/hives/{id}", { params: { path: { id } } });
+    void enqueue("hive", id, "delete");
 
     await navigateTo("/");
 }

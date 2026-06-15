@@ -9,7 +9,7 @@ const route = useRoute();
 const colonyId = route.query.colonyId as string | undefined;
 
 const db = useDb();
-const api = useApi();
+const { enqueue } = useSync();
 
 const year = ref("");
 const breed = ref("");
@@ -66,35 +66,8 @@ async function submit(): Promise<void> {
         return;
     }
 
-    void api.PUT("/queens/{id}", {
-        params: { path: { id: queen.id } },
-        body: {
-            colonyId: queen.colonyId ?? null,
-            introducedAt: queen.introducedAt ?? null,
-            year: queen.year ?? null,
-            breed: queen.breed ?? null,
-            origin: queen.origin ?? null,
-            motherQueenId: null,
-            status: queen.status,
-        },
-    });
-
-    if (queenChangeEvent && colonyId) {
-        void api.POST("/events/batch", {
-            body: {
-                events: [
-                    {
-                        id: queenChangeEvent.id,
-                        apiaryId: queenChangeEvent.apiaryId,
-                        colonyId,
-                        occurredAt: now.toISOString(),
-                        type: "queen_change" as const,
-                        payload: { action: "introduced" as const, queenId: queen.id },
-                    },
-                ],
-            },
-        });
-    }
+    void enqueue("queen", queen.id, "upsert");
+    if (queenChangeEvent) void enqueue("event", queenChangeEvent.id, "upsert");
 
     await navigateTo(backTo);
 }
