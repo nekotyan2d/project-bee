@@ -1,0 +1,369 @@
+<script setup lang="ts">
+import { uuidv7 } from "uuidv7";
+
+import type { LocalColony, LocalEvent, LocalHive, LocalQueen } from "~/shared/db";
+
+const route = useRoute();
+const settleHiveId = route.query.hiveId as string | undefined;
+
+const db = useDb();
+const api = useApi();
+
+const isSettle = computed(() => !!settleHiveId);
+useHead({ title: isSettle.value ? "Заселить улей — Пасека" : "Новая семья — Пасека" });
+
+// colony
+const label = ref("");
+const origin = ref("");
+const establishedAt = ref("");
+
+// hive (only when creating a new one)
+const hiveLabel = ref("");
+const hiveType = ref("");
+const hiveFrames = ref("");
+
+// queen (optional)
+const addQueen = ref(false);
+const queenYear = ref("");
+const queenBreed = ref("");
+
+const submitting = ref(false);
+const error = ref<string | null>(null);
+
+const HIVE_TYPES = [
+    { value: "dadant", label: "Дадан" },
+    { value: "rut", label: "Рут" },
+    { value: "ukrainian", label: "Украинский" },
+    { value: "multi_hull", label: "Многокорпусный" },
+];
+
+async function submit(): Promise<void> {
+    const trimmedLabel = label.value.trim();
+    if (!trimmedLabel) return;
+    if (!isSettle.value && !hiveLabel.value.trim()) return;
+
+    const apiary = await db.apiary.orderBy("updatedAt").first();
+    if (!apiary) return;
+
+    submitting.value = true;
+    error.value = null;
+
+    const now = new Date();
+
+    // hive: reuse the empty one we're settling into, or create a new one
+    let hive: LocalHive | null = null;
+    let hiveId = settleHiveId;
+    if (!hiveId) {
+        hive = {
+            id: uuidv7(),
+            apiaryId: apiary.id,
+            label: hiveLabel.value.trim(),
+            type: hiveType.value || undefined,
+            frameCount: hiveFrames.value ? parseInt(hiveFrames.value, 10) : undefined,
+            status: "active",
+            updatedAt: now,
+        };
+        hiveId = hive.id;
+    }
+
+    const queen: LocalQueen | null = addQueen.value
+        ? {
+              id: uuidv7(),
+              colonyId: undefined,
+              year: queenYear.value ? parseInt(queenYear.value, 10) : undefined,
+              breed: queenBreed.value.trim() || undefined,
+              status: "active",
+              updatedAt: now,
+          }
+        : null;
+
+    const colony: LocalColony = {
+        id: uuidv7(),
+        apiaryId: apiary.id,
+        label: trimmedLabel,
+        establishedAt: establishedAt.value || undefined,
+        origin: origin.value.trim() || undefined,
+        status: "active",
+        superCount: 0,
+        currentHiveId: hiveId,
+        currentQueenId: queen?.id,
+        updatedAt: now,
+    };
+    if (queen) queen.colonyId = colony.id;
+
+    const migrationEvent: LocalEvent = {
+        id: uuidv7(),
+        apiaryId: apiary.id,
+        colonyId: colony.id,
+        type: "migration",
+        occurredAt: now,
+        payload: { toHiveId: hiveId },
+        updatedAt: now,
+    };
+
+    const queenChangeEvent: LocalEvent | null = queen
+        ? {
+              id: uuidv7(),
+              apiaryId: apiary.id,
+              colonyId: colony.id,
+              type: "queen_change",
+              occurredAt: now,
+              payload: { action: "introduced", queenId: queen.id },
+              updatedAt: now,
+          }
+        : null;
+
+    try {
+        await db.transaction("rw", db.hive, db.colony, db.queen, db.event, async () => {
+            if (hive) await db.hive.add(hive);
+            await db.colony.add(colony);
+            await db.event.add(migrationEvent);
+            if (queen) await db.queen.add(queen);
+            if (queenChangeEvent) await db.event.add(queenChangeEvent);
+        });
+    } catch {
+        error.value = "Не удалось сохранить. Попробуйте ещё раз.";
+        submitting.value = false;
+        return;
+    }
+
+    // sync (fire-and-forget): hive → colony → queen → events
+    if (hive) {
+        void api.PUT("/hives/{id}", {
+            params: { path: { id: hive.id } },
+            body: {
+                apiaryId: hive.apiaryId,
+                label: hive.label,
+                type: hive.type ?? null,
+                frameCount: hive.frameCount ?? null,
+                status: hive.status,
+            },
+        });
+    }
+
+    void api.PUT("/colonies/{id}", {
+        params: { path: { id: colony.id } },
+        body: {
+            apiaryId: colony.apiaryId,
+            label: colony.label,
+            establishedAt: colony.establishedAt ?? null,
+            origin: colony.origin ?? null,
+            status: colony.status,
+        },
+    });
+
+    if (queen) {
+        void api.PUT("/queens/{id}", {
+            params: { path: { id: queen.id } },
+            body: {
+                colonyId: queen.colonyId ?? null,
+                motherQueenId: null,
+                year: queen.year ?? null,
+                breed: queen.breed ?? null,
+                origin: null,
+                introducedAt: null,
+                status: queen.status,
+            },
+        });
+    }
+
+    const occurredAtStr = now.toISOString();
+    const events = [
+        {
+            id: migrationEvent.id,
+            apiaryId: apiary.id,
+            colonyId: colony.id,
+            occurredAt: occurredAtStr,
+            type: "migration" as const,
+            payload: { toHiveId: hiveId },
+        },
+        ...(queen && queenChangeEvent
+            ? [
+                  {
+                      id: queenChangeEvent.id,
+                      apiaryId: apiary.id,
+                      colonyId: colony.id,
+                      occurredAt: occurredAtStr,
+                      type: "queen_change" as const,
+                      payload: { action: "introduced" as const, queenId: queen.id },
+                  },
+              ]
+            : []),
+    ];
+    void api.POST("/events/batch", { body: { events } });
+
+    await navigateTo(`/colonies/${colony.id}`);
+}
+</script>
+
+<template>
+    <AppPage
+        :title="isSettle ? 'Заселить улей' : 'Новая семья'"
+        back-to="/">
+        <form
+            class="form"
+            @submit.prevent="submit">
+            <FormField
+                v-slot="{ id }"
+                label="Название семьи"
+                required>
+                <BaseInput
+                    :id="id"
+                    v-model="label"
+                    placeholder="Семья №1"
+                    autocomplete="off"
+                    required />
+            </FormField>
+
+            <template v-if="!isSettle">
+                <FormField
+                    v-slot="{ id }"
+                    label="Улей"
+                    required>
+                    <BaseInput
+                        :id="id"
+                        v-model="hiveLabel"
+                        placeholder="Улей №1"
+                        autocomplete="off"
+                        required />
+                </FormField>
+                <FormField
+                    v-slot="{ id }"
+                    label="Тип улья">
+                    <BaseSelect
+                        :id="id"
+                        v-model="hiveType">
+                        <option value="">Не указан</option>
+                        <option
+                            v-for="t in HIVE_TYPES"
+                            :key="t.value"
+                            :value="t.value">
+                            {{ t.label }}
+                        </option>
+                    </BaseSelect>
+                </FormField>
+                <FormField
+                    v-slot="{ id }"
+                    label="Вместимость (рамок)">
+                    <BaseInput
+                        :id="id"
+                        v-model="hiveFrames"
+                        type="number"
+                        placeholder="12" />
+                </FormField>
+            </template>
+
+            <FormField
+                v-slot="{ id }"
+                label="Происхождение">
+                <BaseInput
+                    :id="id"
+                    v-model="origin"
+                    placeholder="Рой, отводок, покупная…"
+                    autocomplete="off" />
+            </FormField>
+
+            <FormField
+                v-slot="{ id }"
+                label="Дата основания">
+                <BaseInput
+                    :id="id"
+                    v-model="establishedAt"
+                    type="date" />
+            </FormField>
+
+            <div class="queen-toggle">
+                <button
+                    type="button"
+                    class="queen-toggle__btn"
+                    :class="{ 'queen-toggle__btn--open': addQueen }"
+                    @click="addQueen = !addQueen">
+                    <Icon
+                        name="lucide:crown"
+                        size="18" />
+                    <span>Добавить матку</span>
+                    <Icon
+                        name="lucide:chevron-down"
+                        size="18"
+                        class="queen-toggle__chevron" />
+                </button>
+            </div>
+
+            <template v-if="addQueen">
+                <FormField
+                    v-slot="{ id }"
+                    label="Год вывода матки">
+                    <BaseInput
+                        :id="id"
+                        v-model="queenYear"
+                        type="number"
+                        placeholder="2024" />
+                </FormField>
+                <FormField
+                    v-slot="{ id }"
+                    label="Порода">
+                    <BaseInput
+                        :id="id"
+                        v-model="queenBreed"
+                        placeholder="Карника, бакфаст…"
+                        autocomplete="off" />
+                </FormField>
+            </template>
+
+            <p
+                v-if="error"
+                class="form__error">
+                {{ error }}
+            </p>
+
+            <BaseButton
+                type="submit"
+                :loading="submitting"
+                block>
+                {{ isSettle ? "Заселить" : "Создать" }}
+            </BaseButton>
+        </form>
+    </AppPage>
+</template>
+
+<style scoped lang="scss">
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+
+    &__error {
+        color: var(--color-danger);
+        font-size: var(--text-sm);
+    }
+}
+
+.queen-toggle {
+    &__btn {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        width: 100%;
+        min-height: var(--tap-min);
+        padding: 0 var(--space-4);
+        border: 1px dashed var(--color-border);
+        border-radius: var(--radius-md);
+        background: none;
+        color: var(--color-text);
+        font-size: var(--text-base);
+        font-weight: 500;
+        font-family: var(--font-sans);
+        cursor: pointer;
+    }
+
+    &__chevron {
+        margin-left: auto;
+        color: var(--color-text-muted);
+        transition: transform var(--transition-fast);
+    }
+
+    &__btn--open &__chevron {
+        transform: rotate(180deg);
+    }
+}
+</style>

@@ -1,0 +1,176 @@
+<script setup lang="ts">
+import { uuidv7 } from "uuidv7";
+
+import type { LocalEvent, LocalQueen } from "~/shared/db";
+
+useHead({ title: "Новая матка — Пасека" });
+
+const route = useRoute();
+const colonyId = route.query.colonyId as string | undefined;
+
+const db = useDb();
+const api = useApi();
+
+const year = ref("");
+const breed = ref("");
+const origin = ref("");
+const introducedAt = ref("");
+const submitting = ref(false);
+const error = ref<string | null>(null);
+
+const backTo = colonyId ? `/colonies/${colonyId}` : "/colonies";
+
+async function submit(): Promise<void> {
+    const apiary = await db.apiary.orderBy("updatedAt").first();
+    if (!apiary) return;
+
+    submitting.value = true;
+    error.value = null;
+
+    const now = new Date();
+
+    const queen: LocalQueen = {
+        id: uuidv7(),
+        colonyId,
+        year: year.value ? parseInt(year.value, 10) : undefined,
+        breed: breed.value.trim() || undefined,
+        origin: origin.value.trim() || undefined,
+        introducedAt: introducedAt.value || undefined,
+        status: "active",
+        updatedAt: now,
+    };
+
+    const queenChangeEvent: LocalEvent | null = colonyId
+        ? {
+              id: uuidv7(),
+              apiaryId: apiary.id,
+              colonyId,
+              type: "queen_change",
+              occurredAt: now,
+              payload: { action: "introduced", queenId: queen.id },
+              updatedAt: now,
+          }
+        : null;
+
+    try {
+        await db.transaction("rw", db.queen, db.colony, db.event, async () => {
+            await db.queen.add(queen);
+            if (queenChangeEvent && colonyId) {
+                await db.colony.update(colonyId, { currentQueenId: queen.id, updatedAt: now });
+                await db.event.add(queenChangeEvent);
+            }
+        });
+    } catch {
+        error.value = "Не удалось сохранить. Попробуйте ещё раз.";
+        submitting.value = false;
+        return;
+    }
+
+    void api.PUT("/queens/{id}", {
+        params: { path: { id: queen.id } },
+        body: {
+            colonyId: queen.colonyId ?? null,
+            introducedAt: queen.introducedAt ?? null,
+            year: queen.year ?? null,
+            breed: queen.breed ?? null,
+            origin: queen.origin ?? null,
+            motherQueenId: null,
+            status: queen.status,
+        },
+    });
+
+    if (queenChangeEvent && colonyId) {
+        void api.POST("/events/batch", {
+            body: {
+                events: [
+                    {
+                        id: queenChangeEvent.id,
+                        apiaryId: queenChangeEvent.apiaryId,
+                        colonyId,
+                        occurredAt: now.toISOString(),
+                        type: "queen_change" as const,
+                        payload: { action: "introduced" as const, queenId: queen.id },
+                    },
+                ],
+            },
+        });
+    }
+
+    await navigateTo(backTo);
+}
+</script>
+
+<template>
+    <AppPage
+        title="Новая матка"
+        :back-to="backTo">
+        <form
+            class="form"
+            @submit.prevent="submit">
+            <FormField
+                v-slot="{ id }"
+                label="Год вывода">
+                <BaseInput
+                    :id="id"
+                    v-model="year"
+                    type="number"
+                    placeholder="2024" />
+            </FormField>
+
+            <FormField
+                v-slot="{ id }"
+                label="Порода">
+                <BaseInput
+                    :id="id"
+                    v-model="breed"
+                    placeholder="Карника, бакфаст…"
+                    autocomplete="off" />
+            </FormField>
+
+            <FormField
+                v-slot="{ id }"
+                label="Происхождение">
+                <BaseInput
+                    :id="id"
+                    v-model="origin"
+                    placeholder="Питомник, отводок…"
+                    autocomplete="off" />
+            </FormField>
+
+            <FormField
+                v-slot="{ id }"
+                label="Дата подсадки">
+                <BaseInput
+                    :id="id"
+                    v-model="introducedAt"
+                    type="date" />
+            </FormField>
+
+            <p
+                v-if="error"
+                class="form__error">
+                {{ error }}
+            </p>
+
+            <BaseButton
+                type="submit"
+                :loading="submitting"
+                block>
+                Сохранить
+            </BaseButton>
+        </form>
+    </AppPage>
+</template>
+
+<style scoped lang="scss">
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+
+    &__error {
+        color: var(--color-danger);
+        font-size: var(--text-sm);
+    }
+}
+</style>

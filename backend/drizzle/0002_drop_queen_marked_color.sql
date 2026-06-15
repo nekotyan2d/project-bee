@@ -1,0 +1,1 @@
+ALTER TABLE "queen" DROP COLUMN "marked_color";
