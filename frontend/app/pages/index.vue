@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { LocalApiary, LocalColony, LocalHive, LocalQueen } from "~/shared/db";
 
-definePageMeta({ layout: "tabs" });
 useHead({ title: "Пасека" });
 
 const db = useDb();
@@ -15,7 +14,7 @@ type QueryData = {
 
 const EMPTY: QueryData = { apiary: null, hives: [], colonyByHiveId: {}, queenById: {} };
 
-const data = useLiveQuery<QueryData>(async () => {
+const { data, loading } = useLiveQuery<QueryData>(async () => {
     const apiary = (await db.apiary.orderBy("updatedAt").first()) ?? null;
     if (!apiary) return EMPTY;
 
@@ -70,7 +69,9 @@ const viewMode = ref<"list" | "map">("list");
             <ThemeToggle />
         </template>
 
-        <template v-if="data.hives.length > 0">
+        <LoadingSpinner v-if="loading" />
+
+        <template v-else-if="data.hives.length > 0">
             <HiveMap
                 v-if="viewMode === 'map'"
                 :hives="data.hives"

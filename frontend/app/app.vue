@@ -2,7 +2,7 @@
     <div>
         <NuxtRouteAnnouncer />
         <NuxtLayout>
-            <NuxtPage />
+            <NuxtPage :keepalive="{ include: ['index', 'analytics', 'colonies-id'] }" />
         </NuxtLayout>
     </div>
 </template>

@@ -12,7 +12,7 @@ type QueryData = {
 
 const EMPTY: QueryData = { colonies: [], hivesById: {} };
 
-const data = useLiveQuery<QueryData>(async () => {
+const { data, loading } = useLiveQuery<QueryData>(async () => {
     const apiary = await db.apiary.orderBy("updatedAt").first();
     if (!apiary) return EMPTY;
 
@@ -37,8 +37,10 @@ const data = useLiveQuery<QueryData>(async () => {
         title="Семьи"
         back-to="/"
         variant="list">
+        <LoadingSpinner v-if="loading" />
+
         <ul
-            v-if="data.colonies.length > 0"
+            v-else-if="data.colonies.length > 0"
             class="colony-list">
             <li
                 v-for="colony in data.colonies"

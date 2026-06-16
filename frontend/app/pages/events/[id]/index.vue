@@ -16,7 +16,7 @@ type PageData = {
 
 const EMPTY: PageData = { event: undefined, colony: undefined, hivesById: {}, queenLabel: undefined };
 
-const data = useLiveQuery<PageData>(async () => {
+const { data, loading } = useLiveQuery<PageData>(async () => {
     const event = await db.event.get(id);
     if (!event || event.deletedAt) return EMPTY;
 
@@ -101,7 +101,9 @@ async function deleteEvent(): Promise<void> {
             </NuxtLink>
         </template>
 
-        <template v-if="data.event && summary">
+        <LoadingSpinner v-if="loading" />
+
+        <template v-else-if="data.event && summary">
             <div class="head">
                 <span class="head__icon">
                     <Icon :name="summary.icon" size="22" />

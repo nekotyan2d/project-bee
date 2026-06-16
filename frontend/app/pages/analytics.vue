@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { LocalColony, LocalEvent } from "~/shared/db";
 
-definePageMeta({ layout: "tabs" });
 useHead({ title: "Аналитика — Пасека" });
 
 const db = useDb();
@@ -25,7 +24,7 @@ type SeasonData = {
     totalByProduct: Record<string, number>;
 };
 
-const harvestData = useLiveQuery<SeasonData[]>(async () => {
+const { data: harvestData, loading: harvestLoading } = useLiveQuery<SeasonData[]>(async () => {
     const events = await db.event
         .where("type")
         .equals("harvest")
@@ -108,7 +107,7 @@ type TreatmentRow = {
 const TODAY = new Date();
 TODAY.setHours(0, 0, 0, 0);
 
-const treatmentData = useLiveQuery<TreatmentRow[]>(async () => {
+const { data: treatmentData, loading: treatmentLoading } = useLiveQuery<TreatmentRow[]>(async () => {
     const events = await db.event
         .where("type")
         .equals("treatment")
@@ -176,7 +175,7 @@ type FeedingRow = {
     concentration: string;
 };
 
-const feedingData = useLiveQuery<FeedingRow[]>(async () => {
+const { data: feedingData, loading: feedingLoading } = useLiveQuery<FeedingRow[]>(async () => {
     const events = await db.event
         .where("type")
         .equals("feeding")
@@ -210,7 +209,11 @@ type SurvivalYear = {
     colonies: { label: string; diedAt: Date | null }[];
 };
 
-const survivalData = useLiveQuery<{ years: SurvivalYear[]; activeCount: number; deadCount: number }>(
+const { data: survivalData, loading: survivalLoading } = useLiveQuery<{
+    years: SurvivalYear[];
+    activeCount: number;
+    deadCount: number;
+}>(
     async () => {
         const [allColonies, deathEvents] = await Promise.all([
             db.colony.toArray(),
@@ -315,7 +318,8 @@ const survivalData = useLiveQuery<{ years: SurvivalYear[]; activeCount: number; 
         </div>
 
         <template v-if="tab === 'harvest'">
-            <template v-if="harvestData.length > 0">
+            <LoadingSpinner v-if="harvestLoading" />
+            <template v-else-if="harvestData.length > 0">
                 <div
                     v-if="harvestData.length > 1"
                     class="season-tabs">
@@ -366,6 +370,7 @@ const survivalData = useLiveQuery<{ years: SurvivalYear[]; activeCount: number; 
         </template>
 
         <template v-else-if="tab === 'treatment'">
+            <LoadingSpinner v-if="treatmentLoading" />
             <template v-if="activeWithdrawals.length > 0">
                 <div class="withdraw-banner">
                     <Icon
@@ -420,14 +425,15 @@ const survivalData = useLiveQuery<{ years: SurvivalYear[]; activeCount: number; 
             </template>
 
             <EmptyState
-                v-else-if="treatmentData.length === 0"
+                v-else-if="treatmentData.length === 0 && !treatmentLoading"
                 icon="lucide:pill"
                 text="Нет обработок"
                 hint="Добавьте событие «Обработка» на странице семьи" />
         </template>
 
         <template v-else-if="tab === 'feeding'">
-            <template v-if="feedingData.length > 0">
+            <LoadingSpinner v-if="feedingLoading" />
+            <template v-else-if="feedingData.length > 0">
                 <section class="event-list">
                     <div
                         v-for="row in feedingData"
@@ -454,6 +460,8 @@ const survivalData = useLiveQuery<{ years: SurvivalYear[]; activeCount: number; 
                 hint="Добавьте событие «Подкормка» на странице семьи" />
         </template>
         <template v-else-if="tab === 'survival'">
+            <LoadingSpinner v-if="survivalLoading" />
+            <template v-else>
             <div class="totals">
                 <div class="total-card">
                     <span class="total-card__label">Активных</span>
@@ -502,6 +510,7 @@ const survivalData = useLiveQuery<{ years: SurvivalYear[]; activeCount: number; 
                 icon="lucide:heart-pulse"
                 text="Нет данных об отходе"
                 hint="Погибшие семьи появятся здесь после события «Гибель»" />
+            </template>
         </template>
     </AppPage>
 </template>

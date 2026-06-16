@@ -1,17 +1,24 @@
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
     title: string;
     icon?: string;
     backTo?: string;
 }>();
+
+const router = useRouter();
+
+function goBack(): void {
+    if (window.history.state?.back) router.back();
+    else if (props.backTo) void router.push(props.backTo);
+}
 </script>
 
 <template>
     <header class="topbar">
         <div class="topbar__inner">
-            <NuxtLink v-if="backTo" :to="backTo" class="topbar__back" aria-label="Назад">
+            <button v-if="backTo" type="button" class="topbar__back" aria-label="Назад" @click="goBack">
                 <Icon name="lucide:arrow-left" size="20" />
-            </NuxtLink>
+            </button>
             <h1 class="topbar__title">
                 <Icon v-if="icon" :name="icon" size="20" />
                 {{ title }}
@@ -49,7 +56,9 @@ defineProps<{
         min-height: var(--tap-min);
         margin: 0 calc(-1 * var(--space-2));
         color: var(--color-text);
-        text-decoration: none;
+        border: none;
+        background: none;
+        cursor: pointer;
     }
 
     &__title {

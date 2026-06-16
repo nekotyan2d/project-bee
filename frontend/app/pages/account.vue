@@ -1,5 +1,4 @@
 <script setup lang="ts">
-definePageMeta({ layout: "tabs" });
 useHead({ title: "Аккаунт — Пасека" });
 
 const { me, register, login, logout } = useAuth();

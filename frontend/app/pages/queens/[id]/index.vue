@@ -14,7 +14,7 @@ type PageData = {
 
 const EMPTY: PageData = { queen: undefined, colony: undefined, mother: undefined };
 
-const data = useLiveQuery<PageData>(async () => {
+const { data, loading } = useLiveQuery<PageData>(async () => {
     const queen = await db.queen.get(id);
     if (!queen) return EMPTY;
 
@@ -67,7 +67,9 @@ const age = computed(() => {
             </NuxtLink>
         </template>
 
-        <template v-if="data.queen">
+        <LoadingSpinner v-if="loading" />
+
+        <template v-else-if="data.queen">
             <section class="section">
                 <InfoGrid>
                     <InfoRow label="Статус">{{ STATUS_LABEL[data.queen.status] ?? data.queen.status }}</InfoRow>

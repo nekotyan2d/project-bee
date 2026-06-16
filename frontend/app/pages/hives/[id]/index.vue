@@ -18,7 +18,7 @@ type PageData = {
 
 const EMPTY: PageData = { hive: undefined, colony: undefined, queen: undefined, unassigned: [] };
 
-const data = useLiveQuery<PageData>(async () => {
+const { data, loading } = useLiveQuery<PageData>(async () => {
     const hive = await db.hive.get(id);
     if (!hive) return EMPTY;
 
@@ -94,8 +94,9 @@ async function assignColony(colony: LocalColony): Promise<void> {
             </NuxtLink>
         </template>
 
-        <template v-if="data.hive">
-            <!-- Basic info -->
+        <LoadingSpinner v-if="loading" />
+
+        <template v-else-if="data.hive">
             <section class="section">
                 <InfoGrid>
                     <InfoRow label="Статус">{{ STATUS_LABEL[data.hive.status] ?? data.hive.status }}</InfoRow>
@@ -112,7 +113,6 @@ async function assignColony(colony: LocalColony): Promise<void> {
                 </InfoGrid>
             </section>
 
-            <!-- Colony -->
             <section class="section">
                 <h2 class="section__title">Семья</h2>
 

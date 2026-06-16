@@ -1,18 +1,20 @@
 import { liveQuery } from "dexie";
 
 export function useLiveQuery<T>(querier: () => T | Promise<T>, initialValue: T) {
-    const result = shallowRef<T>(initialValue);
+    const data = shallowRef<T>(initialValue);
+    const loading = ref(true);
     let subscription: { unsubscribe(): void } | null = null;
 
     onMounted(() => {
         subscription = liveQuery(querier).subscribe({
             next(val) {
-                result.value = val;
+                data.value = val;
+                loading.value = false;
             },
         });
     });
 
     onUnmounted(() => subscription?.unsubscribe());
 
-    return result;
+    return { data, loading };
 }

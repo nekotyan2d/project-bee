@@ -18,7 +18,7 @@ type PageData = {
 
 const EMPTY: PageData = { colony: undefined, hive: undefined, queen: undefined, events: [], hivesById: {} };
 
-const data = useLiveQuery<PageData>(async () => {
+const { data, loading } = useLiveQuery<PageData>(async () => {
     const colony = await db.colony.get(id);
     if (!colony) return EMPTY;
 
@@ -101,7 +101,9 @@ const QUICK_ACTIONS = [
             </NuxtLink>
         </template>
 
-        <template v-if="data.colony">
+        <LoadingSpinner v-if="loading" />
+
+        <template v-else-if="data.colony">
             <nav class="quick-actions">
                 <NuxtLink
                     v-for="action in QUICK_ACTIONS"
