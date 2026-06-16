@@ -49,6 +49,8 @@ type HiveNode = {
     colony: LocalColony | undefined;
     fill: string;
     stroke: string;
+    textColor: string;
+    textMuted: string;
 };
 
 const container = ref<HTMLDivElement | null>(null);
@@ -75,34 +77,26 @@ onMounted(() => {
 });
 onUnmounted(() => resizeObserver?.disconnect());
 
-function colorWithAlpha(cssColor: string, alpha: number): string {
-    return `color-mix(in srgb, ${cssColor} ${String(Math.round(alpha * 100))}%, transparent)`;
-}
-
 const nodes = computed<HiveNode[]>(() => {
     const c = colors.value;
     return props.hives.map((hive, i) => {
         const colony = props.colonyByHiveId[hive.id];
         const pos = hive.x != null && hive.y != null ? { x: hive.x, y: hive.y } : defaultPos(i);
 
-        let fill = colorWithAlpha(c.border, 0.4);
-        let stroke = colorWithAlpha(c.muted, 0.5);
+        let fill = c.border;
+        let stroke = c.muted;
 
-        if (colony) {
-            const status = inspectionStatus(colony.lastInspectedAt);
-            if (status.level === "alert") {
-                fill = colorWithAlpha(c.danger, 0.15);
-                stroke = colorWithAlpha(c.danger, 0.6);
-            } else if (status.level === "warn") {
-                fill = colorWithAlpha(c.warning, 0.15);
-                stroke = colorWithAlpha(c.warning, 0.5);
-            } else {
-                fill = colorWithAlpha(c.success, 0.12);
-                stroke = colorWithAlpha(c.success, 0.4);
-            }
+        const hex = hiveColorHex(hive.color);
+        let textColor = c.text;
+        let textMuted = c.muted;
+        if (hex) {
+            fill = hex;
+            stroke = hex;
+            textColor = "#ffffff";
+            textMuted = "rgba(255,255,255,0.75)";
         }
 
-        return { hive, x: pos.x, y: pos.y, colony, fill, stroke };
+        return { hive, x: pos.x, y: pos.y, colony, fill, stroke, textColor, textMuted };
     });
 });
 
@@ -229,7 +223,7 @@ const stageConfig = computed(() => ({ width: stageW.value, height: stageH.value,
                             y: 14,
                             fontSize: 13,
                             fontStyle: 'bold',
-                            fill: colors.text,
+                            fill: node.textColor,
                         }" />
                     <v-text
                         v-if="node.colony"
@@ -239,7 +233,7 @@ const stageConfig = computed(() => ({ width: stageW.value, height: stageH.value,
                             align: 'center',
                             y: 34,
                             fontSize: 11,
-                            fill: colors.muted,
+                            fill: node.textMuted,
                         }" />
                     <v-text
                         v-else
@@ -249,7 +243,7 @@ const stageConfig = computed(() => ({ width: stageW.value, height: stageH.value,
                             align: 'center',
                             y: 34,
                             fontSize: 11,
-                            fill: colors.muted,
+                            fill: node.textMuted,
                         }" />
                 </v-group>
             </v-layer>

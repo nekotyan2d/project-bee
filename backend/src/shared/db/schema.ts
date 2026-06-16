@@ -62,6 +62,7 @@ export const hive = pgTable("hive", {
     status: text("status").notNull().default("active"),
     x: integer("x"),
     y: integer("y"),
+    color: text("color"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),

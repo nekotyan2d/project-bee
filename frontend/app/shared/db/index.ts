@@ -33,6 +33,7 @@ export interface LocalHive {
     status: string;
     x?: number;
     y?: number;
+    color?: string;
     updatedAt: Date;
     deletedAt?: Date;
 }

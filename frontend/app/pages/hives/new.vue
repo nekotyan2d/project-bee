@@ -11,6 +11,7 @@ const { enqueue } = useSync();
 const label = ref("");
 const type = ref("");
 const frameCount = ref("");
+const color = ref("");
 const submitting = ref(false);
 const error = ref<string | null>(null);
 
@@ -40,6 +41,7 @@ async function submit(): Promise<void> {
         type: type.value || undefined,
         frameCount: frames,
         status: "active",
+        color: color.value || undefined,
         updatedAt: new Date(),
     };
 
@@ -92,6 +94,24 @@ async function submit(): Promise<void> {
                 </BaseSelect>
             </FormField>
 
+            <FormField label="Цвет">
+                <div class="color-picker">
+                    <button
+                        type="button"
+                        class="color-swatch color-swatch--none"
+                        :class="{ 'color-swatch--active': !color }"
+                        @click="color = ''" />
+                    <button
+                        v-for="c in HIVE_COLORS"
+                        :key="c.key"
+                        type="button"
+                        class="color-swatch"
+                        :class="{ 'color-swatch--active': color === c.key }"
+                        :style="{ background: c.hex }"
+                        @click="color = c.key" />
+                </div>
+            </FormField>
+
             <FormField
                 v-slot="{ id }"
                 label="Вместимость (рамок)">
@@ -127,6 +147,30 @@ async function submit(): Promise<void> {
     &__error {
         color: var(--color-danger);
         font-size: var(--text-sm);
+    }
+}
+
+.color-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform var(--transition-fast);
+
+    &--none {
+        background: var(--color-border);
+    }
+
+    &--active {
+        border-color: var(--color-text);
+        transform: scale(1.15);
     }
 }
 </style>

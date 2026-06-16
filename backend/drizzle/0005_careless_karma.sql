@@ -1,0 +1,1 @@
+ALTER TABLE "hive" ADD COLUMN "color" text;

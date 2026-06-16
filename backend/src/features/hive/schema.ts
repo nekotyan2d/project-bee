@@ -17,6 +17,7 @@ export const hiveInput = z.object({
     status: z.string().min(1).max(50).default("active"),
     x: z.number().int().nullable().default(null),
     y: z.number().int().nullable().default(null),
+    color: z.string().max(50).nullable().default(null),
 });
 
 export const hiveDto = z.object({
@@ -28,6 +29,7 @@ export const hiveDto = z.object({
     status: z.string(),
     x: z.number().int().nullable(),
     y: z.number().int().nullable(),
+    color: z.string().nullable(),
     createdAt: z.iso.datetime({ offset: true }),
     updatedAt: z.iso.datetime({ offset: true }),
     deletedAt: z.iso.datetime({ offset: true }).nullable(),

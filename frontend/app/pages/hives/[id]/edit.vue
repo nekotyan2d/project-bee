@@ -14,6 +14,7 @@ const label = ref("");
 const type = ref("");
 const frameCount = ref("");
 const status = ref("active");
+const color = ref("");
 const submitting = ref(false);
 const error = ref<string | null>(null);
 const deleting = ref(false);
@@ -33,6 +34,7 @@ onMounted(async () => {
     type.value = h.type ?? "";
     frameCount.value = h.frameCount ? String(h.frameCount) : "";
     status.value = h.status;
+    color.value = h.color ?? "";
 });
 
 async function submit(): Promise<void> {
@@ -48,6 +50,7 @@ async function submit(): Promise<void> {
         type: type.value || undefined,
         frameCount: frameCount.value ? parseInt(frameCount.value, 10) : undefined,
         status: status.value,
+        color: color.value || undefined,
         updatedAt: now,
     };
 
@@ -111,6 +114,24 @@ async function deleteHive(): Promise<void> {
                         {{ t.label }}
                     </option>
                 </BaseSelect>
+            </FormField>
+
+            <FormField label="Цвет">
+                <div class="color-picker">
+                    <button
+                        type="button"
+                        class="color-swatch color-swatch--none"
+                        :class="{ 'color-swatch--active': !color }"
+                        @click="color = ''" />
+                    <button
+                        v-for="c in HIVE_COLORS"
+                        :key="c.key"
+                        type="button"
+                        class="color-swatch"
+                        :class="{ 'color-swatch--active': color === c.key }"
+                        :style="{ background: c.hex }"
+                        @click="color = c.key" />
+                </div>
             </FormField>
 
             <FormField
@@ -177,5 +198,29 @@ async function deleteHive(): Promise<void> {
     color: var(--color-text-muted);
     text-align: center;
     padding: var(--space-8) 0;
+}
+
+.color-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.color-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: transform var(--transition-fast);
+
+    &--none {
+        background: var(--color-border);
+    }
+
+    &--active {
+        border-color: var(--color-text);
+        transform: scale(1.15);
+    }
 }
 </style>

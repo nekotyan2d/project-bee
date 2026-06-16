@@ -56,7 +56,7 @@ export function useSync() {
                 if (!r) return "ok";
                 const res = await $api.PUT("/hives/{id}", {
                     params: { path: { id } },
-                    body: { apiaryId: r.apiaryId, label: r.label, type: r.type ?? null, frameCount: r.frameCount ?? null, status: r.status, x: r.x ?? null, y: r.y ?? null },
+                    body: { apiaryId: r.apiaryId, label: r.label, type: r.type ?? null, frameCount: r.frameCount ?? null, status: r.status, x: r.x ?? null, y: r.y ?? null, color: r.color ?? null },
                 });
                 return res.response.ok ? "ok" : classify(res.response.status);
             }
@@ -223,6 +223,7 @@ export function useSync() {
             status: d.status,
             x: d.x ?? undefined,
             y: d.y ?? undefined,
+            color: d.color ?? undefined,
             updatedAt: new Date(d.updatedAt),
             deletedAt: d.deletedAt ? new Date(d.deletedAt) : undefined,
         }));

@@ -7,7 +7,7 @@ const props = defineProps<{
     queen?: LocalQueen;
 }>();
 
-const status = computed(() => props.colony ? inspectionStatus(props.colony.lastInspectedAt) : null);
+const status = computed(() => (props.colony ? inspectionStatus(props.colony.lastInspectedAt) : null));
 
 const queenLabel = computed(() => {
     if (!props.queen) return null;
@@ -19,23 +19,41 @@ const queenLabel = computed(() => {
     <NuxtLink
         v-if="colony"
         :to="`/colonies/${colony.id}`"
-        class="hive-card"
-    >
+        class="hive-card">
         <div class="hive-card__top">
-            <span class="hive-card__label">{{ hive.label }}</span>
-            <span v-if="status" class="attention" :data-level="status.level">
-                <Icon name="lucide:search" size="13" />
+            <span class="hive-card__label">
+                <span
+                    v-if="hive.color"
+                    class="hive-card__dot"
+                    :style="{ background: hiveColorHex(hive.color) }" />
+                {{ hive.label }}
+            </span>
+            <span
+                v-if="status"
+                class="attention"
+                :data-level="status.level">
+                <Icon
+                    name="lucide:search"
+                    size="13" />
                 {{ status.label }}
             </span>
         </div>
 
         <div class="hive-card__meta">
-            <span v-if="queenLabel" class="hive-card__meta-item">
-                <Icon name="lucide:crown" size="14" />
+            <span
+                v-if="queenLabel"
+                class="hive-card__meta-item">
+                <Icon
+                    name="lucide:crown"
+                    size="14" />
                 {{ queenLabel }}
             </span>
-            <span v-if="colony.superCount > 0" class="hive-card__meta-item">
-                <Icon name="lucide:layers" size="14" />
+            <span
+                v-if="colony.superCount > 0"
+                class="hive-card__meta-item">
+                <Icon
+                    name="lucide:layers"
+                    size="14" />
                 {{ colony.superCount }} маг.
             </span>
         </div>
@@ -44,14 +62,21 @@ const queenLabel = computed(() => {
     <NuxtLink
         v-else
         :to="`/hives/${hive.id}`"
-        class="hive-card hive-card--empty"
-    >
+        class="hive-card hive-card--empty">
         <div class="hive-card__top">
-            <span class="hive-card__label">{{ hive.label }}</span>
+            <span class="hive-card__label">
+                <span
+                    v-if="hive.color"
+                    class="hive-card__dot"
+                    :style="{ background: hiveColorHex(hive.color) }" />
+                {{ hive.label }}
+            </span>
             <span class="hive-card__empty-tag">Пусто</span>
         </div>
         <span class="hive-card__settle">
-            <Icon name="lucide:plus" size="14" />
+            <Icon
+                name="lucide:plus"
+                size="14" />
             Заселить или изменить
         </span>
     </NuxtLink>
@@ -88,8 +113,18 @@ const queenLabel = computed(() => {
     }
 
     &__label {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2);
         font-size: var(--text-base);
         font-weight: 600;
+    }
+
+    &__dot {
+        flex-shrink: 0;
+        width: 16px;
+        height: 16px;
+        border-radius: var(--radius-full);
     }
 
     &__meta {

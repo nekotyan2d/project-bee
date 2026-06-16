@@ -413,6 +413,7 @@ export interface paths {
                             status: string;
                             x: number | null;
                             y: number | null;
+                            color: string | null;
                             /** Format: date-time */
                             createdAt: string;
                             /** Format: date-time */
@@ -467,6 +468,7 @@ export interface paths {
                             status: string;
                             x: number | null;
                             y: number | null;
+                            color: string | null;
                             /** Format: date-time */
                             createdAt: string;
                             /** Format: date-time */
@@ -503,6 +505,8 @@ export interface paths {
                         x?: number | null;
                         /** @default null */
                         y?: number | null;
+                        /** @default null */
+                        color?: string | null;
                     };
                 };
             };
@@ -524,6 +528,7 @@ export interface paths {
                             status: string;
                             x: number | null;
                             y: number | null;
+                            color: string | null;
                             /** Format: date-time */
                             createdAt: string;
                             /** Format: date-time */
