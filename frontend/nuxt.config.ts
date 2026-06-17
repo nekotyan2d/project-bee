@@ -2,9 +2,13 @@
 export default defineNuxtConfig({
     compatibilityDate: "2025-07-15",
     devtools: { enabled: true },
-    modules: ["@nuxt/eslint", "@nuxtjs/color-mode", "@nuxt/icon"],
+    modules: ["@nuxt/eslint", "@nuxtjs/color-mode", "@nuxt/icon", "@vite-pwa/nuxt"],
     css: ["~/assets/scss/app.scss"],
     ssr: false,
+    // ponytail: static preset so `nuxt build` writes a real index.html — without it there's nothing for the SW to precache for offline navigation
+    nitro: {
+        preset: "static",
+    },
     colorMode: {
         preference: "system",
         fallback: "light",
@@ -21,9 +25,39 @@ export default defineNuxtConfig({
             ],
         },
     },
+    icon: {
+        clientBundle: {
+            scan: true,
+        },
+    },
     runtimeConfig: {
         public: {
             apiBase: "http://localhost:8000",
+        },
+    },
+    pwa: {
+        registerType: "autoUpdate",
+        manifest: {
+            name: "Пасека",
+            short_name: "Пасека",
+            description: "Учёт пасеки",
+            theme_color: "#fafaf9",
+            background_color: "#fafaf9",
+            display: "standalone",
+            start_url: "/",
+            icons: [
+                { src: "/pwa-icon.svg", sizes: "192x192", type: "image/svg+xml" },
+                { src: "/pwa-icon.svg", sizes: "512x512", type: "image/svg+xml" },
+                { src: "/pwa-icon.svg", sizes: "512x512", type: "image/svg+xml", purpose: "maskable" },
+            ],
+        },
+        workbox: {
+            navigateFallback: "/",
+            globPatterns: ["**/*.{js,css,html,svg,png,ico}"],
+        },
+        devOptions: {
+            enabled: true,
+            type: "module",
         },
     },
     eslint: {

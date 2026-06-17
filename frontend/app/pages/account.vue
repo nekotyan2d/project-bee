@@ -5,6 +5,7 @@ const { me, register, login, logout } = useAuth();
 
 const loading = ref(true);
 const email = ref<string | null>(null);
+const offline = ref(false);
 
 const mode = ref<"register" | "login">("register");
 
@@ -28,7 +29,9 @@ const pushError = ref<string | null>(null);
 const pushDone = ref(false);
 
 onMounted(async () => {
-    email.value = (await me())?.email ?? null;
+    const result = await me();
+    email.value = result?.email ?? null;
+    offline.value = result?.offline ?? false;
     loading.value = false;
 });
 
@@ -83,8 +86,17 @@ async function pushData(): Promise<void> {
     <AppPage
         title="Аккаунт"
         variant="stack">
-        <template v-if="!loading">
-            <!-- Залогинен -->
+        <LoadingSpinner v-if="loading" />
+        <template v-else>
+            <p
+                v-if="offline"
+                class="offline-banner">
+                <Icon
+                    name="lucide:wifi-off"
+                    size="14" />
+                Нет соединения — показаны последние известные данные аккаунта
+            </p>
+
             <template v-if="email">
                 <section class="section">
                     <InfoGrid>
@@ -92,13 +104,31 @@ async function pushData(): Promise<void> {
                     </InfoGrid>
                     <p class="hint">Данные привязаны к этому аккаунту и доступны на других устройствах после входа.</p>
 
-                    <p v-if="pushDone" class="success">Данные отправлены на сервер.</p>
-                    <p v-if="pushError" class="error">{{ pushError }}</p>
-                    <BaseButton variant="secondary" :loading="pushBusy" block @click="pushData">
+                    <p
+                        v-if="pushDone"
+                        class="success">
+                        Данные отправлены на сервер.
+                    </p>
+                    <p
+                        v-if="pushError"
+                        class="error">
+                        {{ pushError }}
+                    </p>
+                    <BaseButton
+                        variant="secondary"
+                        :loading="pushBusy"
+                        :disabled="offline"
+                        block
+                        @click="pushData">
                         Отправить данные на сервер
                     </BaseButton>
 
-                    <BaseButton variant="secondary" :loading="busyLogout" block @click="submitLogout">
+                    <BaseButton
+                        variant="secondary"
+                        :loading="busyLogout"
+                        :disabled="offline"
+                        block
+                        @click="submitLogout">
                         Выйти
                     </BaseButton>
                 </section>
@@ -116,11 +146,24 @@ async function pushData(): Promise<void> {
                     <p class="hint">
                         Привяжите почту и пароль к текущим данным, чтобы открыть их на другом устройстве.
                     </p>
-                    <form class="form" @submit.prevent="submitRegister">
-                        <FormField v-slot="{ id }" label="Почта" required>
-                            <BaseInput :id="id" v-model="regEmail" type="email" autocomplete="email" required />
+                    <form
+                        class="form"
+                        @submit.prevent="submitRegister">
+                        <FormField
+                            v-slot="{ id }"
+                            label="Почта"
+                            required>
+                            <BaseInput
+                                :id="id"
+                                v-model="regEmail"
+                                type="email"
+                                autocomplete="email"
+                                required />
                         </FormField>
-                        <FormField v-slot="{ id }" label="Пароль (минимум 8 символов)" required>
+                        <FormField
+                            v-slot="{ id }"
+                            label="Пароль (минимум 8 символов)"
+                            required>
                             <BaseInput
                                 :id="id"
                                 v-model="regPassword"
@@ -129,10 +172,22 @@ async function pushData(): Promise<void> {
                                 minlength="8"
                                 required />
                         </FormField>
-                        <p v-if="regError" class="error">{{ regError }}</p>
-                        <BaseButton type="submit" :loading="regBusy" block>Сохранить</BaseButton>
+                        <p
+                            v-if="regError"
+                            class="error">
+                            {{ regError }}
+                        </p>
+                        <BaseButton
+                            type="submit"
+                            :loading="regBusy"
+                            block
+                            >Сохранить</BaseButton
+                        >
                     </form>
-                    <button type="button" class="switch" @click="mode = 'login'">
+                    <button
+                        type="button"
+                        class="switch"
+                        @click="mode = 'login'">
                         Уже есть аккаунт? Войти
                     </button>
                 </section>
@@ -142,11 +197,24 @@ async function pushData(): Promise<void> {
                 <section class="section">
                     <h2 class="section__title">Вход</h2>
                     <p class="hint">Вход заменит локальные данные данными аккаунта.</p>
-                    <form class="form" @submit.prevent="submitLogin">
-                        <FormField v-slot="{ id }" label="Почта" required>
-                            <BaseInput :id="id" v-model="logEmail" type="email" autocomplete="email" required />
+                    <form
+                        class="form"
+                        @submit.prevent="submitLogin">
+                        <FormField
+                            v-slot="{ id }"
+                            label="Почта"
+                            required>
+                            <BaseInput
+                                :id="id"
+                                v-model="logEmail"
+                                type="email"
+                                autocomplete="email"
+                                required />
                         </FormField>
-                        <FormField v-slot="{ id }" label="Пароль" required>
+                        <FormField
+                            v-slot="{ id }"
+                            label="Пароль"
+                            required>
                             <BaseInput
                                 :id="id"
                                 v-model="logPassword"
@@ -154,10 +222,22 @@ async function pushData(): Promise<void> {
                                 autocomplete="current-password"
                                 required />
                         </FormField>
-                        <p v-if="logError" class="error">{{ logError }}</p>
-                        <BaseButton type="submit" :loading="logBusy" block>Войти</BaseButton>
+                        <p
+                            v-if="logError"
+                            class="error">
+                            {{ logError }}
+                        </p>
+                        <BaseButton
+                            type="submit"
+                            :loading="logBusy"
+                            block
+                            >Войти</BaseButton
+                        >
                     </form>
-                    <button type="button" class="switch" @click="mode = 'register'">
+                    <button
+                        type="button"
+                        class="switch"
+                        @click="mode = 'register'">
                         Нет аккаунта? Сохранить текущие данные
                     </button>
                 </section>
@@ -210,5 +290,19 @@ async function pushData(): Promise<void> {
 .success {
     color: var(--color-success);
     font-size: var(--text-sm);
+}
+
+.offline-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4);
+    margin-bottom: var(--space-3);
+    background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--color-warning) 30%, transparent);
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-warning);
 }
 </style>

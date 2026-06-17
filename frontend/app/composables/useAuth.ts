@@ -2,7 +2,7 @@ type AuthError = { message?: string };
 
 export function useAuth() {
     const config = useRuntimeConfig();
-    const { getToken, setToken, clearToken } = useAuthToken();
+    const { getToken, setToken, clearToken, getCachedEmail, setCachedEmail, clearCachedEmail } = useAuthToken();
     const db = useDb();
     const base = config.public.apiBase;
 
@@ -19,12 +19,19 @@ export function useAuth() {
         await Promise.all(db.tables.map((t) => t.clear()));
     }
 
-    async function me(): Promise<{ id: string; email: string | null } | null> {
+    async function me(): Promise<{ id: string; email: string | null; offline?: boolean } | null> {
         const token = getToken();
         if (!token) return null;
-        const res = await fetch(`${base}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
-        if (!res.ok) return null;
-        return (await res.json()) as { id: string; email: string | null };
+        try {
+            const res = await fetch(`${base}/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+            if (!res.ok) return null;
+            const data = (await res.json()) as { id: string; email: string | null };
+            setCachedEmail(data.email);
+            return data;
+        } catch {
+            const cachedEmail = getCachedEmail();
+            return cachedEmail ? { id: "", email: cachedEmail, offline: true } : null;
+        }
     }
 
     async function register(email: string, password: string): Promise<void> {
@@ -58,6 +65,7 @@ export function useAuth() {
 
     async function logout(): Promise<void> {
         clearToken();
+        clearCachedEmail();
         await resetLocalData();
         const res = await fetch(`${base}/auth/anonymous`, { method: "POST" });
         if (res.ok) {
