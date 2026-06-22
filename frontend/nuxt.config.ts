@@ -36,7 +36,7 @@ export default defineNuxtConfig({
         },
     },
     pwa: {
-        registerType: "autoUpdate",
+        registerType: "prompt",
         manifest: {
             name: "Пасека",
             short_name: "Пасека",

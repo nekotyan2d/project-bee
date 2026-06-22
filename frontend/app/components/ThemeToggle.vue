@@ -7,7 +7,7 @@ function toggle(): void {
 </script>
 
 <template>
-    <BaseButton variant="ghost" size="sm" :aria-label="`Тема: ${colorMode.value}`" @click="toggle">
+    <BaseButton variant="ghost" size="icon" :aria-label="`Тема: ${colorMode.value}`" @click="toggle">
         <ClientOnly>
             <Icon :name="colorMode.value === 'dark' ? 'lucide:moon' : 'lucide:sun'" size="20" />
             <template #fallback>

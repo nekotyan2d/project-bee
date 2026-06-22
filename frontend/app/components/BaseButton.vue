@@ -1,12 +1,14 @@
 <script setup lang="ts">
-withDefaults(
+const props = withDefaults(
     defineProps<{
-        variant?: "primary" | "secondary" | "ghost" | "danger";
-        size?: "sm" | "md" | "lg";
+        variant?: "primary" | "secondary" | "ghost" | "danger" | "danger-outline";
+        size?: "sm" | "md" | "lg" | "icon";
         type?: "button" | "submit" | "reset";
         block?: boolean;
         disabled?: boolean;
         loading?: boolean;
+        to?: string;
+        href?: string;
     }>(),
     {
         variant: "primary",
@@ -15,19 +17,40 @@ withDefaults(
         block: false,
         disabled: false,
         loading: false,
+        to: undefined,
+        href: undefined,
     },
 );
+
+const isLink = computed(() => !!(props.to || props.href));
+const tag = computed(() => (props.to ? resolveComponent("NuxtLink") : props.href ? "a" : "button"));
+
+function onClick(e: MouseEvent): void {
+    if (isLink.value && (props.disabled || props.loading)) e.preventDefault();
+}
 </script>
 
 <template>
-    <button
-        :type="type"
-        :disabled="disabled || loading"
-        :class="['btn', `btn--${variant}`, `btn--${size}`, { 'btn--block': block }]"
-    >
-        <span v-if="loading" class="btn__spinner" aria-hidden="true" />
+    <component
+        :is="tag"
+        :to="to"
+        :href="href"
+        :type="!isLink ? type : undefined"
+        :disabled="!isLink ? disabled || loading : undefined"
+        :aria-disabled="isLink && (disabled || loading) ? true : undefined"
+        :class="[
+            'btn',
+            `btn--${variant}`,
+            `btn--${size}`,
+            { 'btn--block': block, 'btn--disabled': isLink && (disabled || loading) },
+        ]"
+        @click="onClick">
+        <span
+            v-if="loading"
+            class="btn__spinner"
+            aria-hidden="true" />
         <slot />
-    </button>
+    </component>
 </template>
 
 <style scoped lang="scss">
@@ -48,7 +71,8 @@ withDefaults(
         border-color var(--transition-fast),
         opacity var(--transition-fast);
 
-    &:disabled {
+    &:disabled,
+    &--disabled {
         cursor: not-allowed;
         opacity: 0.55;
     }
@@ -69,11 +93,18 @@ withDefaults(
         font-size: var(--text-lg);
     }
 
+    &--icon {
+        width: var(--tap-min);
+        height: var(--tap-min);
+        min-height: var(--tap-min);
+        padding: 0;
+    }
+
     &--primary {
         background: var(--color-primary);
         color: var(--color-on-primary);
 
-        &:hover:not(:disabled) {
+        &:hover:not(:disabled):not(.btn--disabled) {
             background: var(--color-primary-hover);
         }
     }
@@ -83,7 +114,7 @@ withDefaults(
         background: var(--color-surface);
         color: var(--color-text);
 
-        &:hover:not(:disabled) {
+        &:hover:not(:disabled):not(.btn--disabled) {
             background: var(--color-surface-2);
         }
     }
@@ -92,7 +123,7 @@ withDefaults(
         background: transparent;
         color: var(--color-text);
 
-        &:hover:not(:disabled) {
+        &:hover:not(:disabled):not(.btn--disabled) {
             background: var(--color-surface-2);
         }
     }
@@ -101,8 +132,19 @@ withDefaults(
         background: var(--color-danger);
         color: var(--color-on-danger);
 
-        &:hover:not(:disabled) {
+        &:hover:not(:disabled):not(.btn--disabled) {
             background: var(--color-danger-hover);
+        }
+    }
+
+    &--danger-outline {
+        border-color: var(--color-danger);
+        background: none;
+        color: var(--color-danger);
+
+        &:hover:not(:disabled):not(.btn--disabled),
+        &:active:not(:disabled):not(.btn--disabled) {
+            background: color-mix(in srgb, var(--color-danger) 10%, transparent);
         }
     }
 

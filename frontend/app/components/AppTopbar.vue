@@ -17,14 +17,27 @@ function goBack(): void {
 <template>
     <header class="topbar">
         <div class="topbar__inner">
-            <button v-if="backTo" type="button" class="topbar__back" aria-label="Назад" @click="goBack">
-                <Icon name="lucide:arrow-left" size="20" />
-            </button>
+            <BaseButton
+                v-if="backTo"
+                variant="ghost"
+                size="icon"
+                class="topbar__back"
+                aria-label="Назад"
+                @click="goBack">
+                <Icon
+                    name="lucide:arrow-left"
+                    size="20" />
+            </BaseButton>
             <h1 class="topbar__title">
-                <Icon v-if="icon" :name="icon" size="20" />
+                <Icon
+                    v-if="icon"
+                    :name="icon"
+                    size="20" />
                 {{ title }}
             </h1>
-            <div v-if="$slots.actions" class="topbar__actions">
+            <div
+                v-if="$slots.actions"
+                class="topbar__actions">
                 <slot name="actions" />
             </div>
         </div>
@@ -39,6 +52,7 @@ function goBack(): void {
     background: var(--color-bg);
     border-bottom: 1px solid var(--color-border);
     padding-top: var(--safe-top);
+    height: var(--topbar-height);
 
     &__inner {
         display: flex;
@@ -50,16 +64,7 @@ function goBack(): void {
     }
 
     &__back {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-width: var(--tap-min);
-        min-height: var(--tap-min);
         margin: 0 calc(-1 * var(--space-2));
-        color: var(--color-text);
-        border: none;
-        background: none;
-        cursor: pointer;
     }
 
     &__title {

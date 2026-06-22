@@ -15,6 +15,8 @@ defineProps<{
             </template>
         </AppTopbar>
 
+        <UpdateBanner />
+
         <main class="main" :class="`main--${variant ?? 'form'}`">
             <slot />
         </main>

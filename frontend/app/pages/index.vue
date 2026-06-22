@@ -56,16 +56,16 @@ const viewMode = ref<"list" | "map">("list");
         icon="lucide:hexagon"
         variant="list">
         <template #actions>
-            <button
+            <BaseButton
                 v-if="data.hives.length > 0"
-                type="button"
-                class="view-toggle"
+                variant="ghost"
+                size="icon"
                 :aria-label="viewMode === 'list' ? 'Схема' : 'Список'"
                 @click="viewMode = viewMode === 'list' ? 'map' : 'list'">
                 <Icon
                     :name="viewMode === 'list' ? 'lucide:layout-grid' : 'lucide:list'"
                     size="20" />
-            </button>
+            </BaseButton>
             <ThemeToggle />
         </template>
 
@@ -154,27 +154,6 @@ const viewMode = ref<"list" | "map">("list");
 </template>
 
 <style scoped lang="scss">
-.view-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 36px;
-    height: 36px;
-    border: none;
-    border-radius: var(--radius-md);
-    background: none;
-    color: var(--color-text-muted);
-    cursor: pointer;
-    transition:
-        color var(--transition-fast),
-        background-color var(--transition-fast);
-
-    &:active {
-        background: var(--color-surface-2);
-        color: var(--color-text);
-    }
-}
-
 .hive-list {
     list-style: none;
     display: flex;

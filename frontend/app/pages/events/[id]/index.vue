@@ -96,9 +96,9 @@ async function deleteEvent(): Promise<void> {
 <template>
     <AppPage :title="summary?.title ?? 'Событие'" :back-to="backTo" variant="stack">
         <template v-if="canEdit" #actions>
-            <NuxtLink :to="`/events/new?eventId=${id}`" class="topbar-edit" aria-label="Редактировать">
+            <BaseButton variant="ghost" size="icon" :to="`/events/new?eventId=${id}`" aria-label="Редактировать">
                 <Icon name="lucide:pencil" size="20" />
-            </NuxtLink>
+            </BaseButton>
         </template>
 
         <LoadingSpinner v-if="loading" />
@@ -132,15 +132,6 @@ async function deleteEvent(): Promise<void> {
 </template>
 
 <style scoped lang="scss">
-.topbar-edit {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: var(--tap-min);
-    min-height: var(--tap-min);
-    color: var(--color-text);
-    text-decoration: none;
-}
 
 .head {
     display: flex;

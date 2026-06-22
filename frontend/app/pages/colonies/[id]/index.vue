@@ -91,14 +91,15 @@ const QUICK_ACTIONS = [
         back-to="/"
         variant="stack">
         <template #actions>
-            <NuxtLink
+            <BaseButton
+                variant="ghost"
+                size="icon"
                 :to="`/colonies/${id}/edit`"
-                class="topbar-edit"
                 aria-label="Редактировать">
                 <Icon
                     name="lucide:pencil"
                     size="20" />
-            </NuxtLink>
+            </BaseButton>
         </template>
 
         <LoadingSpinner v-if="loading" />
@@ -449,16 +450,6 @@ const QUICK_ACTIONS = [
     color: var(--color-primary);
     text-decoration: none;
     min-height: var(--tap-min);
-}
-
-.topbar-edit {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: var(--tap-min);
-    min-height: var(--tap-min);
-    color: var(--color-text);
-    text-decoration: none;
 }
 
 .timeline {
