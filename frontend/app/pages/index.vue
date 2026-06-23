@@ -47,7 +47,18 @@ function resolveQueen(colony: LocalColony | undefined): LocalQueen | undefined {
 }
 
 const showCreateSheet = ref(false);
-const viewMode = ref<"list" | "map">("list");
+
+const VIEW_MODE_KEY = "hiveViewMode";
+
+function loadViewMode(): "list" | "map" {
+    if (!import.meta.client) return "list";
+    return localStorage.getItem(VIEW_MODE_KEY) === "map" ? "map" : "list";
+}
+
+const viewMode = ref<"list" | "map">(loadViewMode());
+watch(viewMode, (mode) => {
+    localStorage.setItem(VIEW_MODE_KEY, mode);
+});
 </script>
 
 <template>
