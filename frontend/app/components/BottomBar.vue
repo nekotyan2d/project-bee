@@ -11,15 +11,19 @@ const isActive = (to: string): boolean => (to === "/" ? route.path === "/" : rou
 
 <template>
     <nav class="bottom-bar">
-        <NuxtLink
-            v-for="tab in TABS"
-            :key="tab.to"
-            :to="tab.to"
-            class="bottom-bar__tab"
-            :class="{ 'bottom-bar__tab--active': isActive(tab.to) }">
-            <Icon :name="tab.icon" size="22" />
-            <span class="bottom-bar__label">{{ tab.label }}</span>
-        </NuxtLink>
+        <div class="bottom-bar__inner">
+            <NuxtLink
+                v-for="tab in TABS"
+                :key="tab.to"
+                :to="tab.to"
+                class="bottom-bar__tab"
+                :class="{ 'bottom-bar__tab--active': isActive(tab.to) }">
+                <Icon
+                    :name="tab.icon"
+                    size="22" />
+                <span class="bottom-bar__label">{{ tab.label }}</span>
+            </NuxtLink>
+        </div>
     </nav>
 </template>
 
@@ -30,10 +34,15 @@ const isActive = (to: string): boolean => (to === "/" ? route.path === "/" : rou
     left: 0;
     right: 0;
     z-index: 10;
-    display: flex;
     background: var(--color-bg);
     border-top: 1px solid var(--color-border);
     padding-bottom: var(--safe-bottom);
+
+    &__inner {
+        display: flex;
+        max-width: 640px;
+        margin: 0 auto;
+    }
 
     &__tab {
         flex: 1;
