@@ -53,7 +53,6 @@ const viewMode = ref<"list" | "map">("list");
 <template>
     <AppPage
         :title="data.apiary?.name ?? 'Пасека'"
-        icon="lucide:hexagon"
         variant="list">
         <template #actions>
             <BaseButton

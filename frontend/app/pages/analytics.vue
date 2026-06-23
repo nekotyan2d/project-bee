@@ -267,7 +267,6 @@ const { data: survivalData, loading: survivalLoading } = useLiveQuery<{
 <template>
     <AppPage
         title="Аналитика"
-        icon="lucide:bar-chart-2"
         variant="stack">
         <div class="section-tabs">
             <button

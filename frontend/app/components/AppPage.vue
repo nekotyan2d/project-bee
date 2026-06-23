@@ -2,14 +2,13 @@
 defineProps<{
     title: string;
     backTo?: string;
-    icon?: string;
     variant?: "form" | "stack" | "list";
 }>();
 </script>
 
 <template>
     <div class="layout">
-        <AppTopbar :title="title" :icon="icon" :back-to="backTo">
+        <AppTopbar :title="title" :back-to="backTo">
             <template v-if="$slots.actions" #actions>
                 <slot name="actions" />
             </template>

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 const props = defineProps<{
     title: string;
-    icon?: string;
     backTo?: string;
 }>();
 
@@ -29,10 +28,6 @@ function goBack(): void {
                     size="20" />
             </BaseButton>
             <h1 class="topbar__title">
-                <Icon
-                    v-if="icon"
-                    :name="icon"
-                    size="20" />
                 {{ title }}
             </h1>
             <div
@@ -58,9 +53,10 @@ function goBack(): void {
         display: flex;
         align-items: center;
         gap: var(--space-3);
+        height: 100%;
         max-width: 640px;
         margin: 0 auto;
-        padding: var(--space-3) var(--space-4);
+        padding: 0 var(--space-4);
     }
 
     &__back {
