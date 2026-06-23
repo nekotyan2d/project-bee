@@ -1,6 +1,6 @@
 <template>
     <div>
-        <VitePwaManifest />
+        <NuxtPwaAssets />
         <NuxtRouteAnnouncer />
         <NuxtLayout>
             <NuxtPage :keepalive="{ include: ['index', 'analytics', 'colonies-id'] }" />

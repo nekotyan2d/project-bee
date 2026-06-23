@@ -5,7 +5,6 @@ export default defineNuxtConfig({
     modules: ["@nuxt/eslint", "@nuxtjs/color-mode", "@nuxt/icon", "@vite-pwa/nuxt"],
     css: ["~/assets/scss/app.scss"],
     ssr: false,
-    // ponytail: static preset so `nuxt build` writes a real index.html — without it there's nothing for the SW to precache for offline navigation
     nitro: {
         preset: "static",
     },
@@ -45,11 +44,9 @@ export default defineNuxtConfig({
             background_color: "#fafaf9",
             display: "standalone",
             start_url: "/",
-            icons: [
-                { src: "/pwa-icon.svg", sizes: "192x192", type: "image/svg+xml" },
-                { src: "/pwa-icon.svg", sizes: "512x512", type: "image/svg+xml" },
-                { src: "/pwa-icon.svg", sizes: "512x512", type: "image/svg+xml", purpose: "maskable" },
-            ],
+        },
+        pwaAssets: {
+            image: "public/icon.svg",
         },
         workbox: {
             navigateFallback: "/",
@@ -64,5 +61,8 @@ export default defineNuxtConfig({
         config: {
             stylistic: false,
         },
+    },
+    devServer: {
+        port: 3000,
     },
 });
