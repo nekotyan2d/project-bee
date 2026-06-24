@@ -15,7 +15,9 @@ watch(modelValue, (open) => {
         </Transition>
         <Transition name="slide-up">
             <div v-if="modelValue" class="sheet" role="dialog" aria-modal="true">
-                <div class="sheet__handle" />
+                <div class="sheet__handle-area">
+                    <div class="sheet__handle" />
+                </div>
                 <slot />
             </div>
         </Transition>
@@ -36,19 +38,30 @@ watch(modelValue, (open) => {
     right: 0;
     bottom: 0;
     z-index: 41;
+    max-width: 640px;
+    margin: 0 auto;
     background: var(--color-surface);
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    padding: var(--space-2) 0 max(var(--space-6), env(safe-area-inset-bottom));
-    max-height: 80dvh;
+    padding: 0 0 max(var(--space-6), env(safe-area-inset-bottom));
+    max-height: calc(100dvh - 72px);
     overflow-y: auto;
+
+    @media (width > 640px) {
+        max-height: calc(100dvh - 56px);
+    }
+}
+
+.sheet__handle-area {
+    display: flex;
+    justify-content: center;
+    padding: 22px 0;
 }
 
 .sheet__handle {
-    width: 36px;
+    width: 32px;
     height: 4px;
     border-radius: var(--radius-full);
     background: var(--color-border);
-    margin: var(--space-1) auto var(--space-4);
 }
 
 .fade-enter-active,

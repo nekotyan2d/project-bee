@@ -10,7 +10,6 @@
 .info-grid {
     display: flex;
     flex-direction: column;
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     overflow: hidden;

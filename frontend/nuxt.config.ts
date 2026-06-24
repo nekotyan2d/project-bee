@@ -19,8 +19,8 @@ export default defineNuxtConfig({
         head: {
             viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
             meta: [
-                { name: "theme-color", content: "#fafaf9", media: "(prefers-color-scheme: light)" },
-                { name: "theme-color", content: "#0c0a09", media: "(prefers-color-scheme: dark)" },
+                { name: "theme-color", content: "#fffbff", media: "(prefers-color-scheme: light)" },
+                { name: "theme-color", content: "#1f1b16", media: "(prefers-color-scheme: dark)" },
             ],
         },
     },
@@ -40,8 +40,8 @@ export default defineNuxtConfig({
             name: "Пасека",
             short_name: "Пасека",
             description: "Учёт пасеки",
-            theme_color: "#fafaf9",
-            background_color: "#fafaf9",
+            theme_color: "#fffbff",
+            background_color: "#fffbff",
             display: "standalone",
             start_url: "/",
         },

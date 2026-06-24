@@ -224,8 +224,7 @@ const QUICK_ACTIONS = [
                     <ol class="timeline">
                         <li
                             v-for="event in data.events"
-                            :key="event.id"
-                            class="timeline__item">
+                            :key="event.id">
                             <NuxtLink
                                 :to="`/events/${event.id}`"
                                 class="timeline__link">
@@ -284,7 +283,6 @@ const QUICK_ACTIONS = [
     justify-content: center;
     gap: var(--space-2);
     padding: var(--space-4) var(--space-2);
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     color: var(--color-text);
@@ -380,7 +378,6 @@ const QUICK_ACTIONS = [
     align-items: center;
     gap: var(--space-1);
     padding: var(--space-4);
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     text-align: center;
@@ -405,7 +402,6 @@ const QUICK_ACTIONS = [
     flex-direction: column;
     gap: var(--space-2);
     padding: var(--space-4);
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     text-decoration: none;
@@ -459,28 +455,26 @@ const QUICK_ACTIONS = [
     display: flex;
     flex-direction: column;
     gap: 0;
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     overflow: hidden;
-
-    &__item {
-        & + & {
-            border-top: 1px solid var(--color-border);
-        }
-    }
 
     &__link {
         display: flex;
         align-items: flex-start;
         gap: var(--space-3);
+        min-height: var(--list-item-height);
         padding: var(--space-3) var(--space-4);
         text-decoration: none;
         color: inherit;
         transition: background-color var(--transition-fast);
 
+        &:hover {
+            background: color-mix(in srgb, var(--color-text) 8%, transparent);
+        }
+
         &:active {
-            background: var(--color-surface-2);
+            background: color-mix(in srgb, var(--color-text) 12%, transparent);
         }
     }
 

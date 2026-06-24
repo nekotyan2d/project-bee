@@ -600,7 +600,6 @@ const { data: survivalData, loading: survivalLoading } = useLiveQuery<{
     flex-direction: column;
     gap: var(--space-1);
     padding: var(--space-4);
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
 
@@ -656,12 +655,10 @@ const { data: survivalData, loading: survivalLoading } = useLiveQuery<{
     gap: 2px;
     padding: var(--space-3) var(--space-4);
     background: var(--color-surface);
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
 
     &--warning {
-        border-color: color-mix(in srgb, var(--color-danger) 35%, transparent);
-        background: color-mix(in srgb, var(--color-danger) 5%, var(--color-surface));
+        background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface));
     }
 
     &__main {

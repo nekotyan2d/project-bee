@@ -18,9 +18,11 @@ const isActive = (to: string): boolean => (to === "/" ? route.path === "/" : rou
                 :to="tab.to"
                 class="bottom-bar__tab"
                 :class="{ 'bottom-bar__tab--active': isActive(tab.to) }">
-                <Icon
-                    :name="tab.icon"
-                    size="22" />
+                <span class="bottom-bar__indicator">
+                    <Icon
+                        :name="tab.icon"
+                        size="22" />
+                </span>
                 <span class="bottom-bar__label">{{ tab.label }}</span>
             </NuxtLink>
         </div>
@@ -34,8 +36,7 @@ const isActive = (to: string): boolean => (to === "/" ? route.path === "/" : rou
     left: 0;
     right: 0;
     z-index: 10;
-    background: var(--color-bg);
-    border-top: 1px solid var(--color-border);
+    background: var(--color-surface-3);
     padding-bottom: var(--safe-bottom);
 
     &__inner {
@@ -50,16 +51,31 @@ const isActive = (to: string): boolean => (to === "/" ? route.path === "/" : rou
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 2px;
-        padding: var(--space-2) 0;
-        min-height: 56px;
+        gap: 4px;
+        padding: 12px 0 16px;
+        min-height: 80px;
         color: var(--color-text-muted);
         text-decoration: none;
         transition: color var(--transition-fast);
 
         &--active {
-            color: var(--color-primary);
+            color: var(--color-text);
         }
+    }
+
+    &__indicator {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 32px;
+        border-radius: var(--radius-full);
+        transition: background-color var(--transition-fast);
+    }
+
+    &__tab--active &__indicator {
+        background: var(--color-secondary-container);
+        color: var(--color-on-secondary-container);
     }
 
     &__label {

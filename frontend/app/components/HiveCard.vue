@@ -88,7 +88,6 @@ const queenLabel = computed(() => {
     flex-direction: column;
     gap: var(--space-2);
     padding: var(--space-4);
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     box-shadow: var(--shadow-sm);
@@ -101,8 +100,8 @@ const queenLabel = computed(() => {
     }
 
     &--empty {
+        border: 1px dashed var(--color-border);
         box-shadow: none;
-        border-style: dashed;
     }
 
     &__top {

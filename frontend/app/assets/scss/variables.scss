@@ -41,6 +41,7 @@
     --radius-sm: 0.5rem;
     --radius-md: 0.75rem;
     --radius-lg: 1rem;
+    --radius-xl: 1.75rem;
     --radius-full: 9999px;
 
     // Typography
@@ -63,6 +64,8 @@
 
     // Layout
     --topbar-height: 68px;
+    --bottombar-height: 80px;
+    --list-item-height: 56px; // M3 one-line list item
 
     // Touch / safe areas
     --tap-min: 44px;
@@ -71,40 +74,72 @@
     --safe-left: env(safe-area-inset-left, 0px);
     --safe-right: env(safe-area-inset-right, 0px);
 
-    // Semantic — light (default)
-    --color-bg: var(--stone-50);
-    --color-surface: #ffffff;
-    --color-surface-2: var(--stone-100);
-    --color-text: var(--stone-900);
-    --color-text-muted: var(--stone-500);
-    --color-border: var(--stone-200);
+    // Semantic — Material You 3 tonal palette, generated from seed #F59E0B
+    // via `bun run scripts/generate-theme.mjs` (@material/material-color-utilities)
+    // Light (default)
+    // Blocks are told apart by surface *tone* (M3 surface-container scale), not by border —
+    // each step below is one tone lighter than the last: bg < surface < surface-2 < surface-3.
+    --color-bg: #ffffff;
+    --color-surface: #fcf2ea;
+    --color-surface-2: #f6ece4;
+    --color-surface-3: #f1e6de;
+    --color-text: #1f1b16;
+    --color-text-muted: #504539;
+    --color-border: #d4c4b5;
+    --color-outline: #827568;
 
-    --color-primary: var(--amber-500);
-    --color-primary-hover: var(--amber-600);
-    --color-on-primary: var(--stone-950);
+    --color-primary: #855300;
+    --color-primary-hover: color-mix(in srgb, var(--color-primary) 92%, var(--color-on-primary) 8%);
+    --color-on-primary: #ffffff;
+    --color-primary-container: #ffddb8;
+    --color-on-primary-container: #2a1700;
+
+    --color-secondary: #715a41;
+    --color-on-secondary: #ffffff;
+    --color-secondary-container: #fcddbd;
+    --color-on-secondary-container: #281805;
+
+    --color-tertiary: #54643d;
+    --color-on-tertiary: #ffffff;
+    --color-tertiary-container: #d7e9b9;
+    --color-on-tertiary-container: #121f02;
 
     --color-success: #16a34a;
     --color-warning: var(--amber-600);
-    --color-danger: #dc2626;
-    --color-danger-hover: #b91c1c;
+    --color-danger: #ba1a1a;
+    --color-danger-hover: color-mix(in srgb, var(--color-danger) 92%, var(--color-on-danger) 8%);
     --color-on-danger: #ffffff;
 }
 
 [data-theme="dark"] {
-    --color-bg: var(--stone-950);
-    --color-surface: var(--stone-900);
-    --color-surface-2: var(--stone-800);
-    --color-text: var(--stone-100);
-    --color-text-muted: var(--stone-400);
-    --color-border: var(--stone-800);
+    --color-bg: #110d09;
+    --color-surface: #1f1b16;
+    --color-surface-2: #231f1a;
+    --color-surface-3: #2e2924;
+    --color-text: #ebe1d9;
+    --color-text-muted: #d4c4b5;
+    --color-border: #504539;
+    --color-outline: #9c8e80;
 
-    --color-primary: var(--amber-400);
-    --color-primary-hover: var(--amber-300);
-    --color-on-primary: var(--stone-950);
+    --color-primary: #ffb95f;
+    --color-primary-hover: color-mix(in srgb, var(--color-primary) 92%, var(--color-on-primary) 8%);
+    --color-on-primary: #472a00;
+    --color-primary-container: #653e00;
+    --color-on-primary-container: #ffddb8;
+
+    --color-secondary: #dfc2a2;
+    --color-on-secondary: #3f2d17;
+    --color-secondary-container: #57432b;
+    --color-on-secondary-container: #fcddbd;
+
+    --color-tertiary: #bbcd9e;
+    --color-on-tertiary: #273513;
+    --color-tertiary-container: #3d4c28;
+    --color-on-tertiary-container: #d7e9b9;
 
     --color-success: #22c55e;
     --color-warning: var(--amber-400);
-    --color-danger: #ef4444;
-    --color-danger-hover: #f87171;
-    --color-on-danger: var(--stone-950);
+    --color-danger: #ffb4ab;
+    --color-danger-hover: color-mix(in srgb, var(--color-danger) 92%, var(--color-on-danger) 8%);
+    --color-on-danger: #690005;
 }

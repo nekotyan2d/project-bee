@@ -48,7 +48,6 @@ const lastInspected = computed(() => daysAgo(props.colony.lastInspectedAt));
     flex-direction: column;
     gap: var(--space-2);
     padding: var(--space-4);
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     box-shadow: var(--shadow-sm);

@@ -62,7 +62,7 @@ function onClick(e: MouseEvent): void {
     min-height: var(--tap-min);
     padding: 0 var(--space-4);
     border: 1px solid transparent;
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-full);
     font-size: var(--text-base);
     font-weight: 600;
     line-height: 1;
@@ -110,12 +110,16 @@ function onClick(e: MouseEvent): void {
     }
 
     &--secondary {
-        border-color: var(--color-border);
-        background: var(--color-surface);
-        color: var(--color-text);
+        border-color: var(--color-outline);
+        background: transparent;
+        color: var(--color-primary);
 
         &:hover:not(:disabled):not(.btn--disabled) {
-            background: var(--color-surface-2);
+            background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+        }
+
+        &:active:not(:disabled):not(.btn--disabled) {
+            background: color-mix(in srgb, var(--color-primary) 12%, transparent);
         }
     }
 

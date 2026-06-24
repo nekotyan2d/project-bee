@@ -176,7 +176,7 @@ async function assignColony(colony: LocalColony): Promise<void> {
                             @click="showPicker = !showPicker">
                             <Icon
                                 name="lucide:link"
-                                size="18" />
+                                size="20" />
                             Привязать семью
                         </BaseButton>
                     </div>
@@ -235,7 +235,6 @@ async function assignColony(colony: LocalColony): Promise<void> {
     flex-direction: column;
     gap: var(--space-2);
     padding: var(--space-4);
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     text-decoration: none;
@@ -309,7 +308,6 @@ async function assignColony(colony: LocalColony): Promise<void> {
     list-style: none;
     padding: 0;
     margin: 0;
-    border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     overflow: hidden;
@@ -322,19 +320,18 @@ async function assignColony(colony: LocalColony): Promise<void> {
         padding: var(--space-3) var(--space-4);
         background: none;
         border: none;
-        border-top: 1px solid var(--color-border);
         font-size: var(--text-base);
         color: var(--color-text);
         cursor: pointer;
-        min-height: var(--tap-min);
+        min-height: var(--list-item-height);
         transition: background-color var(--transition-fast);
 
-        &:first-child {
-            border-top: none;
+        &:hover {
+            background: color-mix(in srgb, var(--color-text) 8%, transparent);
         }
 
         &:active {
-            background: var(--color-surface-2);
+            background: color-mix(in srgb, var(--color-text) 12%, transparent);
         }
     }
 

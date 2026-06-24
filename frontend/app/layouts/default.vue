@@ -13,6 +13,6 @@ const showTabs = computed(() => TAB_PATHS.has(route.path));
 
 <style scoped lang="scss">
 .tabs-layout--tabs :deep(.main) {
-    padding-bottom: calc(72px + 56px + var(--safe-bottom));
+    padding-bottom: calc(72px + var(--bottombar-height) + var(--safe-bottom));
 }
 </style>

@@ -86,9 +86,9 @@ const { data, loading } = useLiveQuery<QueryData>(async () => {
     right: var(--space-5);
     width: 56px;
     height: 56px;
-    border-radius: var(--radius-full);
-    background: var(--color-primary);
-    color: var(--color-on-primary);
+    border-radius: var(--radius-lg);
+    background: var(--color-primary-container);
+    color: var(--color-on-primary-container);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -97,7 +97,7 @@ const { data, loading } = useLiveQuery<QueryData>(async () => {
     text-decoration: none;
 
     &:active {
-        background: var(--color-primary-hover);
+        background: color-mix(in srgb, var(--color-primary-container) 88%, var(--color-on-primary-container) 12%);
     }
 }
 </style>

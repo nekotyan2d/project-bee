@@ -174,11 +174,9 @@ watch(viewMode, (mode) => {
 }
 
 .picker-title {
-    font-size: var(--text-sm);
+    font-size: var(--text-base);
     font-weight: 600;
     color: var(--color-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     padding: 0 var(--space-4) var(--space-2);
 }
 
@@ -238,14 +236,14 @@ watch(viewMode, (mode) => {
 
 .fab {
     position: fixed;
-    bottom: calc(var(--space-3) + 56px + var(--safe-bottom));
+    bottom: calc(var(--space-3) + var(--bottombar-height) + var(--safe-bottom));
     right: var(--space-5);
     width: 56px;
     height: 56px;
     border: none;
-    border-radius: var(--radius-full);
-    background: var(--color-primary);
-    color: var(--color-on-primary);
+    border-radius: var(--radius-lg);
+    background: var(--color-primary-container);
+    color: var(--color-on-primary-container);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -255,7 +253,7 @@ watch(viewMode, (mode) => {
     z-index: 10;
 
     &:active {
-        background: var(--color-primary-hover);
+        background: color-mix(in srgb, var(--color-primary-container) 88%, var(--color-on-primary-container) 12%);
     }
 }
 </style>

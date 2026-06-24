@@ -257,7 +257,7 @@ const stageConfig = computed(() => ({ width: stageW.value, height: stageH.value,
     left: 0;
     right: 0;
     top: calc(var(--safe-top) + 69px);
-    bottom: calc(56px + var(--safe-bottom));
+    bottom: calc(var(--bottombar-height) + var(--safe-bottom));
     z-index: 1;
     overflow: hidden;
     touch-action: none;
