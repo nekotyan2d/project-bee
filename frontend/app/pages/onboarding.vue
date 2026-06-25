@@ -9,6 +9,8 @@ useHead({ title: "Добро пожаловать — Пасека" });
 const db = useDb();
 const { enqueue } = useSync();
 
+const mode = ref<"create" | "login">("create");
+
 const name = ref("");
 const notes = ref("");
 const submitting = ref(false);
@@ -51,47 +53,71 @@ async function submit(): Promise<void> {
                     size="48" />
             </div>
             <h1 class="onboarding__title">Добро пожаловать!</h1>
-            <p class="onboarding__hint">Дайте название вашей пасеке, чтобы начать.</p>
+            <p class="onboarding__hint">
+                {{ mode === "create" ? "Дайте название вашей пасеке, чтобы начать." : "Войдите в существующий аккаунт." }}
+            </p>
 
-            <form
-                class="onboarding__form"
-                @submit.prevent="submit">
-                <FormField
-                    v-slot="{ id }"
-                    label="Название пасеки"
-                    required>
-                    <BaseInput
-                        :id="id"
-                        v-model="name"
-                        placeholder="Моя пасека"
-                        autocomplete="off"
-                        autofocus
-                        required />
-                </FormField>
+            <template v-if="mode === 'create'">
+                <form
+                    class="onboarding__form"
+                    @submit.prevent="submit">
+                    <FormField
+                        v-slot="{ id }"
+                        label="Название пасеки"
+                        required>
+                        <BaseInput
+                            :id="id"
+                            v-model="name"
+                            placeholder="Моя пасека"
+                            autocomplete="off"
+                            autofocus
+                            required />
+                    </FormField>
 
-                <FormField
-                    v-slot="{ id }"
-                    label="Заметки (необязательно)">
-                    <BaseTextarea
-                        :id="id"
-                        v-model="notes"
-                        placeholder="Адрес, особенности места…"
-                        :rows="3" />
-                </FormField>
+                    <FormField
+                        v-slot="{ id }"
+                        label="Заметки (необязательно)">
+                        <BaseTextarea
+                            :id="id"
+                            v-model="notes"
+                            placeholder="Адрес, особенности места…"
+                            :rows="3" />
+                    </FormField>
 
-                <p
-                    v-if="error"
-                    class="onboarding__error">
-                    {{ error }}
-                </p>
+                    <p
+                        v-if="error"
+                        class="onboarding__error">
+                        {{ error }}
+                    </p>
 
-                <BaseButton
-                    type="submit"
-                    :loading="submitting"
-                    block>
-                    Начать
-                </BaseButton>
-            </form>
+                    <BaseButton
+                        type="submit"
+                        :loading="submitting"
+                        block>
+                        Начать
+                    </BaseButton>
+                </form>
+
+                <button
+                    type="button"
+                    class="onboarding__switch"
+                    @click="mode = 'login'">
+                    Уже есть пасека в аккаунте? Войти
+                </button>
+            </template>
+
+            <template v-else>
+                <div class="onboarding__form">
+                    <LoginForm />
+                </div>
+
+                <button
+                    type="button"
+                    class="onboarding__switch"
+                    @click="mode = 'create'">
+                    Создать новую пасеку
+                </button>
+            </template>
         </div>
     </main>
 </template>
@@ -138,6 +164,17 @@ async function submit(): Promise<void> {
     &__error {
         color: var(--color-danger);
         font-size: var(--text-sm);
+    }
+
+    &__switch {
+        background: none;
+        border: none;
+        padding: var(--space-2);
+        color: var(--color-primary);
+        font-size: var(--text-sm);
+        font-weight: 500;
+        cursor: pointer;
+        min-height: var(--tap-min);
     }
 }
 </style>

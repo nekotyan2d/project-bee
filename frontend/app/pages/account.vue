@@ -1,7 +1,7 @@
 <script setup lang="ts">
 useHead({ title: "Аккаунт — Пасека" });
 
-const { me, register, login, logout } = useAuth();
+const { me, register, logout } = useAuth();
 
 const loading = ref(true);
 const email = ref<string | null>(null);
@@ -15,12 +15,6 @@ const regPassword = ref("");
 const regBusy = ref(false);
 const regError = ref<string | null>(null);
 const regDone = ref(false);
-
-// login form
-const logEmail = ref("");
-const logPassword = ref("");
-const logBusy = ref(false);
-const logError = ref<string | null>(null);
 
 const busyLogout = ref(false);
 
@@ -46,18 +40,6 @@ async function submitRegister(): Promise<void> {
         regError.value = e instanceof Error ? e.message : "Ошибка";
     } finally {
         regBusy.value = false;
-    }
-}
-
-async function submitLogin(): Promise<void> {
-    logBusy.value = true;
-    logError.value = null;
-    try {
-        await login(logEmail.value.trim(), logPassword.value);
-        await navigateTo("/");
-    } catch (e) {
-        logError.value = e instanceof Error ? e.message : "Ошибка";
-        logBusy.value = false;
     }
 }
 
@@ -197,43 +179,7 @@ async function pushData(): Promise<void> {
                 <section class="section">
                     <h2 class="section__title">Вход</h2>
                     <p class="hint">Вход заменит локальные данные данными аккаунта.</p>
-                    <form
-                        class="form"
-                        @submit.prevent="submitLogin">
-                        <FormField
-                            v-slot="{ id }"
-                            label="Почта"
-                            required>
-                            <BaseInput
-                                :id="id"
-                                v-model="logEmail"
-                                type="email"
-                                autocomplete="email"
-                                required />
-                        </FormField>
-                        <FormField
-                            v-slot="{ id }"
-                            label="Пароль"
-                            required>
-                            <BaseInput
-                                :id="id"
-                                v-model="logPassword"
-                                type="password"
-                                autocomplete="current-password"
-                                required />
-                        </FormField>
-                        <p
-                            v-if="logError"
-                            class="error">
-                            {{ logError }}
-                        </p>
-                        <BaseButton
-                            type="submit"
-                            :loading="logBusy"
-                            block
-                            >Войти</BaseButton
-                        >
-                    </form>
+                    <LoginForm />
                     <button
                         type="button"
                         class="switch"
