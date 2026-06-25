@@ -1,24 +1,39 @@
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
     id?: string;
     type?: "text" | "email" | "password" | "number" | "tel" | "url" | "date" | "datetime-local";
     placeholder?: string;
     autocomplete?: string;
+    inputmode?: "none" | "text" | "tel" | "url" | "email" | "numeric" | "decimal" | "search";
+    min?: number | string;
+    max?: number | string;
+    step?: number | string;
     required?: boolean;
     disabled?: boolean;
+    autofocus?: boolean;
 }>();
 
 const model = defineModel<string | number>();
+
+const el = ref<HTMLInputElement | null>(null);
+onMounted(() => {
+    if (props.autofocus) el.value?.focus();
+});
 </script>
 
 <template>
     <input
         :id="id"
+        ref="el"
         v-model="model"
         class="input"
         :type="type ?? 'text'"
         :placeholder="placeholder"
         :autocomplete="autocomplete"
+        :inputmode="inputmode"
+        :min="min"
+        :max="max"
+        :step="step"
         :required="required"
         :disabled="disabled"
     >

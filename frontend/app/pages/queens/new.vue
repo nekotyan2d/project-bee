@@ -87,7 +87,11 @@ async function submit(): Promise<void> {
                     :id="id"
                     v-model="year"
                     type="number"
-                    placeholder="2024" />
+                    inputmode="numeric"
+                    :min="MIN_QUEEN_YEAR"
+                    :max="MAX_QUEEN_YEAR"
+                    placeholder="2024"
+                    autofocus />
             </FormField>
 
             <FormField

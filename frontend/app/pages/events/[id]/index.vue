@@ -52,8 +52,7 @@ const fields = computed(() =>
 const occurredLabel = computed(() => data.value.event ? formatDateTime(data.value.event.occurredAt) : "");
 const backTo = computed(() => data.value.colony ? `/colonies/${data.value.colony.id}` : "/");
 
-const EDITABLE_TYPES = ["inspection", "super_change", "treatment", "feeding", "harvest", "swarm", "note"];
-const canEdit = computed(() => !!data.value.event && EDITABLE_TYPES.includes(data.value.event.type));
+const canEdit = computed(() => !!data.value.event && EDITABLE_EVENT_TYPES.includes(data.value.event.type));
 
 useHead(() => ({ title: summary.value ? `${summary.value.title} — Пасека` : "Событие — Пасека" }));
 

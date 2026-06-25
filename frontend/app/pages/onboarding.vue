@@ -65,6 +65,7 @@ async function submit(): Promise<void> {
                         v-model="name"
                         placeholder="Моя пасека"
                         autocomplete="off"
+                        autofocus
                         required />
                 </FormField>
 

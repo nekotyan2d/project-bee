@@ -54,9 +54,37 @@ const temperament = ref("");
 const inspectionNotes = ref("");
 
 // super_change
-const superAction = ref<"add" | "remove">("add");
+const superAction = ref("add");
 const superCount = ref("1");
 const superReason = ref("");
+
+// chip option sets
+const SUPER_ACTION_OPTS = [
+    { value: "add", label: "Поставить" },
+    { value: "remove", label: "Снять" },
+];
+const QUEEN_SEEN_OPTS = [
+    { value: "", label: "Не отмечено" },
+    { value: "true", label: "Видна" },
+    { value: "false", label: "Не видна" },
+];
+const STORES_OPTS = [
+    { value: "", label: "Не отмечено" },
+    { value: "low", label: "Мало" },
+    { value: "medium", label: "Достаточно" },
+    { value: "high", label: "Много" },
+];
+const TEMPERAMENT_OPTS = [
+    { value: "", label: "Не отмечено" },
+    { value: "calm", label: "Спокойный" },
+    { value: "nervous", label: "Нервный" },
+    { value: "aggressive", label: "Агрессивный" },
+];
+const SWARM_OPTS = [
+    { value: "", label: "Не отмечено" },
+    { value: "true", label: "Поймали" },
+    { value: "false", label: "Ушёл" },
+];
 
 // treatment
 const treatProduct = ref("");
@@ -351,6 +379,12 @@ function prefillFromEvent(ev: LocalEvent): void {
 onMounted(async () => {
     if (eventId) {
         const ev = await db.event.get(eventId);
+        // Правка поддержана только для editable-типов; иначе уводим на просмотр
+        // (прямой заход по URL на edit, например, queen_change — иначе создал бы дубль).
+        if (ev && !ev.deletedAt && !EDITABLE_EVENT_TYPES.includes(ev.type)) {
+            await navigateTo(`/events/${eventId}`, { replace: true });
+            return;
+        }
         if (ev && !ev.deletedAt) prefillFromEvent(ev);
         loading.value = false;
     }
@@ -387,76 +421,66 @@ onMounted(async () => {
             </FormField>
 
             <template v-if="type === 'inspection'">
-                <FormField
-                    v-slot="{ id }"
-                    label="Рамок в гнезде">
-                    <BaseInput
-                        :id="id"
-                        v-model="framesTotal"
-                        type="number"
-                        placeholder="0" />
+                <div class="grid-2">
+                    <FormField
+                        v-slot="{ id }"
+                        label="Рамок в гнезде">
+                        <BaseInput
+                            :id="id"
+                            v-model="framesTotal"
+                            type="number"
+                            inputmode="numeric"
+                            min="0"
+                            placeholder="0" />
+                    </FormField>
+                    <FormField
+                        v-slot="{ id }"
+                        label="Рамок расплода">
+                        <BaseInput
+                            :id="id"
+                            v-model="framesBrood"
+                            type="number"
+                            inputmode="numeric"
+                            min="0"
+                            placeholder="0" />
+                    </FormField>
+                    <FormField
+                        v-slot="{ id }"
+                        label="Рамок корма">
+                        <BaseInput
+                            :id="id"
+                            v-model="framesStores"
+                            type="number"
+                            inputmode="numeric"
+                            min="0"
+                            placeholder="0" />
+                    </FormField>
+                    <FormField
+                        v-slot="{ id }"
+                        label="Маточники">
+                        <BaseInput
+                            :id="id"
+                            v-model="queenCells"
+                            type="number"
+                            inputmode="numeric"
+                            min="0"
+                            placeholder="0" />
+                    </FormField>
+                </div>
+                <FormField label="Матка">
+                    <ChoiceChips
+                        v-model="queenSeen"
+                        :options="QUEEN_SEEN_OPTS" />
                 </FormField>
-                <FormField
-                    v-slot="{ id }"
-                    label="Рамок расплода">
-                    <BaseInput
-                        :id="id"
-                        v-model="framesBrood"
-                        type="number"
-                        placeholder="0" />
+                <FormField label="Запасы">
+                    <ChoiceChips
+                        v-model="storesLevel"
+                        :options="STORES_OPTS" />
                 </FormField>
-                <FormField
-                    v-slot="{ id }"
-                    label="Рамок корма">
-                    <BaseInput
-                        :id="id"
-                        v-model="framesStores"
-                        type="number"
-                        placeholder="0" />
-                </FormField>
-                <FormField
-                    v-slot="{ id }"
-                    label="Маточники">
-                    <BaseInput
-                        :id="id"
-                        v-model="queenCells"
-                        type="number"
-                        placeholder="0" />
-                </FormField>
-                <FormField
-                    v-slot="{ id }"
-                    label="Матка">
-                    <BaseSelect
-                        :id="id"
-                        v-model="queenSeen">
-                        <option value="">Не отмечено</option>
-                        <option value="true">Видна</option>
-                        <option value="false">Не видна</option>
-                    </BaseSelect>
-                </FormField>
-                <FormField
-                    v-slot="{ id }"
-                    label="Запасы">
-                    <BaseSelect
-                        :id="id"
-                        v-model="storesLevel">
-                        <option value="">Не отмечено</option>
-                        <option value="low">Мало</option>
-                        <option value="medium">Достаточно</option>
-                        <option value="high">Много</option>
-                    </BaseSelect>
-                </FormField>
-                <FormField
-                    v-slot="{ id }"
-                    label="Нрав">
-                    <BaseSelect
-                        :id="id"
-                        v-model="temperament">
-                        <option value="">Не отмечено</option>
-                        <option value="calm">Спокойный</option>
-                        <option value="nervous">Нервный</option>
-                        <option value="aggressive">Агрессивный</option>
-                    </BaseSelect>
+                <FormField label="Нрав">
+                    <ChoiceChips
+                        v-model="temperament"
+                        :options="TEMPERAMENT_OPTS" />
                 </FormField>
                 <FormField
                     v-slot="{ id }"
@@ -470,22 +494,9 @@ onMounted(async () => {
 
             <template v-else-if="type === 'super_change'">
                 <FormField label="Действие">
-                    <div class="btn-group">
-                        <button
-                            type="button"
-                            class="btn-group__item"
-                            :class="{ 'btn-group__item--active': superAction === 'add' }"
-                            @click="superAction = 'add'">
-                            Поставить
-                        </button>
-                        <button
-                            type="button"
-                            class="btn-group__item"
-                            :class="{ 'btn-group__item--active': superAction === 'remove' }"
-                            @click="superAction = 'remove'">
-                            Снять
-                        </button>
-                    </div>
+                    <ChoiceChips
+                        v-model="superAction"
+                        :options="SUPER_ACTION_OPTS" />
                 </FormField>
                 <FormField
                     v-slot="{ id }"
@@ -494,6 +505,8 @@ onMounted(async () => {
                         :id="id"
                         v-model="superCount"
                         type="number"
+                        inputmode="numeric"
+                        min="1"
                         placeholder="1" />
                 </FormField>
                 <FormField
@@ -544,6 +557,8 @@ onMounted(async () => {
                         :id="id"
                         v-model="treatWithdrawalDays"
                         type="number"
+                        inputmode="numeric"
+                        min="0"
                         placeholder="0" />
                 </FormField>
             </template>
@@ -572,6 +587,9 @@ onMounted(async () => {
                         :id="id"
                         v-model="feedAmountKg"
                         type="number"
+                        inputmode="decimal"
+                        min="0"
+                        step="0.1"
                         placeholder="0" />
                 </FormField>
                 <FormField
@@ -606,6 +624,9 @@ onMounted(async () => {
                         :id="id"
                         v-model="harvestAmountKg"
                         type="number"
+                        inputmode="decimal"
+                        min="0"
+                        step="0.1"
                         placeholder="0"
                         required />
                 </FormField>
@@ -633,6 +654,9 @@ onMounted(async () => {
                             :id="id"
                             v-model="qcYear"
                             type="number"
+                            inputmode="numeric"
+                            :min="MIN_QUEEN_YEAR"
+                            :max="MAX_QUEEN_YEAR"
                             placeholder="2024" />
                     </FormField>
                     <FormField
@@ -648,16 +672,10 @@ onMounted(async () => {
             </template>
 
             <template v-else-if="type === 'swarm'">
-                <FormField
-                    v-slot="{ id }"
-                    label="Рой пойман?">
-                    <BaseSelect
-                        :id="id"
-                        v-model="swarmCaptured">
-                        <option value="">Не отмечено</option>
-                        <option value="true">Поймали</option>
-                        <option value="false">Ушёл</option>
-                    </BaseSelect>
+                <FormField label="Рой пойман?">
+                    <ChoiceChips
+                        v-model="swarmCaptured"
+                        :options="SWARM_OPTS" />
                 </FormField>
                 <FormField
                     v-slot="{ id }"
@@ -777,35 +795,9 @@ onMounted(async () => {
     }
 }
 
-.btn-group {
+.grid-2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
-    overflow: hidden;
-
-    &__item {
-        padding: var(--space-3);
-        border: none;
-        background: var(--color-surface);
-        color: var(--color-text-muted);
-        font-size: var(--text-base);
-        font-weight: 500;
-        font-family: var(--font-sans);
-        cursor: pointer;
-        min-height: var(--tap-min);
-        transition:
-            background-color var(--transition-fast),
-            color var(--transition-fast);
-
-        & + & {
-            border-left: 1px solid var(--color-border);
-        }
-
-        &--active {
-            background: var(--color-primary);
-            color: var(--color-on-primary);
-        }
-    }
+    gap: var(--space-4);
 }
 </style>

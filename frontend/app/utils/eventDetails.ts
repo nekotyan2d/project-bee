@@ -1,5 +1,10 @@
 import type { LocalEvent } from "~/shared/db";
 
+// Типы событий, которые можно редактировать через events/new (форма умеет их prefill'ить).
+// Жизненный цикл (queen_change/migration/split/merge/death) меняет состояние семьи/связи —
+// его правка не поддержана, поэтому edit для них скрыт/запрещён.
+export const EDITABLE_EVENT_TYPES = ["inspection", "super_change", "treatment", "feeding", "harvest", "swarm", "note"];
+
 export interface EventField {
     label: string;
     value: string;

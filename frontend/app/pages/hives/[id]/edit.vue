@@ -141,6 +141,8 @@ async function deleteHive(): Promise<void> {
                     :id="fid"
                     v-model="frameCount"
                     type="number"
+                    inputmode="numeric"
+                    min="0"
                     placeholder="12" />
             </FormField>
 

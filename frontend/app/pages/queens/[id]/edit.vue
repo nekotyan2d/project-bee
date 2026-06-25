@@ -89,6 +89,9 @@ async function deleteQueen(): Promise<void> {
                     :id="fid"
                     v-model="year"
                     type="number"
+                    inputmode="numeric"
+                    :min="MIN_QUEEN_YEAR"
+                    :max="MAX_QUEEN_YEAR"
                     placeholder="2024" />
             </FormField>
 

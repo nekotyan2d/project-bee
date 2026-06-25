@@ -75,6 +75,7 @@ async function submit(): Promise<void> {
                     v-model="label"
                     placeholder="Улей №1"
                     autocomplete="off"
+                    autofocus
                     required />
             </FormField>
 
@@ -119,6 +120,8 @@ async function submit(): Promise<void> {
                     :id="id"
                     v-model="frameCount"
                     type="number"
+                    inputmode="numeric"
+                    min="0"
                     placeholder="12" />
             </FormField>
 

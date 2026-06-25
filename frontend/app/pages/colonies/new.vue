@@ -153,6 +153,7 @@ async function submit(): Promise<void> {
                     v-model="label"
                     placeholder="Семья №1"
                     autocomplete="off"
+                    autofocus
                     required />
             </FormField>
 
@@ -190,6 +191,8 @@ async function submit(): Promise<void> {
                         :id="id"
                         v-model="hiveFrames"
                         type="number"
+                        inputmode="numeric"
+                        min="0"
                         placeholder="12" />
                 </FormField>
             </template>
@@ -238,6 +241,9 @@ async function submit(): Promise<void> {
                         :id="id"
                         v-model="queenYear"
                         type="number"
+                        inputmode="numeric"
+                        :min="MIN_QUEEN_YEAR"
+                        :max="MAX_QUEEN_YEAR"
                         placeholder="2024" />
                 </FormField>
                 <FormField
