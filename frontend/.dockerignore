@@ -1,0 +1,10 @@
+node_modules
+.nuxt
+.output
+.git
+.env
+*.log
+.eslintcache
+dist
+Dockerfile
+.dockerignore

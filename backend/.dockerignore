@@ -1,0 +1,7 @@
+node_modules
+.git
+.env
+*.log
+.eslintcache
+Dockerfile
+.dockerignore
