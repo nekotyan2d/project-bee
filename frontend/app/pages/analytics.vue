@@ -518,9 +518,16 @@ const { data: survivalData, loading: survivalLoading } = useLiveQuery<{
 .section-tabs {
     display: flex;
     gap: var(--space-2);
+    overflow-x: auto;
+    scrollbar-width: none; // Firefox
+
+    &::-webkit-scrollbar {
+        display: none; // WebKit
+    }
 }
 
 .section-tab {
+    flex-shrink: 0; // keep full size, let the row scroll instead of squashing
     display: inline-flex;
     align-items: center;
     gap: var(--space-1);
