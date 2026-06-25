@@ -1,32 +1,11 @@
 import type { LocalEvent, LocalHive } from "~/shared/db";
 
+import { FEED_TYPE_LABEL, HARVEST_PRODUCT_LABEL, QUEEN_ACTION_LABEL } from "./eventLabels";
+
 type EventSummary = {
     icon: string;
     title: string;
     detail?: string;
-};
-
-const FEED_TYPE_LABEL: Record<string, string> = {
-    syrup: "сироп",
-    candy: "канди",
-    honey: "мёд",
-    pollen_substitute: "белковый корм",
-    water: "вода",
-};
-
-const HARVEST_PRODUCT_LABEL: Record<string, string> = {
-    honey: "мёд",
-    wax: "воск",
-    propolis: "прополис",
-    pollen: "пыльца",
-};
-
-const QUEEN_ACTION_LABEL: Record<string, string> = {
-    introduced: "Подсажена матка",
-    replaced: "Матка заменена",
-    superseded: "Тихая замена матки",
-    lost: "Матка потеряна",
-    died: "Матка погибла",
 };
 
 export function getEventSummary(event: LocalEvent, hivesById: Record<string, LocalHive>): EventSummary {
@@ -37,8 +16,7 @@ export function getEventSummary(event: LocalEvent, hivesById: Record<string, Loc
             if (typeof p.framesTotal === "number") parts.push(`гнездо: ${String(p.framesTotal)} р.`);
             if (typeof p.framesBrood === "number") parts.push(`расплод: ${String(p.framesBrood)} р.`);
             if (typeof p.framesStores === "number") parts.push(`корм: ${String(p.framesStores)} р.`);
-            if (typeof p.queenCells === "number" && p.queenCells > 0)
-                parts.push(`маточники: ${String(p.queenCells)}`);
+            if (typeof p.queenCells === "number" && p.queenCells > 0) parts.push(`маточники: ${String(p.queenCells)}`);
             if (p.queenSeen === true) parts.push("матка видна");
             else if (p.queenSeen === false) parts.push("матка не видна");
             return { icon: "lucide:search", title: "Осмотр", detail: parts.join(" · ") || undefined };

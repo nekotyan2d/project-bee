@@ -1,8 +1,7 @@
 import type { LocalEvent } from "~/shared/db";
 
-// Типы событий, которые можно редактировать через events/new (форма умеет их prefill'ить).
-// Жизненный цикл (queen_change/migration/split/merge/death) меняет состояние семьи/связи —
-// его правка не поддержана, поэтому edit для них скрыт/запрещён.
+import { FEED_TYPE_LABEL, HARVEST_PRODUCT_LABEL, QUEEN_ACTION_LABEL } from "./eventLabels";
+
 export const EDITABLE_EVENT_TYPES = ["inspection", "super_change", "treatment", "feeding", "harvest", "swarm", "note"];
 
 export interface EventField {
@@ -15,21 +14,6 @@ export interface EventFieldsContext {
     queenLabel?: string;
 }
 
-const FEED_TYPE_LABEL: Record<string, string> = {
-    syrup: "сироп",
-    candy: "канди",
-    honey: "мёд",
-    pollen_substitute: "белковый корм",
-    water: "вода",
-};
-
-const HARVEST_PRODUCT_LABEL: Record<string, string> = {
-    honey: "мёд",
-    wax: "воск",
-    propolis: "прополис",
-    pollen: "пыльца",
-};
-
 const STORES_LEVEL_LABEL: Record<string, string> = {
     low: "мало",
     medium: "достаточно",
@@ -40,14 +24,6 @@ const TEMPERAMENT_LABEL: Record<string, string> = {
     calm: "спокойный",
     nervous: "нервный",
     aggressive: "агрессивный",
-};
-
-const QUEEN_ACTION_LABEL: Record<string, string> = {
-    introduced: "Подсажена новая матка",
-    replaced: "Матка заменена",
-    superseded: "Тихая смена",
-    lost: "Матка потеряна",
-    died: "Матка погибла",
 };
 
 function num(value: unknown): string | null {
