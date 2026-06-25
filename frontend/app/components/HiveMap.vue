@@ -35,13 +35,6 @@ const GRID_ROW_H = 90;
 const COLS = 4;
 const PAD = 16;
 
-function defaultPos(index: number): { x: number; y: number } {
-    return {
-        x: PAD + (index % COLS) * GRID_COL_W,
-        y: PAD + Math.floor(index / COLS) * GRID_ROW_H,
-    };
-}
-
 type HiveNode = {
     hive: LocalHive;
     x: number;
@@ -51,6 +44,8 @@ type HiveNode = {
     stroke: string;
     textColor: string;
     textMuted: string;
+    statusColor: string | null;
+    subtitle: string;
 };
 
 const container = ref<HTMLDivElement | null>(null);
@@ -79,9 +74,24 @@ onUnmounted(() => resizeObserver?.disconnect());
 
 const nodes = computed<HiveNode[]>(() => {
     const c = colors.value;
-    return props.hives.map((hive, i) => {
+
+    const placed = props.hives.filter((h) => Number.isFinite(h.x) && Number.isFinite(h.y));
+    const anchorX = placed.length ? Math.min(...placed.map((h) => h.x as number)) : PAD;
+    const anchorY = placed.length ? Math.max(...placed.map((h) => (h.y as number) + CARD_H)) + GAP : PAD;
+    let free = 0;
+
+    return props.hives.map((hive) => {
         const colony = props.colonyByHiveId[hive.id];
-        const pos = hive.x != null && hive.y != null ? { x: hive.x, y: hive.y } : defaultPos(i);
+        let pos: Pos;
+        if (Number.isFinite(hive.x) && Number.isFinite(hive.y)) {
+            pos = { x: hive.x as number, y: hive.y as number };
+        } else {
+            pos = {
+                x: anchorX + (free % COLS) * GRID_COL_W,
+                y: anchorY + Math.floor(free / COLS) * GRID_ROW_H,
+            };
+            free++;
+        }
 
         let fill = c.border;
         let stroke = c.muted;
@@ -96,7 +106,16 @@ const nodes = computed<HiveNode[]>(() => {
             textMuted = "rgba(255,255,255,0.75)";
         }
 
-        return { hive, x: pos.x, y: pos.y, colony, fill, stroke, textColor, textMuted };
+        let statusColor: string | null = null;
+        if (colony) {
+            const lvl = inspectionStatus(colony.lastInspectedAt).level;
+            if (lvl === "warn") statusColor = c.warning;
+            else if (lvl === "alert") statusColor = c.danger;
+        }
+
+        const subtitle = colony ? (colony.superCount > 0 ? `${String(colony.superCount)} маг.` : "") : "Пусто";
+
+        return { hive, x: pos.x, y: pos.y, colony, fill, stroke, textColor, textMuted, statusColor, subtitle };
     });
 });
 
@@ -146,6 +165,18 @@ function snapAndConstrain(draggingId: string, raw: Pos): Pos {
         }
     }
 
+    if (others.length > 0) {
+        const M = GRID_COL_W * 1.5;
+        const oMinX = Math.min(...others.map((o) => o.x));
+        const oMinY = Math.min(...others.map((o) => o.y));
+        const oMaxX = Math.max(...others.map((o) => o.x + CARD_W));
+        const oMaxY = Math.max(...others.map((o) => o.y + CARD_H));
+        best = {
+            x: Math.min(Math.max(best.x, oMinX - M), oMaxX - CARD_W + M),
+            y: Math.min(Math.max(best.y, oMinY - M), oMaxY - CARD_H + M),
+        };
+    }
+
     return best;
 }
 
@@ -179,11 +210,12 @@ watchEffect(() => {
     const minY = Math.min(...ns.map((n) => n.y));
     const maxX = Math.max(...ns.map((n) => n.x + CARD_W));
     const maxY = Math.max(...ns.map((n) => n.y + CARD_H));
-    stageRef.value.getNode().position({
-        x: Math.round(stageW.value / 2 - (minX + maxX) / 2),
-        y: Math.round(stageH.value / 2 - (minY + maxY) / 2),
-    });
-    stageRef.value.getNode().batchDraw();
+    const posX = Math.round(stageW.value / 2 - (minX + maxX) / 2);
+    const posY = Math.round(stageH.value / 2 - (minY + maxY) / 2);
+    if (!Number.isFinite(posX) || !Number.isFinite(posY)) return;
+    const stage = stageRef.value.getNode();
+    stage.position({ x: posX, y: posY });
+    stage.batchDraw();
     centered.value = true;
 });
 
@@ -226,24 +258,23 @@ const stageConfig = computed(() => ({ width: stageW.value, height: stageH.value,
                             fill: node.textColor,
                         }" />
                     <v-text
-                        v-if="node.colony"
                         :config="{
-                            text: node.colony.superCount > 0 ? `${node.colony.superCount} маг.` : 'Занят',
+                            text: node.subtitle,
                             width: CARD_W,
                             align: 'center',
                             y: 34,
                             fontSize: 11,
                             fill: node.textMuted,
                         }" />
-                    <v-text
-                        v-else
+                    <v-circle
+                        v-if="node.statusColor"
                         :config="{
-                            text: 'Пусто',
-                            width: CARD_W,
-                            align: 'center',
-                            y: 34,
-                            fontSize: 11,
-                            fill: node.textMuted,
+                            x: CARD_W - 11,
+                            y: 11,
+                            radius: 5,
+                            fill: node.statusColor,
+                            stroke: '#ffffff',
+                            strokeWidth: 1.5,
                         }" />
                 </v-group>
             </v-layer>

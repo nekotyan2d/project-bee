@@ -29,7 +29,7 @@ const queenLabel = computed(() => {
                 {{ hive.label }}
             </span>
             <span
-                v-if="status"
+                v-if="status && status.level !== 'ok'"
                 class="attention"
                 :data-level="status.level">
                 <Icon
@@ -71,7 +71,6 @@ const queenLabel = computed(() => {
                     :style="{ background: hiveColorHex(hive.color) }" />
                 {{ hive.label }}
             </span>
-            <span class="hive-card__empty-tag">Пусто</span>
         </div>
         <span class="hive-card__settle">
             <Icon
@@ -140,15 +139,6 @@ const queenLabel = computed(() => {
         color: var(--color-text-muted);
     }
 
-    &__empty-tag {
-        font-size: var(--text-xs);
-        font-weight: 600;
-        padding: 2px var(--space-2);
-        border-radius: var(--radius-full);
-        background: color-mix(in srgb, var(--color-text-muted) 15%, transparent);
-        color: var(--color-text-muted);
-    }
-
     &__settle {
         display: inline-flex;
         align-items: center;
@@ -168,11 +158,6 @@ const queenLabel = computed(() => {
     font-weight: 600;
     padding: 2px var(--space-2);
     border-radius: var(--radius-full);
-
-    &[data-level="ok"] {
-        background: color-mix(in srgb, var(--color-success) 15%, transparent);
-        color: var(--color-success);
-    }
 
     &[data-level="warn"] {
         background: color-mix(in srgb, var(--color-warning) 18%, transparent);
