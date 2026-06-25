@@ -14,6 +14,13 @@ const FEED_TYPE_LABEL: Record<string, string> = {
     water: "вода",
 };
 
+const HARVEST_PRODUCT_LABEL: Record<string, string> = {
+    honey: "мёд",
+    wax: "воск",
+    propolis: "прополис",
+    pollen: "пыльца",
+};
+
 const QUEEN_ACTION_LABEL: Record<string, string> = {
     introduced: "Подсажена матка",
     replaced: "Матка заменена",
@@ -30,6 +37,8 @@ export function getEventSummary(event: LocalEvent, hivesById: Record<string, Loc
             if (typeof p.framesTotal === "number") parts.push(`гнездо: ${String(p.framesTotal)} р.`);
             if (typeof p.framesBrood === "number") parts.push(`расплод: ${String(p.framesBrood)} р.`);
             if (typeof p.framesStores === "number") parts.push(`корм: ${String(p.framesStores)} р.`);
+            if (typeof p.queenCells === "number" && p.queenCells > 0)
+                parts.push(`маточники: ${String(p.queenCells)}`);
             if (p.queenSeen === true) parts.push("матка видна");
             else if (p.queenSeen === false) parts.push("матка не видна");
             return { icon: "lucide:search", title: "Осмотр", detail: parts.join(" · ") || undefined };
@@ -43,12 +52,16 @@ export function getEventSummary(event: LocalEvent, hivesById: Record<string, Loc
                 detail: typeof p.reason === "string" ? p.reason : undefined,
             };
         }
-        case "treatment":
+        case "treatment": {
+            const parts: string[] = [];
+            if (typeof p.dose === "string") parts.push(p.dose);
+            if (typeof p.withdrawalDays === "number") parts.push(`⏳ ${String(p.withdrawalDays)} дн`);
             return {
                 icon: "lucide:flask-conical",
                 title: `Обработка: ${typeof p.product === "string" ? p.product : ""}`,
-                detail: typeof p.dose === "string" ? p.dose : undefined,
+                detail: parts.join(" · ") || undefined,
             };
+        }
         case "feeding": {
             const ft = typeof p.feedType === "string" ? (FEED_TYPE_LABEL[p.feedType] ?? p.feedType) : "";
             const kg = typeof p.amountKg === "number" ? ` · ${String(p.amountKg)} кг` : "";
@@ -60,7 +73,12 @@ export function getEventSummary(event: LocalEvent, hivesById: Record<string, Loc
         }
         case "harvest": {
             const kg = typeof p.amountKg === "number" ? ` · ${String(p.amountKg)} кг` : "";
-            return { icon: "lucide:droplet", title: `Откачка${kg}` };
+            const product = typeof p.product === "string" ? p.product : "honey";
+            return {
+                icon: "lucide:droplet",
+                title: `Откачка${kg}`,
+                detail: product !== "honey" ? (HARVEST_PRODUCT_LABEL[product] ?? product) : undefined,
+            };
         }
         case "swarm": {
             const captured = p.captured === true ? "поймали" : p.captured === false ? "ушёл" : undefined;

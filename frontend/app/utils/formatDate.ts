@@ -1,6 +1,7 @@
 const dateFormatter = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" });
 const dateShortFormatter = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short", year: "numeric" });
 const dateTimeFormatter = new Intl.DateTimeFormat("ru-RU", { dateStyle: "long", timeStyle: "short" });
+const monthFormatter = new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" });
 
 export function formatDateTime(value: Date | string | null | undefined): string {
     if (!value) return "—";
@@ -28,4 +29,20 @@ export function daysAgo(value: Date | string | null | undefined): string | null 
     if (days === 0) return "сегодня";
     if (days === 1) return "вчера";
     return `${String(days)} дн. назад`;
+}
+
+// Относительное время для свежих событий (≤7 дн), иначе короткая дата.
+export function relativeDate(value: Date | string | null | undefined): string {
+    if (!value) return "—";
+    const days = Math.floor((Date.now() - new Date(value).getTime()) / 86_400_000);
+    if (days <= 0) return "сегодня";
+    if (days === 1) return "вчера";
+    if (days <= 7) return `${String(days)} дн. назад`;
+    return formatDateShort(value);
+}
+
+// «Июнь 2026» — для группировки истории по месяцам.
+export function formatMonth(value: Date | string): string {
+    const s = monthFormatter.format(new Date(value));
+    return s.charAt(0).toUpperCase() + s.slice(1);
 }
