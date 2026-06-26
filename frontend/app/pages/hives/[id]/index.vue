@@ -111,6 +111,13 @@ async function assignColony(colony: LocalColony): Promise<void> {
                         label="Вместимость">
                         {{ data.hive.frameCount }} рамок
                     </InfoRow>
+                    <InfoRow
+                        v-if="data.hive.color"
+                        label="Цвет">
+                        <span
+                            class="color-dot"
+                            :style="{ background: hiveColorHex(data.hive.color) }" />
+                    </InfoRow>
                 </InfoGrid>
             </section>
 
@@ -228,6 +235,14 @@ async function assignColony(colony: LocalColony): Promise<void> {
         font-size: var(--text-sm);
         color: var(--color-text-muted);
     }
+}
+
+.color-dot {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border-radius: var(--radius-full);
+    vertical-align: middle;
 }
 
 .colony-link {
