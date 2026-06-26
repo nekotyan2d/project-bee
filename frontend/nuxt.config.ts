@@ -4,7 +4,7 @@ import pkg from "./package.json";
 export default defineNuxtConfig({
     compatibilityDate: "2025-07-15",
     devtools: { enabled: true },
-    modules: ["@nuxt/eslint", "@nuxtjs/color-mode", "@nuxt/icon", "@vite-pwa/nuxt"],
+    modules: ["@nuxt/eslint", "@nuxtjs/color-mode", "@nuxt/icon", "@nuxt/fonts", "@vite-pwa/nuxt"],
     css: ["~/assets/scss/app.scss"],
     ssr: false,
     nitro: {
@@ -29,6 +29,12 @@ export default defineNuxtConfig({
     icon: {
         clientBundle: {
             scan: true,
+        },
+    },
+    fonts: {
+        defaults: {
+            weights: [400, 500, 600, 700],
+            subsets: ["cyrillic", "latin"],
         },
     },
     runtimeConfig: {
