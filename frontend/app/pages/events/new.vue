@@ -255,7 +255,7 @@ async function submitQueenChange(apiaryId: string, cid: string, occurredAtDate: 
     if (prevQueen) void enqueue("queen", prevQueen.id, "upsert");
     void enqueue("event", event.id, "upsert");
 
-    await navigateTo(backTo.value);
+    await returnTo(backTo.value);
 }
 
 async function submit(): Promise<void> {
@@ -321,7 +321,7 @@ async function submit(): Promise<void> {
     void enqueue("event", event.id, "upsert");
     if (STATUS_BY_TYPE[type.value ?? ""]) void enqueue("colony", cid, "upsert");
 
-    await navigateTo(backTo.value);
+    await returnTo(backTo.value);
 }
 
 function prefillFromEvent(ev: LocalEvent): void {

@@ -152,7 +152,7 @@ async function submit(): Promise<void> {
     void enqueue("event", migrationEvent.id, "upsert");
     if (queenChangeEvent) void enqueue("event", queenChangeEvent.id, "upsert");
 
-    await navigateTo(`/colonies/${colony.id}`);
+    await returnTo(`/colonies/${colony.id}`);
 }
 </script>
 

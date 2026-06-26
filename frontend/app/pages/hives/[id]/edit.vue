@@ -64,7 +64,7 @@ async function submit(): Promise<void> {
 
     void enqueue("hive", id, "upsert");
 
-    await navigateTo(`/hives/${id}`);
+    await returnTo(`/hives/${id}`);
 }
 
 async function deleteHive(): Promise<void> {
@@ -76,7 +76,7 @@ async function deleteHive(): Promise<void> {
 
     void enqueue("hive", id, "delete");
 
-    await navigateTo("/");
+    await returnTo("/");
 }
 </script>
 

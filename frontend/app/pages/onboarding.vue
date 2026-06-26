@@ -40,7 +40,7 @@ async function submit(): Promise<void> {
 
     void enqueue("apiary", apiary.id, "upsert");
 
-    await navigateTo("/");
+    await returnTo("/");
 }
 </script>
 

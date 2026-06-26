@@ -46,7 +46,7 @@ async function submitRegister(): Promise<void> {
 async function submitLogout(): Promise<void> {
     busyLogout.value = true;
     await logout();
-    await navigateTo("/");
+    await returnTo("/");
 }
 
 async function pushData(): Promise<void> {

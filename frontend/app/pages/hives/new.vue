@@ -55,7 +55,7 @@ async function submit(): Promise<void> {
 
     void enqueue("hive", hive.id, "upsert");
 
-    await navigateTo("/");
+    await returnTo("/");
 }
 </script>
 

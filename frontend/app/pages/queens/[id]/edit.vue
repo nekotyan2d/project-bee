@@ -56,7 +56,7 @@ async function submit(): Promise<void> {
 
     void enqueue("queen", id, "upsert");
 
-    await navigateTo(`/queens/${id}`);
+    await returnTo(`/queens/${id}`);
 }
 
 async function deleteQueen(): Promise<void> {
@@ -70,7 +70,7 @@ async function deleteQueen(): Promise<void> {
 
     void enqueue("queen", id, "delete");
 
-    await navigateTo(backTo);
+    await returnTo(backTo);
 }
 </script>
 

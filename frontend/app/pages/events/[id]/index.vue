@@ -88,7 +88,7 @@ async function deleteEvent(): Promise<void> {
 
     void enqueue("event", id, "delete");
 
-    await navigateTo(colonyId ? `/colonies/${colonyId}` : "/");
+    await returnTo(colonyId ? `/colonies/${colonyId}` : "/");
 }
 </script>
 

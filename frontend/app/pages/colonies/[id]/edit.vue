@@ -53,7 +53,7 @@ async function submit(): Promise<void> {
 
     void enqueue("colony", id, "upsert");
 
-    await navigateTo(`/colonies/${id}`);
+    await returnTo(`/colonies/${id}`);
 }
 </script>
 

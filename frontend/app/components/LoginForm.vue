@@ -13,7 +13,7 @@ async function submit(): Promise<void> {
     error.value = null;
     try {
         await login(email.value.trim(), password.value);
-        await navigateTo("/");
+        await returnTo("/");
     } catch (e) {
         error.value = e instanceof Error ? e.message : "Ошибка";
         busy.value = false;

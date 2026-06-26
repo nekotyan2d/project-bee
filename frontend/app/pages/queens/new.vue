@@ -69,7 +69,7 @@ async function submit(): Promise<void> {
     void enqueue("queen", queen.id, "upsert");
     if (queenChangeEvent) void enqueue("event", queenChangeEvent.id, "upsert");
 
-    await navigateTo(backTo);
+    await returnTo(backTo);
 }
 </script>
 
