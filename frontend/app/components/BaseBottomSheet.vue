@@ -11,10 +11,17 @@ watch(modelValue, (open) => {
 <template>
     <Teleport to="body">
         <Transition name="fade">
-            <div v-if="modelValue" class="backdrop" @click="modelValue = false" />
+            <div
+                v-if="modelValue"
+                class="backdrop"
+                @click="modelValue = false" />
         </Transition>
         <Transition name="slide-up">
-            <div v-if="modelValue" class="sheet" role="dialog" aria-modal="true">
+            <div
+                v-if="modelValue"
+                class="sheet"
+                role="dialog"
+                aria-modal="true">
                 <div class="sheet__handle-area">
                     <div class="sheet__handle" />
                 </div>
@@ -45,6 +52,7 @@ watch(modelValue, (open) => {
     padding: 0 0 max(var(--space-6), env(safe-area-inset-bottom));
     max-height: calc(100dvh - 72px);
     overflow-y: auto;
+    overscroll-behavior: contain;
 
     @media (width > 640px) {
         max-height: calc(100dvh - 56px);
