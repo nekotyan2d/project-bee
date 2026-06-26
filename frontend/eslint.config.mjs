@@ -8,7 +8,7 @@ import withNuxt from "./.nuxt/eslint.config.mjs";
 export default withNuxt(
     {
         name: "project/ignores",
-        ignores: ["app/shared/api/schema.d.ts"],
+        ignores: ["app/shared/api/schema.d.ts", "pwa-assets.config.ts"],
     },
     ...tseslint.configs.strictTypeChecked,
     {

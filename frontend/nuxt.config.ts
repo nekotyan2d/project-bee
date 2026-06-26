@@ -46,7 +46,7 @@ export default defineNuxtConfig({
             start_url: "/",
         },
         pwaAssets: {
-            image: "public/icon.svg",
+            config: true,
         },
         workbox: {
             navigateFallback: "/",
