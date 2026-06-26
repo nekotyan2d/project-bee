@@ -1,7 +1,10 @@
 <script setup lang="ts">
-useHead({ title: "Аккаунт — Пасека" });
+useHead({ title: "Настройки — Пасека" });
 
 const { me, register, logout } = useAuth();
+
+const { version, builtAt } = useRuntimeConfig().public;
+const buildDate = new Date(builtAt).toLocaleString("ru", { dateStyle: "long", timeStyle: "short" });
 
 const loading = ref(true);
 const email = ref<string | null>(null);
@@ -66,21 +69,23 @@ async function pushData(): Promise<void> {
 
 <template>
     <AppPage
-        title="Аккаунт"
+        title="Настройки"
         variant="stack">
-        <LoadingSpinner v-if="loading" />
-        <template v-else>
-            <p
-                v-if="offline"
-                class="offline-banner">
-                <Icon
-                    name="lucide:wifi-off"
-                    size="14" />
-                Нет соединения — показаны последние известные данные аккаунта
-            </p>
+        <section class="section">
+            <h2 class="section__title">Аккаунт</h2>
 
-            <template v-if="email">
-                <section class="section">
+            <LoadingSpinner v-if="loading" />
+            <template v-else>
+                <p
+                    v-if="offline"
+                    class="offline-banner">
+                    <Icon
+                        name="lucide:wifi-off"
+                        size="14" />
+                    Нет соединения — показаны последние известные данные аккаунта
+                </p>
+
+                <template v-if="email">
                     <InfoGrid>
                         <InfoRow label="Почта">{{ email }}</InfoRow>
                     </InfoGrid>
@@ -96,35 +101,34 @@ async function pushData(): Promise<void> {
                         class="error">
                         {{ pushError }}
                     </p>
-                    <BaseButton
-                        variant="secondary"
-                        :loading="pushBusy"
-                        :disabled="offline"
-                        block
-                        @click="pushData">
-                        Отправить данные на сервер
-                    </BaseButton>
 
-                    <BaseButton
-                        variant="secondary"
-                        :loading="busyLogout"
-                        :disabled="offline"
-                        block
-                        @click="submitLogout">
-                        Выйти
-                    </BaseButton>
-                </section>
-            </template>
+                    <div class="actions">
+                        <BaseButton
+                            variant="secondary"
+                            :loading="pushBusy"
+                            :disabled="offline"
+                            block
+                            @click="pushData">
+                            Отправить данные на сервер
+                        </BaseButton>
+                        <BaseButton
+                            variant="secondary"
+                            :loading="busyLogout"
+                            :disabled="offline"
+                            block
+                            @click="submitLogout">
+                            Выйти
+                        </BaseButton>
+                    </div>
+                </template>
 
-            <template v-else-if="regDone">
-                <section class="section">
-                    <h2 class="section__title">Аккаунт сохранён</h2>
-                    <p class="success">Теперь можно войти с этим логином на другом устройстве.</p>
-                </section>
-            </template>
-            <template v-else-if="mode === 'register'">
-                <section class="section">
-                    <h2 class="section__title">Сохранить аккаунт</h2>
+                <p
+                    v-else-if="regDone"
+                    class="success">
+                    Аккаунт сохранён — теперь можно войти с этим логином на другом устройстве.
+                </p>
+
+                <template v-else-if="mode === 'register'">
                     <p class="hint">
                         Привяжите почту и пароль к текущим данным, чтобы открыть их на другом устройстве.
                     </p>
@@ -172,12 +176,9 @@ async function pushData(): Promise<void> {
                         @click="mode = 'login'">
                         Уже есть аккаунт? Войти
                     </button>
-                </section>
-            </template>
+                </template>
 
-            <template v-else>
-                <section class="section">
-                    <h2 class="section__title">Вход</h2>
+                <template v-else>
                     <p class="hint">Вход заменит локальные данные данными аккаунта.</p>
                     <LoginForm />
                     <button
@@ -186,9 +187,19 @@ async function pushData(): Promise<void> {
                         @click="mode = 'register'">
                         Нет аккаунта? Сохранить текущие данные
                     </button>
-                </section>
+                </template>
             </template>
-        </template>
+        </section>
+        <section class="section">
+            <h2 class="section__title">Приложение</h2>
+            <InfoGrid>
+                <InfoRow label="Тёмная тема">
+                    <ThemeToggle />
+                </InfoRow>
+                <InfoRow label="Версия">v{{ version }}</InfoRow>
+                <InfoRow label="Сборка">{{ buildDate }}</InfoRow>
+            </InfoGrid>
+        </section>
     </AppPage>
 </template>
 
@@ -202,7 +213,14 @@ async function pushData(): Promise<void> {
         font-size: var(--text-sm);
         font-weight: 600;
         color: var(--color-text-muted);
+        padding: 0 var(--space-1);
     }
+}
+
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
 }
 
 .form {
@@ -243,7 +261,6 @@ async function pushData(): Promise<void> {
     align-items: center;
     gap: var(--space-2);
     padding: var(--space-3) var(--space-4);
-    margin-bottom: var(--space-3);
     background: color-mix(in srgb, var(--color-warning) 12%, transparent);
     border: 1px solid color-mix(in srgb, var(--color-warning) 30%, transparent);
     border-radius: var(--radius-md);

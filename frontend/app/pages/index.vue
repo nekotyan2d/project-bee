@@ -76,7 +76,6 @@ watch(viewMode, (mode) => {
                     :name="viewMode === 'list' ? 'lucide:layout-grid' : 'lucide:list'"
                     size="20" />
             </BaseButton>
-            <ThemeToggle />
         </template>
 
         <LoadingSpinner v-if="loading" />

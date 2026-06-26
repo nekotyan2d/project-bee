@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const TAB_PATHS = new Set(["/", "/analytics", "/account"]);
+const TAB_PATHS = new Set(["/", "/analytics", "/settings"]);
 const route = useRoute();
 const showTabs = computed(() => TAB_PATHS.has(route.path));
 </script>
