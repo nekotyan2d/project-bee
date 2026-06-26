@@ -132,7 +132,7 @@ watch(viewMode, (mode) => {
                         </span>
                         <span class="create-item__body">
                             <span class="create-item__label">Новая семья</span>
-                            <span class="create-item__hint">Семья + улей, при желании матка</span>
+                            <span class="create-item__hint">Поселить семью в улей</span>
                         </span>
                         <Icon
                             name="lucide:chevron-right"
@@ -150,7 +150,7 @@ watch(viewMode, (mode) => {
                         </span>
                         <span class="create-item__body">
                             <span class="create-item__label">Пустой улей</span>
-                            <span class="create-item__hint">Ящик без семьи — заселить позже</span>
+                            <span class="create-item__hint">Без семьи — заселить позже</span>
                         </span>
                         <Icon
                             name="lucide:chevron-right"
