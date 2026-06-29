@@ -161,7 +161,9 @@ const LIFECYCLE_EVENTS = [
             <section class="section">
                 <h2 class="section__title">Показатели</h2>
                 <div class="metrics">
-                    <div class="metric">
+                    <NuxtLink
+                        :to="`/events/new/?colonyId=${id}&type=inspection`"
+                        class="metric">
                         <Icon
                             name="lucide:search"
                             size="20"
@@ -170,23 +172,27 @@ const LIFECYCLE_EVENTS = [
                             daysAgo(data.colony.lastInspectedAt) ?? "Не осматривалась"
                         }}</span>
                         <span class="metric__label">Последний осмотр</span>
-                    </div>
-                    <div class="metric">
+                    </NuxtLink>
+                    <NuxtLink
+                        class="metric"
+                        :to="`/events/new/?colonyId=${id}&type=super_change`">
                         <Icon
                             name="lucide:layers"
                             size="20"
                             class="metric__icon" />
                         <span class="metric__value">{{ data.colony.superCount }}</span>
                         <span class="metric__label">Магазинов</span>
-                    </div>
-                    <div class="metric">
+                    </NuxtLink>
+                    <NuxtLink
+                        class="metric"
+                        :to="`/events/new/?colonyId=${id}&type=inspection`">
                         <Icon
                             name="lucide:layout-list"
                             size="20"
                             class="metric__icon" />
                         <span class="metric__value">{{ nestLabel }}</span>
                         <span class="metric__label">Гнездо</span>
-                    </div>
+                    </NuxtLink>
                 </div>
             </section>
 
