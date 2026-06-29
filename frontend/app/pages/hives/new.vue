@@ -9,6 +9,7 @@ const db = useDb();
 const { enqueue } = useSync();
 
 const label = ref("");
+const defaultLabel = ref("Улей");
 const type = ref("");
 const frameCount = ref("");
 const color = ref("");
@@ -21,6 +22,20 @@ const HIVE_TYPES = [
     { value: "ukrainian", label: "Украинский" },
     { value: "multi_hull", label: "Многокорпусный" },
 ];
+
+onMounted(async () => {
+    const apiary = await db.apiary.orderBy("updatedAt").first();
+    if (!apiary) return;
+
+    const count = await db.hive
+        .where("apiaryId")
+        .equals(apiary.id)
+        .filter((h) => !h.deletedAt)
+        .count();
+
+    defaultLabel.value = `Улей №${String(count + 1)}`;
+    if (!label.value) label.value = defaultLabel.value;
+});
 
 async function submit(): Promise<void> {
     const trimmedLabel = label.value.trim();

@@ -23,6 +23,7 @@ const hiveType = ref("");
 const hiveFrames = ref("");
 const hiveColor = ref("");
 const defaultHiveLabel = ref("Улей");
+const defaultColonyLabel = ref("Семья");
 
 // optional details, collapsed by default
 const showDetails = ref(false);
@@ -44,15 +45,21 @@ const HIVE_TYPES = [
 
 // Автоимя улья «Улей №N» — поле остаётся редактируемым.
 onMounted(async () => {
-    if (isSettle.value) return;
     const apiary = await db.apiary.orderBy("updatedAt").first();
     if (!apiary) return;
-    const count = await db.hive
+
+    const colonyCount = await db.colony.where("apiaryId").equals(apiary.id).count();
+    defaultColonyLabel.value = `Семья №${String(colonyCount + 1)}`;
+    if (!label.value) label.value = defaultColonyLabel.value;
+
+    if (isSettle.value) return;
+    const hiveCount = await db.hive
         .where("apiaryId")
         .equals(apiary.id)
         .filter((h) => !h.deletedAt)
         .count();
-    defaultHiveLabel.value = `Улей №${String(count + 1)}`;
+    defaultHiveLabel.value = `Улей №${String(hiveCount + 1)}`;
+
     if (!hiveLabel.value) hiveLabel.value = defaultHiveLabel.value;
 });
 
