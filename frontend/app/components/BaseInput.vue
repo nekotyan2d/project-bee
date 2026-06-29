@@ -35,8 +35,7 @@ onMounted(() => {
         :max="max"
         :step="step"
         :required="required"
-        :disabled="disabled"
-    >
+        :disabled="disabled" />
 </template>
 
 <style scoped lang="scss">
@@ -54,6 +53,7 @@ onMounted(() => {
 
     &::placeholder {
         color: var(--color-text-muted);
+        opacity: 0.7;
     }
 
     &:focus {
