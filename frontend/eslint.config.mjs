@@ -47,6 +47,16 @@ export default withNuxt(
                     groups: ["builtin", "external", "internal", ["parent", "sibling", "index"]],
                 },
             ],
+            "vue/html-self-closing": [
+                "error",
+                {
+                    html: {
+                        void: "any",
+                        normal: "always",
+                        component: "always",
+                    },
+                },
+            ],
         },
     },
     {
@@ -54,4 +64,4 @@ export default withNuxt(
         files: ["**/*.{js,mjs,cjs}"],
         rules: { ...tseslint.configs.disableTypeChecked.rules },
     },
-)
+);

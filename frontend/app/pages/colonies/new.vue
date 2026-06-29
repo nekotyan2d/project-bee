@@ -232,21 +232,7 @@ async function submit(): Promise<void> {
                             placeholder="12" />
                     </FormField>
                     <FormField label="Цвет улья">
-                        <div class="color-picker">
-                            <button
-                                type="button"
-                                class="color-swatch color-swatch--none"
-                                :class="{ 'color-swatch--active': !hiveColor }"
-                                @click="hiveColor = ''" />
-                            <button
-                                v-for="c in HIVE_COLORS"
-                                :key="c.key"
-                                type="button"
-                                class="color-swatch"
-                                :class="{ 'color-swatch--active': hiveColor === c.key }"
-                                :style="{ background: c.hex }"
-                                @click="hiveColor = c.key" />
-                        </div>
+                        <ColorPicker v-model="hiveColor" />
                     </FormField>
                 </template>
 
@@ -369,29 +355,5 @@ async function submit(): Promise<void> {
     font-size: var(--text-sm);
     font-weight: 600;
     color: var(--color-text-muted);
-}
-
-.color-picker {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--space-2);
-}
-
-.color-swatch {
-    width: 32px;
-    height: 32px;
-    border-radius: var(--radius-full);
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: transform var(--transition-fast);
-
-    &--none {
-        background: var(--color-border);
-    }
-
-    &--active {
-        border-color: var(--color-text);
-        transform: scale(1.15);
-    }
 }
 </style>

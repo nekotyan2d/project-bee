@@ -68,7 +68,7 @@ const queenLabel = computed(() => {
                 <span
                     v-if="hive.color"
                     class="hive-card__dot"
-                    :style="{ background: hiveColorHex(hive.color) }" />
+                    :style="{ background: hiveColorHex(hive.color) || hive.color }" />
                 {{ hive.label }}
             </span>
         </div>

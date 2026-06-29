@@ -116,7 +116,7 @@ async function assignColony(colony: LocalColony): Promise<void> {
                         label="Цвет">
                         <span
                             class="color-dot"
-                            :style="{ background: hiveColorHex(data.hive.color) }" />
+                            :style="{ background: hiveColorHex(data.hive.color) || data.hive.color }" />
                     </InfoRow>
                 </InfoGrid>
             </section>
