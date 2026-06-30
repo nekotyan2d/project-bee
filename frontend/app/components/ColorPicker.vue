@@ -16,6 +16,7 @@ function onCustomColorSelect() {
     const value = colorInput.value?.value;
     if (!value) return;
     customColors.value.push(value);
+    color.value = value;
 }
 </script>
 <template>
