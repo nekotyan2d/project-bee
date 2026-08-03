@@ -101,11 +101,11 @@ function onClick(e: MouseEvent): void {
     }
 
     &--primary {
-        background: var(--color-primary);
-        color: var(--color-on-primary);
+        background: var(--color-primary-container);
+        color: var(--color-on-primary-container);
 
         &:hover:not(:disabled):not(.btn--disabled) {
-            background: var(--color-primary-hover);
+            background: color-mix(in srgb, var(--color-primary-container) 92%, transparent);
         }
     }
 

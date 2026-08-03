@@ -310,8 +310,8 @@ async function assignColony(colony: LocalColony): Promise<void> {
     transition: background-color var(--transition-fast);
 
     &--primary {
-        background: var(--color-primary);
-        color: var(--color-on-primary);
+        background: var(--color-primary-container);
+        color: var(--color-on-primary-container);
 
         &:active {
             background: var(--color-primary-hover);

@@ -23,8 +23,8 @@ const pwa = usePWA();
     position: sticky;
     top: var(--topbar-height);
     z-index: 9;
-    background: var(--color-primary);
-    color: var(--color-on-primary);
+    background: var(--color-primary-container);
+    color: var(--color-on-primary-container);
 
     &__inner {
         display: flex;
@@ -41,8 +41,8 @@ const pwa = usePWA();
     &__btn {
         flex-shrink: 0;
         padding: var(--space-1) var(--space-3);
-        background: var(--color-on-primary);
-        color: var(--color-primary);
+        background: var(--color-on-primary-container);
+        color: var(--color-primary-container);
         border: none;
         border-radius: var(--radius-full);
         font-size: var(--text-sm);

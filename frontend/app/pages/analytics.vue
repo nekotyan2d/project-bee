@@ -461,54 +461,56 @@ const { data: survivalData, loading: survivalLoading } = useLiveQuery<{
         <template v-else-if="tab === 'survival'">
             <LoadingSpinner v-if="survivalLoading" />
             <template v-else>
-            <div class="totals">
-                <div class="total-card">
-                    <span class="total-card__label">Активных</span>
-                    <span class="total-card__value">{{ survivalData.activeCount }}</span>
+                <div class="totals">
+                    <div class="total-card">
+                        <span class="total-card__label">Активных</span>
+                        <span class="total-card__value">{{ survivalData.activeCount }}</span>
+                    </div>
+                    <div class="total-card">
+                        <span class="total-card__label">Погибших</span>
+                        <span class="total-card__value total-card__value--danger">{{ survivalData.deadCount }}</span>
+                    </div>
                 </div>
-                <div class="total-card">
-                    <span class="total-card__label">Погибших</span>
-                    <span class="total-card__value total-card__value--danger">{{ survivalData.deadCount }}</span>
-                </div>
-            </div>
 
-            <template v-if="survivalData.years.length > 0">
-                <div
-                    v-for="yr in survivalData.years"
-                    :key="yr.year"
-                    class="survival-year">
-                    <div class="survival-year__header">
-                        <span class="survival-year__title">{{ yr.year }}</span>
-                        <span
-                            class="survival-year__rate"
-                            :class="yr.rate >= 80 ? 'survival-year__rate--ok' : 'survival-year__rate--warn'">
-                            {{ yr.rate }}% выживаемость
-                        </span>
-                    </div>
-                    <div class="survival-year__bar">
-                        <div
-                            class="survival-year__bar-fill"
-                            :style="{ width: `${yr.rate}%` }"
-                            :class="yr.rate >= 80 ? 'survival-year__bar-fill--ok' : 'survival-year__bar-fill--warn'" />
-                    </div>
-                    <section class="event-list">
-                        <div
-                            v-for="c in yr.colonies"
-                            :key="c.label"
-                            class="event-row">
-                            <div class="event-row__main">
-                                <span class="event-row__colony">{{ c.label }}</span>
-                                <span class="event-row__date">{{ c.diedAt ? fmtDate(c.diedAt) : "" }}</span>
-                            </div>
+                <template v-if="survivalData.years.length > 0">
+                    <div
+                        v-for="yr in survivalData.years"
+                        :key="yr.year"
+                        class="survival-year">
+                        <div class="survival-year__header">
+                            <span class="survival-year__title">{{ yr.year }}</span>
+                            <span
+                                class="survival-year__rate"
+                                :class="yr.rate >= 80 ? 'survival-year__rate--ok' : 'survival-year__rate--warn'">
+                                {{ yr.rate }}% выживаемость
+                            </span>
                         </div>
-                    </section>
-                </div>
-            </template>
-            <EmptyState
-                v-else
-                icon="lucide:heart-pulse"
-                text="Нет данных об отходе"
-                hint="Погибшие семьи появятся здесь после события «Гибель»" />
+                        <div class="survival-year__bar">
+                            <div
+                                class="survival-year__bar-fill"
+                                :style="{ width: `${yr.rate}%` }"
+                                :class="
+                                    yr.rate >= 80 ? 'survival-year__bar-fill--ok' : 'survival-year__bar-fill--warn'
+                                " />
+                        </div>
+                        <section class="event-list">
+                            <div
+                                v-for="c in yr.colonies"
+                                :key="c.label"
+                                class="event-row">
+                                <div class="event-row__main">
+                                    <span class="event-row__colony">{{ c.label }}</span>
+                                    <span class="event-row__date">{{ c.diedAt ? fmtDate(c.diedAt) : "" }}</span>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </template>
+                <EmptyState
+                    v-else
+                    icon="lucide:heart-pulse"
+                    text="Нет данных об отходе"
+                    hint="Погибшие семьи появятся здесь после события «Гибель»" />
             </template>
         </template>
     </AppPage>
@@ -546,9 +548,9 @@ const { data: survivalData, loading: survivalLoading } = useLiveQuery<{
     position: relative;
 
     &--active {
-        background: var(--color-primary);
-        border-color: var(--color-primary);
-        color: var(--color-on-primary);
+        background: var(--color-primary-container);
+        border-color: var(--color-primary-container);
+        color: var(--color-on-primary-container);
     }
 
     &__badge {
