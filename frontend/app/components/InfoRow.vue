@@ -14,7 +14,7 @@ defineProps<{
 <style scoped lang="scss">
 .info-row {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: var(--space-4);
     min-height: var(--tap-min);
@@ -27,9 +27,12 @@ defineProps<{
     }
 
     &__value {
+        flex: 1;
+        min-width: 0;
         font-size: var(--text-sm);
         font-weight: 500;
         text-align: right;
+        overflow-wrap: break-word;
     }
 }
 </style>

@@ -193,7 +193,8 @@ function buildPayload(): Record<string, unknown> {
 }
 
 function isValid(): boolean {
-    if (!colonyId.value || !type.value) return false;
+    if (!type.value) return false;
+    if (!colonyId.value && type.value !== "note") return false;
     if (type.value === "treatment" && !treatProduct.value.trim()) return false;
     if (type.value === "feeding" && !feedType.value) return false;
     if (type.value === "harvest" && !harvestAmountKg.value) return false;
@@ -261,7 +262,6 @@ async function submitQueenChange(apiaryId: string, cid: string, occurredAtDate: 
 async function submit(): Promise<void> {
     if (!isValid()) return;
     const cid = colonyId.value;
-    if (!cid) return;
 
     submitting.value = true;
     error.value = null;
@@ -275,7 +275,7 @@ async function submit(): Promise<void> {
     const now = new Date();
     const occurredAtDate = occurredAt.value ? new Date(occurredAt.value) : now;
 
-    if (type.value === "queen_change") {
+    if (type.value === "queen_change" && cid) {
         await submitQueenChange(apiary.id, cid, occurredAtDate, now);
         return;
     }
@@ -295,9 +295,9 @@ async function submit(): Promise<void> {
             if (isEdit) await db.event.put(event);
             else await db.event.add(event);
 
-            const colony = await db.colony.get(cid);
+            const colony = cid ? await db.colony.get(cid) : undefined;
             if (colony) {
-                const events = await db.event.where("colonyId").equals(cid).toArray();
+                const events = await db.event.where("colonyId").equals(cid as string).toArray();
                 const st = deriveColonyState(events);
                 colony.superCount = st.superCount;
                 if (st.lastInspectedAt) colony.lastInspectedAt = st.lastInspectedAt;
@@ -319,7 +319,7 @@ async function submit(): Promise<void> {
     }
 
     void enqueue("event", event.id, "upsert");
-    if (STATUS_BY_TYPE[type.value ?? ""]) void enqueue("colony", cid, "upsert");
+    if (cid && STATUS_BY_TYPE[type.value ?? ""]) void enqueue("colony", cid, "upsert");
 
     await returnTo(backTo.value);
 }

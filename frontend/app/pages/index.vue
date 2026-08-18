@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LocalApiary, LocalColony, LocalHive, LocalQueen } from "~/shared/db";
+import type { LocalApiary, LocalColony, LocalEvent, LocalHive, LocalQueen } from "~/shared/db";
 
 useHead({ title: "Пасека" });
 
@@ -10,21 +10,27 @@ type QueryData = {
     hives: LocalHive[];
     colonyByHiveId: Record<string, LocalColony>;
     queenById: Record<string, LocalQueen>;
+    notes: LocalEvent[];
 };
 
-const EMPTY: QueryData = { apiary: null, hives: [], colonyByHiveId: {}, queenById: {} };
+const EMPTY: QueryData = { apiary: null, hives: [], colonyByHiveId: {}, queenById: {}, notes: [] };
 
 const { data, loading } = useLiveQuery<QueryData>(async () => {
     const apiary = (await db.apiary.orderBy("updatedAt").first()) ?? null;
     if (!apiary) return EMPTY;
 
-    const [hives, colonies] = await Promise.all([
+    const [hives, colonies, notes] = await Promise.all([
         db.hive
             .where("apiaryId")
             .equals(apiary.id)
             .filter((h) => !h.deletedAt)
             .toArray(),
         db.colony.where("apiaryId").equals(apiary.id).toArray(),
+        db.event
+            .where("apiaryId")
+            .equals(apiary.id)
+            .filter((e) => e.type === "note" && !e.colonyId && !e.deletedAt)
+            .sortBy("occurredAt"),
     ]);
 
     const colonyByHiveId: Record<string, LocalColony> = {};
@@ -39,7 +45,7 @@ const { data, loading } = useLiveQuery<QueryData>(async () => {
         if (queen && !queen.deletedAt) queenById[queen.id] = queen;
     }
 
-    return { apiary, hives, colonyByHiveId, queenById };
+    return { apiary, hives, colonyByHiveId, queenById, notes: notes.reverse() };
 }, EMPTY);
 
 function resolveQueen(colony: LocalColony | undefined): LocalQueen | undefined {
@@ -47,6 +53,7 @@ function resolveQueen(colony: LocalColony | undefined): LocalQueen | undefined {
 }
 
 const showCreateSheet = ref(false);
+const showNotesSheet = ref(false);
 
 const VIEW_MODE_KEY = "hiveViewMode";
 
@@ -66,6 +73,16 @@ watch(viewMode, (mode) => {
         :title="data.apiary?.name ?? 'Пасека'"
         variant="list">
         <template #actions>
+            <BaseButton
+                v-if="data.apiary"
+                variant="ghost"
+                size="icon"
+                aria-label="Заметки"
+                @click="showNotesSheet = true">
+                <Icon
+                    name="lucide:file-text"
+                    size="20" />
+            </BaseButton>
             <BaseButton
                 v-if="data.hives.length > 0"
                 variant="ghost"
@@ -158,6 +175,27 @@ watch(viewMode, (mode) => {
                     </NuxtLink>
                 </nav>
             </BaseBottomSheet>
+
+            <BaseBottomSheet v-model="showNotesSheet">
+                <div class="notes-sheet__header">
+                    <p class="picker-title">Заметки</p>
+                    <NuxtLink
+                        to="/events/new?type=note"
+                        class="notes-sheet__add"
+                        aria-label="Новая заметка"
+                        @click="showNotesSheet = false">
+                        <Icon
+                            name="lucide:plus"
+                            size="18" />
+                    </NuxtLink>
+                </div>
+                <div class="notes-sheet__body">
+                    <EventTimeline
+                        :events="data.notes"
+                        empty-text="Заметок пока нет"
+                        @navigate="showNotesSheet = false" />
+                </div>
+            </BaseBottomSheet>
         </template>
     </AppPage>
 </template>
@@ -170,6 +208,39 @@ watch(viewMode, (mode) => {
     gap: var(--space-3);
     padding: 0;
     margin: 0;
+}
+
+.notes-sheet {
+    &__header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-right: var(--space-4);
+    }
+
+    &__add {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: var(--radius-full);
+        background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+        color: var(--color-primary);
+        transition: background-color var(--transition-fast);
+
+        &:active {
+            background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+        }
+    }
+
+    &__body {
+        padding: 0 var(--space-4) var(--space-4);
+
+        :deep(.timeline) {
+            background: var(--color-surface-2);
+        }
+    }
 }
 
 .picker-title {

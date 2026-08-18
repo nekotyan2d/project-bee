@@ -78,25 +78,6 @@ const queenSummary = computed(() => {
 });
 
 const EVENT_LIMIT = 15;
-const showAllEvents = ref(false);
-
-// История сгруппирована по месяцам (события уже отсортированы по убыванию).
-type EventRow = { event: LocalEvent; summary: ReturnType<typeof getEventSummary> };
-const eventGroups = computed(() => {
-    const visible = showAllEvents.value ? data.value.events : data.value.events.slice(0, EVENT_LIMIT);
-    const groups: { key: string; label: string; rows: EventRow[] }[] = [];
-    for (const event of visible) {
-        const d = new Date(event.occurredAt);
-        const key = `${String(d.getFullYear())}-${String(d.getMonth())}`;
-        const row: EventRow = { event, summary: getEventSummary(event, data.value.hivesById) };
-        const last = groups.at(-1);
-        if (last && last.key === key) last.rows.push(row);
-        else groups.push({ key, label: formatMonth(event.occurredAt), rows: [row] });
-    }
-    return groups;
-});
-
-const hiddenCount = computed(() => (showAllEvents.value ? 0 : Math.max(0, data.value.events.length - EVENT_LIMIT)));
 
 const showEventSheet = ref(false);
 
@@ -243,55 +224,10 @@ const LIFECYCLE_EVENTS = [
             <section class="section">
                 <h2 class="section__title">История событий</h2>
 
-                <template v-if="data.events.length > 0">
-                    <div
-                        v-for="group in eventGroups"
-                        :key="group.key"
-                        class="timeline-group">
-                        <h3 class="timeline-group__month">{{ group.label }}</h3>
-                        <ol class="timeline">
-                            <li
-                                v-for="{ event, summary } in group.rows"
-                                :key="event.id">
-                                <NuxtLink
-                                    :to="`/events/${event.id}`"
-                                    class="timeline__link">
-                                    <span class="timeline__icon">
-                                        <Icon
-                                            :name="summary.icon"
-                                            size="16" />
-                                    </span>
-                                    <div class="timeline__body">
-                                        <span class="timeline__title">{{ summary.title }}</span>
-                                        <span
-                                            v-if="summary.detail"
-                                            class="timeline__detail">
-                                            {{ summary.detail }}
-                                        </span>
-                                    </div>
-                                    <time
-                                        class="timeline__date"
-                                        :datetime="event.occurredAt.toISOString()">
-                                        {{ relativeDate(event.occurredAt) }}
-                                    </time>
-                                </NuxtLink>
-                            </li>
-                        </ol>
-                    </div>
-
-                    <button
-                        v-if="hiddenCount > 0"
-                        type="button"
-                        class="show-all"
-                        @click="showAllEvents = true">
-                        Показать всю историю (ещё {{ hiddenCount }})
-                    </button>
-                </template>
-                <p
-                    v-else
-                    class="section__empty">
-                    Событий пока нет
-                </p>
+                <EventTimeline
+                    :events="data.events"
+                    :hives-by-id="data.hivesById"
+                    :limit="EVENT_LIMIT" />
             </section>
         </template>
 
@@ -465,11 +401,6 @@ const LIFECYCLE_EVENTS = [
         font-weight: 600;
         color: var(--color-text-muted);
     }
-
-    &__empty {
-        font-size: var(--text-sm);
-        color: var(--color-text-muted);
-    }
 }
 
 .status-badge {
@@ -532,106 +463,6 @@ const LIFECYCLE_EVENTS = [
     &__label {
         font-size: var(--text-xs);
         color: var(--color-text-muted);
-    }
-}
-
-.timeline-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-
-    &__month {
-        font-size: var(--text-xs);
-        font-weight: 600;
-        color: var(--color-text-muted);
-        padding-left: var(--space-1);
-    }
-}
-
-.show-all {
-    width: 100%;
-    min-height: var(--tap-min);
-    border: none;
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    color: var(--color-primary);
-    font-size: var(--text-sm);
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color var(--transition-fast);
-
-    &:active {
-        background: var(--color-surface-2);
-    }
-}
-
-.timeline {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    overflow: hidden;
-
-    &__link {
-        display: flex;
-        align-items: flex-start;
-        gap: var(--space-3);
-        min-height: var(--list-item-height);
-        padding: var(--space-3) var(--space-4);
-        text-decoration: none;
-        color: inherit;
-        transition: background-color var(--transition-fast);
-
-        &:hover {
-            background: color-mix(in srgb, var(--color-text) 8%, transparent);
-        }
-
-        &:active {
-            background: color-mix(in srgb, var(--color-text) 12%, transparent);
-        }
-    }
-
-    &__icon {
-        flex-shrink: 0;
-        width: 28px;
-        height: 28px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: var(--radius-full);
-        background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-        color: var(--color-primary);
-        margin-top: 1px;
-    }
-
-    &__body {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-
-    &__title {
-        font-size: var(--text-sm);
-        font-weight: 600;
-    }
-
-    &__detail {
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-        line-height: 1.4;
-    }
-
-    &__date {
-        flex-shrink: 0;
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-        padding-top: 2px;
     }
 }
 
