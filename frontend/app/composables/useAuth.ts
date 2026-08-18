@@ -35,14 +35,20 @@ export function useAuth() {
     }
 
     async function register(email: string, password: string): Promise<void> {
-        // Сначала гарантируем, что сервер содержит данные (под текущим user_id) — иначе вход
-        // с другого устройства подтянет пусто. Падение здесь → аккаунт не создаётся, можно повторить.
+        if (!getToken()) {
+            const anonRes = await fetch(`${base}/auth/anonymous`, { method: "POST" });
+            if (!anonRes.ok) throw new Error("Не удалось подготовить аккаунт");
+            const anonData = (await anonRes.json()) as { token: string };
+            setToken(anonData.token);
+        }
+
         await useSync().pushAll();
 
         const token = getToken();
+        if (!token) throw new Error("Не удалось подготовить аккаунт");
         const res = await fetch(`${base}/auth/register`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ email, password }),
         });
         if (!res.ok) throw new Error(await parseError(res, "Не удалось сохранить аккаунт"));
@@ -67,11 +73,6 @@ export function useAuth() {
         clearToken();
         clearCachedEmail();
         await resetLocalData();
-        const res = await fetch(`${base}/auth/anonymous`, { method: "POST" });
-        if (res.ok) {
-            const data = (await res.json()) as { token: string };
-            setToken(data.token);
-        }
     }
 
     return { me, register, login, logout };

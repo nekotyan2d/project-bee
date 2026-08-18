@@ -30,12 +30,14 @@ function maxCursor(rows: Dated[], prev?: Date): Date | undefined {
 export function useSync() {
     const db = useDb();
     const { $api } = useNuxtApp();
+    const { getToken } = useAuthToken();
 
     async function pull(): Promise<void> {
         await Promise.allSettled([pullApiaries(), pullHives(), pullColonies(), pullQueens(), pullEvents()]);
     }
 
     async function enqueue(table: SyncTable, entityId: string, op: "upsert" | "delete"): Promise<void> {
+        if (!getToken()) return;
         await db.outbox.put({ key: `${table}:${entityId}`, table, entityId, op, queuedAt: new Date() });
         void flush();
     }
@@ -47,7 +49,12 @@ export function useSync() {
                 if (!r) return "ok";
                 const res = await $api.PUT("/apiaries/{id}", {
                     params: { path: { id } },
-                    body: { name: r.name, latitude: r.latitude ?? null, longitude: r.longitude ?? null, notes: r.notes ?? null },
+                    body: {
+                        name: r.name,
+                        latitude: r.latitude ?? null,
+                        longitude: r.longitude ?? null,
+                        notes: r.notes ?? null,
+                    },
                 });
                 return res.response.ok ? "ok" : classify(res.response.status);
             }
@@ -56,7 +63,16 @@ export function useSync() {
                 if (!r) return "ok";
                 const res = await $api.PUT("/hives/{id}", {
                     params: { path: { id } },
-                    body: { apiaryId: r.apiaryId, label: r.label, type: r.type ?? null, frameCount: r.frameCount ?? null, status: r.status, x: r.x ?? null, y: r.y ?? null, color: r.color ?? null },
+                    body: {
+                        apiaryId: r.apiaryId,
+                        label: r.label,
+                        type: r.type ?? null,
+                        frameCount: r.frameCount ?? null,
+                        status: r.status,
+                        x: r.x ?? null,
+                        y: r.y ?? null,
+                        color: r.color ?? null,
+                    },
                 });
                 return res.response.ok ? "ok" : classify(res.response.status);
             }
@@ -65,7 +81,13 @@ export function useSync() {
                 if (!r) return "ok";
                 const res = await $api.PUT("/colonies/{id}", {
                     params: { path: { id } },
-                    body: { apiaryId: r.apiaryId, label: r.label, establishedAt: r.establishedAt ?? null, origin: r.origin ?? null, status: r.status },
+                    body: {
+                        apiaryId: r.apiaryId,
+                        label: r.label,
+                        establishedAt: r.establishedAt ?? null,
+                        origin: r.origin ?? null,
+                        status: r.status,
+                    },
                 });
                 return res.response.ok ? "ok" : classify(res.response.status);
             }
@@ -89,16 +111,18 @@ export function useSync() {
             case "event": {
                 const r = await db.event.get(id);
                 if (!r) return "ok";
-                
+
                 const body = {
-                    events: [{
-                        id: r.id,
-                        apiaryId: r.apiaryId,
-                        colonyId: r.colonyId ?? null,
-                        occurredAt: r.occurredAt.toISOString(),
-                        type: r.type,
-                        payload: r.payload,
-                    }],
+                    events: [
+                        {
+                            id: r.id,
+                            apiaryId: r.apiaryId,
+                            colonyId: r.colonyId ?? null,
+                            occurredAt: r.occurredAt.toISOString(),
+                            type: r.type,
+                            payload: r.payload,
+                        },
+                    ],
                 } as unknown as BatchBody;
                 const res = await $api.POST("/events/batch", { body });
                 return res.response.ok ? "ok" : classify(res.response.status);
@@ -109,11 +133,20 @@ export function useSync() {
     async function sendDelete(table: SyncTable, id: string): Promise<SendResult> {
         let res;
         switch (table) {
-            case "apiary": res = await $api.DELETE("/apiaries/{id}", { params: { path: { id } } }); break;
-            case "hive": res = await $api.DELETE("/hives/{id}", { params: { path: { id } } }); break;
-            case "queen": res = await $api.DELETE("/queens/{id}", { params: { path: { id } } }); break;
-            case "event": res = await $api.DELETE("/events/{id}", { params: { path: { id } } }); break;
-            default: return "ok";
+            case "apiary":
+                res = await $api.DELETE("/apiaries/{id}", { params: { path: { id } } });
+                break;
+            case "hive":
+                res = await $api.DELETE("/hives/{id}", { params: { path: { id } } });
+                break;
+            case "queen":
+                res = await $api.DELETE("/queens/{id}", { params: { path: { id } } });
+                break;
+            case "event":
+                res = await $api.DELETE("/events/{id}", { params: { path: { id } } });
+                break;
+            default:
+                return "ok";
         }
         if (res.response.ok || res.response.status === 404) return "ok";
         return classify(res.response.status);
@@ -129,8 +162,7 @@ export function useSync() {
         }
     }
 
-   
-   async function flush(): Promise<boolean> {
+    async function flush(): Promise<boolean> {
         if (flushing) return false;
         flushing = true;
         try {

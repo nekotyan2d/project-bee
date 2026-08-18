@@ -1,14 +1,32 @@
 <script setup lang="ts">
-// Вход в существующий аккаунт: login() заменяет локальные данные данными аккаунта (reset + pull).
-// Используется и на онбординге, и на странице аккаунта.
 const { login } = useAuth();
+const { getToken } = useAuthToken();
+const db = useDb();
 
 const email = ref("");
 const password = ref("");
 const busy = ref(false);
 const error = ref<string | null>(null);
+const confirmed = ref(false);
+
+const needsConfirm = ref(false);
+onMounted(async () => {
+    if (getToken()) return;
+    const counts = await Promise.all([
+        db.apiary.count(),
+        db.hive.count(),
+        db.colony.count(),
+        db.queen.count(),
+        db.event.count(),
+    ]);
+    needsConfirm.value = counts.some((c) => c > 0);
+});
 
 async function submit(): Promise<void> {
+    if (needsConfirm.value && !confirmed.value) {
+        confirmed.value = true;
+        return;
+    }
     busy.value = true;
     error.value = null;
     try {
@@ -48,6 +66,11 @@ async function submit(): Promise<void> {
                 required />
         </FormField>
         <p
+            v-if="needsConfirm && confirmed"
+            class="form__warning">
+            На этом устройстве есть несохранённые данные — вход заменит их данными аккаунта. Они будут потеряны.
+        </p>
+        <p
             v-if="error"
             class="form__error">
             {{ error }}
@@ -56,7 +79,7 @@ async function submit(): Promise<void> {
             type="submit"
             :loading="busy"
             block>
-            Войти
+            {{ needsConfirm && confirmed ? "Всё равно войти" : "Войти" }}
         </BaseButton>
     </form>
 </template>
@@ -70,6 +93,11 @@ async function submit(): Promise<void> {
 
 .form__error {
     color: var(--color-danger);
+    font-size: var(--text-sm);
+}
+
+.form__warning {
+    color: var(--color-warning);
     font-size: var(--text-sm);
 }
 </style>

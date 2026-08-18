@@ -1,10 +1,15 @@
 export default defineNuxtPlugin(() => {
+    const { getToken } = useAuthToken();
     const { flush, pull } = useSync();
 
-    void (async () => {
-        await flush();
-        await pull();
-    })();
+    if (getToken()) {
+        void (async () => {
+            await flush();
+            await pull();
+        })();
+    }
 
-    window.addEventListener("online", () => void flush());
+    window.addEventListener("online", () => {
+        if (getToken()) void flush();
+    });
 });
