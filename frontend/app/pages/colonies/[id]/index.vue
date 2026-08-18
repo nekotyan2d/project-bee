@@ -121,8 +121,11 @@ const LIFECYCLE_EVENTS = [
         <LoadingSpinner v-if="loading" />
 
         <template v-else-if="data.colony">
-            <div class="health">
+            <div
+                v-if="data.colony.status !== 'active' || (inspStatus && inspStatus.level !== 'ok')"
+                class="health">
                 <span
+                    v-if="data.colony.status !== 'active'"
                     class="status-badge"
                     :data-status="data.colony.status">
                     {{ STATUS_LABEL[data.colony.status] ?? data.colony.status }}
