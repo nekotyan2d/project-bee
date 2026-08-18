@@ -7,6 +7,7 @@ export const EDITABLE_EVENT_TYPES = ["inspection", "super_change", "treatment", 
 export interface EventField {
     label: string;
     value: string;
+    align?: "center" | "start";
 }
 
 export interface EventFieldsContext {
@@ -37,8 +38,8 @@ function str(value: unknown): string | null {
 export function getEventFields(event: LocalEvent, ctx: EventFieldsContext = {}): EventField[] {
     const p = event.payload;
     const fields: EventField[] = [];
-    const push = (label: string, value: string | null) => {
-        if (value !== null) fields.push({ label, value });
+    const push = (label: string, value: string | null, align?: "start") => {
+        if (value !== null) fields.push({ label, value, align });
     };
 
     switch (event.type) {
@@ -56,12 +57,12 @@ export function getEventFields(event: LocalEvent, ctx: EventFieldsContext = {}):
                 "Нрав",
                 typeof p.temperament === "string" ? (TEMPERAMENT_LABEL[p.temperament] ?? p.temperament) : null,
             );
-            push("Заметки", str(p.notes));
+            push("Заметки", str(p.notes), "start");
             break;
         case "super_change": {
             const delta = typeof p.delta === "number" ? p.delta : 0;
             push("Действие", delta > 0 ? `Поставлено ${String(delta)}` : `Снято ${String(-delta)}`);
-            push("Причина", str(p.reason));
+            push("Причина", str(p.reason), "start");
             break;
         }
         case "treatment":
@@ -85,20 +86,20 @@ export function getEventFields(event: LocalEvent, ctx: EventFieldsContext = {}):
             break;
         case "swarm":
             push("Рой", p.captured === true ? "поймали" : p.captured === false ? "ушёл" : null);
-            push("Заметки", str(p.notes));
+            push("Заметки", str(p.notes), "start");
             break;
         case "migration":
             push("Куда", ctx.hiveLabel ?? null);
             break;
         case "split":
         case "merge":
-            push("Заметки", str(p.notes));
+            push("Заметки", str(p.notes), "start");
             break;
         case "death":
-            push("Причина", str(p.cause));
+            push("Причина", str(p.cause), "start");
             break;
         case "note":
-            push("Текст", str(p.text));
+            push("Текст", str(p.text), "start");
             break;
     }
 

@@ -114,7 +114,7 @@ async function deleteEvent(): Promise<void> {
             </div>
 
             <InfoGrid v-if="fields.length > 0">
-                <InfoRow v-for="field in fields" :key="field.label" :label="field.label">
+                <InfoRow v-for="field in fields" :key="field.label" :label="field.label" :align="field.align">
                     {{ field.value }}
                 </InfoRow>
             </InfoGrid>
