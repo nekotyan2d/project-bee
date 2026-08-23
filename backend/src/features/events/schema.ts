@@ -53,10 +53,13 @@ const queenChangePayload = z.object({
     queenId: z.uuid().optional(),
 });
 
-const harvestPayload = z.object({
-    product: z.enum(["honey", "wax", "propolis", "pollen"]).default("honey"),
-    amountKg: z.number().min(0).max(1000),
-});
+const harvestPayload = z
+    .object({
+        product: z.enum(["honey", "wax", "propolis", "pollen"]).default("honey"),
+        amountKg: z.number().min(0).max(1000).optional(),
+        framesCount: z.number().min(0).max(50).optional(),
+    })
+    .refine((v) => v.amountKg !== undefined || v.framesCount !== undefined, "укажите кг или количество рамок");
 
 const swarmPayload = z.object({ captured: z.boolean().optional(), notes: z.string().max(2000).optional() }).default({});
 
@@ -76,7 +79,7 @@ export const eventInput = z.discriminatedUnion("type", [
     z.object({ ...colonyScoped, type: z.literal("treatment"), payload: treatmentPayload }),
     z.object({ ...colonyScoped, type: z.literal("feeding"), payload: feedingPayload }),
     z.object({ ...colonyScoped, type: z.literal("queen_change"), payload: queenChangePayload }),
-    z.object({ ...colonyScoped, type: z.literal("harvest"), payload: harvestPayload }),
+    z.object({ ...apiaryScoped, type: z.literal("harvest"), payload: harvestPayload }),
     z.object({ ...colonyScoped, type: z.literal("swarm"), payload: swarmPayload }),
     z.object({ ...colonyScoped, type: z.literal("migration"), payload: migrationPayload }),
     z.object({ ...colonyScoped, type: z.literal("split"), payload: splitPayload }),

@@ -79,6 +79,7 @@ export function getEventFields(event: LocalEvent, ctx: EventFieldsContext = {}):
         case "harvest":
             push("Продукт", typeof p.product === "string" ? (HARVEST_PRODUCT_LABEL[p.product] ?? p.product) : "мёд");
             push("Количество", typeof p.amountKg === "number" ? `${String(p.amountKg)} кг` : null);
+            push("Рамок", num(p.framesCount));
             break;
         case "queen_change":
             push("Действие", typeof p.action === "string" ? (QUEEN_ACTION_LABEL[p.action] ?? p.action) : null);

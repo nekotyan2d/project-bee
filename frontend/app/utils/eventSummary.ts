@@ -51,10 +51,11 @@ export function getEventSummary(event: LocalEvent, hivesById: Record<string, Loc
         }
         case "harvest": {
             const kg = typeof p.amountKg === "number" ? ` · ${String(p.amountKg)} кг` : "";
+            const frames = typeof p.framesCount === "number" ? ` · ${String(p.framesCount)} рам.` : "";
             const product = typeof p.product === "string" ? p.product : "honey";
             return {
                 icon: "lucide:droplet",
-                title: `Откачка${kg}`,
+                title: `Откачка${kg}${frames}`,
                 detail: product !== "honey" ? (HARVEST_PRODUCT_LABEL[product] ?? product) : undefined,
             };
         }

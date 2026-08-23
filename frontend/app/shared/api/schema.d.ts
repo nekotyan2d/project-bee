@@ -859,8 +859,11 @@ export interface paths {
                             id: string;
                             /** Format: uuid */
                             apiaryId: string;
-                            /** Format: uuid */
-                            colonyId: string;
+                            /**
+                             * Format: uuid
+                             * @default null
+                             */
+                            colonyId?: string | null;
                             /** Format: date-time */
                             occurredAt: string;
                             /** @enum {string} */
@@ -871,7 +874,8 @@ export interface paths {
                                  * @enum {string}
                                  */
                                 product?: "honey" | "wax" | "propolis" | "pollen";
-                                amountKg: number;
+                                amountKg?: number;
+                                framesCount?: number;
                             };
                         } | {
                             /** Format: uuid */

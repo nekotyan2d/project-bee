@@ -100,6 +100,7 @@ const feedConcentration = ref("");
 // harvest
 const harvestProduct = ref("honey");
 const harvestAmountKg = ref("");
+const harvestFramesCount = ref("");
 
 // queen_change
 const queenAction = ref<"introduced" | "replaced" | "superseded" | "lost" | "died">("replaced");
@@ -158,7 +159,9 @@ function buildPayload(): Record<string, unknown> {
             return p;
         }
         case "harvest": {
-            const p: Record<string, unknown> = { amountKg: parseFloat(harvestAmountKg.value) || 0 };
+            const p: Record<string, unknown> = {};
+            if (harvestAmountKg.value) p.amountKg = parseFloat(harvestAmountKg.value);
+            if (harvestFramesCount.value) p.framesCount = parseFloat(harvestFramesCount.value);
             if (harvestProduct.value) p.product = harvestProduct.value;
             return p;
         }
@@ -194,10 +197,10 @@ function buildPayload(): Record<string, unknown> {
 
 function isValid(): boolean {
     if (!type.value) return false;
-    if (!colonyId.value && type.value !== "note") return false;
+    if (!colonyId.value && type.value !== "note" && type.value !== "harvest") return false;
     if (type.value === "treatment" && !treatProduct.value.trim()) return false;
     if (type.value === "feeding" && !feedType.value) return false;
-    if (type.value === "harvest" && !harvestAmountKg.value) return false;
+    if (type.value === "harvest" && !harvestAmountKg.value && !harvestFramesCount.value) return false;
     if (type.value === "migration" && !migrationToHive.value) return false;
     if (type.value === "note" && !noteText.value.trim()) return false;
     return true;
@@ -365,6 +368,7 @@ function prefillFromEvent(ev: LocalEvent): void {
         case "harvest":
             harvestProduct.value = strVal(p.product) || "honey";
             harvestAmountKg.value = numStr(p.amountKg);
+            harvestFramesCount.value = numStr(p.framesCount);
             break;
         case "swarm":
             swarmCaptured.value = p.captured === true ? "true" : p.captured === false ? "false" : "";
@@ -616,20 +620,32 @@ onMounted(async () => {
                         <option value="pollen">Пыльца</option>
                     </BaseSelect>
                 </FormField>
-                <FormField
-                    v-slot="{ id }"
-                    label="Количество (кг)"
-                    required>
-                    <BaseInput
-                        :id="id"
-                        v-model="harvestAmountKg"
-                        type="number"
-                        inputmode="decimal"
-                        min="0"
-                        step="0.1"
-                        placeholder="0"
-                        required />
-                </FormField>
+                <div class="grid-2">
+                    <FormField
+                        v-slot="{ id }"
+                        label="Количество (кг)">
+                        <BaseInput
+                            :id="id"
+                            v-model="harvestAmountKg"
+                            type="number"
+                            inputmode="decimal"
+                            min="0"
+                            step="0.1"
+                            placeholder="0" />
+                    </FormField>
+                    <FormField
+                        v-slot="{ id }"
+                        label="Рамок (шт.)">
+                        <BaseInput
+                            :id="id"
+                            v-model="harvestFramesCount"
+                            type="number"
+                            inputmode="decimal"
+                            min="0"
+                            step="0.5"
+                            placeholder="0" />
+                    </FormField>
+                </div>
             </template>
 
             <template v-else-if="type === 'queen_change'">

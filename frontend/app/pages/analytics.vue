@@ -13,7 +13,8 @@ const PRODUCTS: Record<string, string> = { honey: "Мёд", wax: "Воск", pro
 type HarvestRow = {
     event: LocalEvent;
     colony: LocalColony | undefined;
-    amountKg: number;
+    amountKg: number | null;
+    framesCount: number | null;
     product: string;
     year: number;
 };
@@ -22,6 +23,7 @@ type SeasonData = {
     year: number;
     rows: HarvestRow[];
     totalByProduct: Record<string, number>;
+    framesByProduct: Record<string, number>;
 };
 
 const { data: harvestData, loading: harvestLoading } = useLiveQuery<SeasonData[]>(async () => {
@@ -44,7 +46,8 @@ const { data: harvestData, loading: harvestLoading } = useLiveQuery<SeasonData[]
         .map((e) => ({
             event: e,
             colony: e.colonyId ? colonyMap[e.colonyId] : undefined,
-            amountKg: typeof e.payload.amountKg === "number" ? e.payload.amountKg : 0,
+            amountKg: typeof e.payload.amountKg === "number" ? e.payload.amountKg : null,
+            framesCount: typeof e.payload.framesCount === "number" ? e.payload.framesCount : null,
             product: typeof e.payload.product === "string" ? e.payload.product : "honey",
             year: e.occurredAt.getFullYear(),
         }))
@@ -60,10 +63,12 @@ const { data: harvestData, loading: harvestLoading } = useLiveQuery<SeasonData[]
     const seasons: SeasonData[] = [];
     for (const [year, yearRows] of byYear) {
         const totalByProduct: Record<string, number> = {};
+        const framesByProduct: Record<string, number> = {};
         for (const r of yearRows) {
-            totalByProduct[r.product] = (totalByProduct[r.product] ?? 0) + r.amountKg;
+            if (r.amountKg !== null) totalByProduct[r.product] = (totalByProduct[r.product] ?? 0) + r.amountKg;
+            if (r.framesCount !== null) framesByProduct[r.product] = (framesByProduct[r.product] ?? 0) + r.framesCount;
         }
-        seasons.push({ year, rows: yearRows, totalByProduct });
+        seasons.push({ year, rows: yearRows, totalByProduct, framesByProduct });
     }
 
     return seasons.sort((a, b) => b.year - a.year);
@@ -317,6 +322,17 @@ const { data: survivalData, loading: survivalLoading } = useLiveQuery<{
         </div>
 
         <template v-if="tab === 'harvest'">
+            <div class="section-header">
+                <BaseButton
+                    variant="ghost"
+                    size="sm"
+                    to="/events/new?type=harvest">
+                    <Icon
+                        name="lucide:plus"
+                        size="16" />
+                    Записать общий сбор
+                </BaseButton>
+            </div>
             <LoadingSpinner v-if="harvestLoading" />
             <template v-else-if="harvestData.length > 0">
                 <div
@@ -342,6 +358,13 @@ const { data: survivalData, loading: survivalLoading } = useLiveQuery<{
                             <span class="total-card__label">{{ PRODUCTS[product] ?? product }}</span>
                             <span class="total-card__value">{{ fmt(kg) }}</span>
                         </div>
+                        <div
+                            v-for="(frames, product) in currentSeason.framesByProduct"
+                            :key="`frames-${product}`"
+                            class="total-card">
+                            <span class="total-card__label">{{ PRODUCTS[product] ?? product }}, рамок</span>
+                            <span class="total-card__value">{{ frames }}</span>
+                        </div>
                     </div>
 
                     <section class="event-list">
@@ -350,8 +373,17 @@ const { data: survivalData, loading: survivalLoading } = useLiveQuery<{
                             :key="row.event.id"
                             class="event-row">
                             <div class="event-row__main">
-                                <span class="event-row__colony">{{ row.colony?.label ?? "Без семьи" }}</span>
-                                <span class="event-row__value">{{ fmt(row.amountKg) }}</span>
+                                <span class="event-row__colony">{{ row.colony?.label ?? "Партия (вся пасека)" }}</span>
+                                <span class="event-row__value">
+                                    {{
+                                        [
+                                            row.amountKg !== null ? fmt(row.amountKg) : null,
+                                            row.framesCount !== null ? `${row.framesCount} рам.` : null,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(" · ")
+                                    }}
+                                </span>
                             </div>
                             <div class="event-row__meta">
                                 <span>{{ PRODUCTS[row.product] ?? row.product }}</span>
@@ -365,7 +397,7 @@ const { data: survivalData, loading: survivalLoading } = useLiveQuery<{
                 v-else
                 icon="lucide:flask-conical"
                 text="Нет откачек"
-                hint="Добавьте событие «Откачка» на странице семьи" />
+                hint="Рамки — на странице семьи, итоговый вес партии — кнопкой выше" />
         </template>
 
         <template v-else-if="tab === 'treatment'">
@@ -567,6 +599,11 @@ const { data: survivalData, loading: survivalLoading } = useLiveQuery<{
         justify-content: center;
         line-height: 1;
     }
+}
+
+.section-header {
+    display: flex;
+    justify-content: flex-start;
 }
 
 .season-tabs {
