@@ -101,6 +101,9 @@ const feedConcentration = ref("");
 const harvestProduct = ref("honey");
 const harvestAmountKg = ref("");
 const harvestFramesCount = ref("");
+watch(harvestProduct, (v) => {
+    if (v !== "honey") harvestFramesCount.value = "";
+});
 
 // queen_change
 const queenAction = ref<"introduced" | "replaced" | "superseded" | "lost" | "died">("replaced");
@@ -620,7 +623,7 @@ onMounted(async () => {
                         <option value="pollen">Пыльца</option>
                     </BaseSelect>
                 </FormField>
-                <div class="grid-2">
+                <div :class="harvestProduct === 'honey' ? 'grid-2' : undefined">
                     <FormField
                         v-slot="{ id }"
                         label="Количество (кг)">
@@ -634,6 +637,7 @@ onMounted(async () => {
                             placeholder="0" />
                     </FormField>
                     <FormField
+                        v-if="harvestProduct === 'honey'"
                         v-slot="{ id }"
                         label="Рамок (шт.)">
                         <BaseInput

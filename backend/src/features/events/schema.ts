@@ -59,7 +59,8 @@ const harvestPayload = z
         amountKg: z.number().min(0).max(1000).optional(),
         framesCount: z.number().min(0).max(50).optional(),
     })
-    .refine((v) => v.amountKg !== undefined || v.framesCount !== undefined, "укажите кг или количество рамок");
+    .refine((v) => v.amountKg !== undefined || v.framesCount !== undefined, "укажите кг или количество рамок")
+    .refine((v) => v.framesCount === undefined || v.product === "honey", "рамки можно указать только для мёда");
 
 const swarmPayload = z.object({ captured: z.boolean().optional(), notes: z.string().max(2000).optional() }).default({});
 
