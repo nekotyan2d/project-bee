@@ -373,7 +373,7 @@ const { data: survivalData, loading: survivalLoading } = useLiveQuery<{
                             :key="row.event.id"
                             class="event-row">
                             <div class="event-row__main">
-                                <span class="event-row__colony">{{ row.colony?.label ?? "Партия (вся пасека)" }}</span>
+                                <span class="event-row__colony">{{ row.colony?.label ?? "Вся пасека" }}</span>
                                 <span class="event-row__value">
                                     {{
                                         [
