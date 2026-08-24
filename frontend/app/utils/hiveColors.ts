@@ -14,7 +14,7 @@ export const HIVE_COLORS = [
 
 export type HiveColor = (typeof HIVE_COLORS)[number]["key"];
 
-export function hiveColorHex(key: string | undefined): string | undefined {
+export function hiveColorHex(key: string | null | undefined): string | undefined {
     return key ? HIVE_COLORS.find((c) => c.key === key)?.hex : undefined;
 }
 

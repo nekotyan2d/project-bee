@@ -17,63 +17,63 @@ export type EventType =
 export interface LocalApiary {
     id: string;
     name: string;
-    latitude?: number;
-    longitude?: number;
-    notes?: string;
+    latitude?: number | null;
+    longitude?: number | null;
+    notes?: string | null;
     updatedAt: Date;
-    deletedAt?: Date;
+    deletedAt?: Date | null;
 }
 
 export interface LocalHive {
     id: string;
     apiaryId: string;
     label: string;
-    type?: string;
-    frameCount?: number;
+    type?: string | null;
+    frameCount?: number | null;
     status: string;
-    x?: number;
-    y?: number;
-    color?: string;
+    x?: number | null;
+    y?: number | null;
+    color?: string | null;
     updatedAt: Date;
-    deletedAt?: Date;
+    deletedAt?: Date | null;
 }
 
 export interface LocalColony {
     id: string;
     apiaryId: string;
-    currentHiveId?: string;
+    currentHiveId?: string | null;
     label: string;
-    establishedAt?: string;
-    origin?: string;
+    establishedAt?: string | null;
+    origin?: string | null;
     status: string;
-    currentQueenId?: string;
+    currentQueenId?: string | null;
     superCount: number;
-    lastInspectedAt?: Date;
+    lastInspectedAt?: Date | null;
     updatedAt: Date;
 }
 
 export interface LocalQueen {
     id: string;
-    colonyId?: string;
-    introducedAt?: string;
-    year?: number;
-    breed?: string;
-    origin?: string;
-    motherQueenId?: string;
+    colonyId?: string | null;
+    introducedAt?: string | null;
+    year?: number | null;
+    breed?: string | null;
+    origin?: string | null;
+    motherQueenId?: string | null;
     status: string;
     updatedAt: Date;
-    deletedAt?: Date;
+    deletedAt?: Date | null;
 }
 
 export interface LocalEvent {
     id: string;
     apiaryId: string;
-    colonyId?: string;
+    colonyId?: string | null;
     type: EventType;
     occurredAt: Date;
     payload: Record<string, unknown>;
     updatedAt: Date;
-    deletedAt?: Date;
+    deletedAt?: Date | null;
 }
 
 export interface SyncMeta {

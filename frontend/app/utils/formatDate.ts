@@ -13,7 +13,7 @@ export function formatDate(value: Date | string | null | undefined): string {
     return dateFormatter.format(new Date(value));
 }
 
-export function formatDateShort(value: Date | string | null | undefined): string {
+function formatDateShort(value: Date | string | null | undefined): string {
     if (!value) return "—";
     return dateShortFormatter.format(new Date(value));
 }
@@ -26,19 +26,16 @@ export function toDatetimeLocal(date: Date): string {
 export function daysAgo(value: Date | string | null | undefined): string | null {
     if (!value) return null;
     const days = Math.floor((Date.now() - new Date(value).getTime()) / 86_400_000);
-    if (days === 0) return "сегодня";
+    if (days <= 0) return "сегодня";
     if (days === 1) return "вчера";
     return `${String(days)} дн. назад`;
 }
 
-// Относительное время для свежих событий (≤7 дн), иначе короткая дата.
+// Свежие события (≤7 дн) — относительно, дальше короткая дата.
 export function relativeDate(value: Date | string | null | undefined): string {
     if (!value) return "—";
-    const days = Math.floor((Date.now() - new Date(value).getTime()) / 86_400_000);
-    if (days <= 0) return "сегодня";
-    if (days === 1) return "вчера";
-    if (days <= 7) return `${String(days)} дн. назад`;
-    return formatDateShort(value);
+    if (Date.now() - new Date(value).getTime() > 7 * 86_400_000) return formatDateShort(value);
+    return daysAgo(value) ?? "—";
 }
 
 // «Июнь 2026» — для группировки истории по месяцам.

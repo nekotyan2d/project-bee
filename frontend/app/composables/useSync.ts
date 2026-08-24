@@ -15,6 +15,10 @@ function classify(status: number): SendResult {
     return status === 401 || status === 403 || status >= 500 ? "retry" : "drop";
 }
 
+function toDate(value: string | null | undefined): Date | null {
+    return value ? new Date(value) : null;
+}
+
 function maxCursor(rows: Dated[], prev?: Date): Date | undefined {
     let m = prev;
     for (const r of rows) {
@@ -51,9 +55,9 @@ export function useSync() {
                     params: { path: { id } },
                     body: {
                         name: r.name,
-                        latitude: r.latitude ?? null,
-                        longitude: r.longitude ?? null,
-                        notes: r.notes ?? null,
+                        latitude: r.latitude,
+                        longitude: r.longitude,
+                        notes: r.notes,
                     },
                 });
                 return res.response.ok ? "ok" : classify(res.response.status);
@@ -66,12 +70,12 @@ export function useSync() {
                     body: {
                         apiaryId: r.apiaryId,
                         label: r.label,
-                        type: r.type ?? null,
-                        frameCount: r.frameCount ?? null,
+                        type: r.type,
+                        frameCount: r.frameCount,
                         status: r.status,
-                        x: r.x ?? null,
-                        y: r.y ?? null,
-                        color: r.color ?? null,
+                        x: r.x,
+                        y: r.y,
+                        color: r.color,
                     },
                 });
                 return res.response.ok ? "ok" : classify(res.response.status);
@@ -84,8 +88,8 @@ export function useSync() {
                     body: {
                         apiaryId: r.apiaryId,
                         label: r.label,
-                        establishedAt: r.establishedAt ?? null,
-                        origin: r.origin ?? null,
+                        establishedAt: r.establishedAt,
+                        origin: r.origin,
                         status: r.status,
                     },
                 });
@@ -97,12 +101,12 @@ export function useSync() {
                 const res = await $api.PUT("/queens/{id}", {
                     params: { path: { id } },
                     body: {
-                        colonyId: r.colonyId ?? null,
-                        motherQueenId: r.motherQueenId ?? null,
-                        year: r.year ?? null,
-                        breed: r.breed ?? null,
-                        origin: r.origin ?? null,
-                        introducedAt: r.introducedAt ?? null,
+                        colonyId: r.colonyId,
+                        motherQueenId: r.motherQueenId,
+                        year: r.year,
+                        breed: r.breed,
+                        origin: r.origin,
+                        introducedAt: r.introducedAt,
                         status: r.status,
                     },
                 });
@@ -117,7 +121,7 @@ export function useSync() {
                         {
                             id: r.id,
                             apiaryId: r.apiaryId,
-                            colonyId: r.colonyId ?? null,
+                            colonyId: r.colonyId,
                             occurredAt: r.occurredAt.toISOString(),
                             type: r.type,
                             payload: r.payload,
@@ -220,15 +224,7 @@ export function useSync() {
         const { data } = await $api.GET("/apiaries", { params: { query } });
         if (!data) return;
 
-        const rows: LocalApiary[] = data.map((d) => ({
-            id: d.id,
-            name: d.name,
-            latitude: d.latitude ?? undefined,
-            longitude: d.longitude ?? undefined,
-            notes: d.notes ?? undefined,
-            updatedAt: new Date(d.updatedAt),
-            deletedAt: d.deletedAt ? new Date(d.deletedAt) : undefined,
-        }));
+        const rows: LocalApiary[] = data.map((d) => ({ ...d, deletedAt: toDate(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
         await db.apiary.bulkPut(rows);
 
         for (const d of data) {
@@ -246,19 +242,7 @@ export function useSync() {
         const { data } = await $api.GET("/hives", { params: { query } });
         if (!data) return;
 
-        const rows: LocalHive[] = data.map((d) => ({
-            id: d.id,
-            apiaryId: d.apiaryId,
-            label: d.label,
-            type: d.type ?? undefined,
-            frameCount: d.frameCount ?? undefined,
-            status: d.status,
-            x: d.x ?? undefined,
-            y: d.y ?? undefined,
-            color: d.color ?? undefined,
-            updatedAt: new Date(d.updatedAt),
-            deletedAt: d.deletedAt ? new Date(d.deletedAt) : undefined,
-        }));
+        const rows: LocalHive[] = data.map((d) => ({ ...d, deletedAt: toDate(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
         await db.hive.bulkPut(rows);
         await commit("hive", data, prev);
     }
@@ -268,19 +252,7 @@ export function useSync() {
         const { data } = await $api.GET("/colonies", { params: { query } });
         if (!data) return;
 
-        const rows: LocalColony[] = data.map((d) => ({
-            id: d.id,
-            apiaryId: d.apiaryId,
-            currentHiveId: d.currentHiveId ?? undefined,
-            label: d.label,
-            establishedAt: d.establishedAt ?? undefined,
-            origin: d.origin ?? undefined,
-            status: d.status,
-            currentQueenId: d.currentQueenId ?? undefined,
-            superCount: d.superCount,
-            lastInspectedAt: d.lastInspectedAt ? new Date(d.lastInspectedAt) : undefined,
-            updatedAt: new Date(d.updatedAt),
-        }));
+        const rows: LocalColony[] = data.map((d) => ({ ...d, lastInspectedAt: toDate(d.lastInspectedAt), updatedAt: new Date(d.updatedAt) }));
         await db.colony.bulkPut(rows);
         await commit("colony", data, prev);
     }
@@ -290,18 +262,7 @@ export function useSync() {
         const { data } = await $api.GET("/queens", { params: { query } });
         if (!data) return;
 
-        const rows: LocalQueen[] = data.map((d) => ({
-            id: d.id,
-            colonyId: d.colonyId ?? undefined,
-            introducedAt: d.introducedAt ?? undefined,
-            year: d.year ?? undefined,
-            breed: d.breed ?? undefined,
-            origin: d.origin ?? undefined,
-            motherQueenId: d.motherQueenId ?? undefined,
-            status: d.status,
-            updatedAt: new Date(d.updatedAt),
-            deletedAt: d.deletedAt ? new Date(d.deletedAt) : undefined,
-        }));
+        const rows: LocalQueen[] = data.map((d) => ({ ...d, deletedAt: toDate(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
         await db.queen.bulkPut(rows);
         await commit("queen", data, prev);
     }
@@ -311,16 +272,7 @@ export function useSync() {
         const { data } = await $api.GET("/events", { params: { query } });
         if (!data) return;
 
-        const rows: LocalEvent[] = data.map((d) => ({
-            id: d.id,
-            apiaryId: d.apiaryId,
-            colonyId: d.colonyId ?? undefined,
-            type: d.type,
-            occurredAt: new Date(d.occurredAt),
-            payload: d.payload,
-            updatedAt: new Date(d.updatedAt),
-            deletedAt: d.deletedAt ? new Date(d.deletedAt) : undefined,
-        }));
+        const rows: LocalEvent[] = data.map((d) => ({ ...d, occurredAt: new Date(d.occurredAt), deletedAt: toDate(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
         await db.event.bulkPut(rows);
         await commit("event", data, prev);
     }

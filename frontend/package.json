@@ -11,8 +11,9 @@
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "gen:api": "openapi-typescript http://localhost:8000/docs/json -o app/shared/api/schema.d.ts",
     "typecheck": "nuxt typecheck",
-    "gen:api": "openapi-typescript http://localhost:8000/docs/json -o app/shared/api/schema.d.ts"
+    "test": "bun test test/"
   },
   "dependencies": {
     "@vite-pwa/nuxt": "^1.1.1",

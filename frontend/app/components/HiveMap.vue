@@ -205,12 +205,12 @@ function onClick(node: HiveNode): void {
 function getRelativeLuminance(hex: string): number {
     const { r, g, b } = hexToRgb(hex);
 
-    const [rs, gs, bs] = [r, g, b].map((c) => {
+    const lin = (c: number): number => {
         const s = c / 255;
         return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-    });
+    };
 
-    return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 }
 
 function getContrastRatio(hex1: string, hex2: string): number {

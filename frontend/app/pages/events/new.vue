@@ -43,20 +43,17 @@ const submitting = ref(false);
 const error = ref<string | null>(null);
 const loading = ref(isEdit);
 
-// inspection
-const framesTotal = ref("");
-const framesBrood = ref("");
-const framesStores = ref("");
-const queenSeen = ref("");
-const queenCells = ref("");
-const storesLevel = ref("");
-const temperament = ref("");
-const inspectionNotes = ref("");
+const f = reactive(emptyForm(type.value));
 
-// super_change
+// super_change: delta выводится из действия и количества, а не вводится
 const superAction = ref("add");
 const superCount = ref("1");
-const superReason = ref("");
+watch(
+    () => f.product,
+    (v) => {
+        if (type.value === "harvest" && v !== "honey") f.framesCount = "";
+    },
+);
 
 // chip option sets
 const SUPER_ACTION_OPTS = [
@@ -86,126 +83,31 @@ const SWARM_OPTS = [
     { value: "false", label: "Ушёл" },
 ];
 
-// treatment
-const treatProduct = ref("");
-const treatDose = ref("");
-const treatMethod = ref("");
-const treatWithdrawalDays = ref("");
-
-// feeding
-const feedType = ref("");
-const feedAmountKg = ref("");
-const feedConcentration = ref("");
-
-// harvest
-const harvestProduct = ref("honey");
-const harvestAmountKg = ref("");
-const harvestFramesCount = ref("");
-watch(harvestProduct, (v) => {
-    if (v !== "honey") harvestFramesCount.value = "";
-});
-
-// queen_change
+// queen_change: поля новой матки, в payload не попадают
 const queenAction = ref<"introduced" | "replaced" | "superseded" | "lost" | "died">("replaced");
 const qcYear = ref("");
 const qcBreed = ref("");
 const queenNeedsNew = computed(() => QC_NEEDS_QUEEN.includes(queenAction.value));
 
-// swarm
-const swarmCaptured = ref("");
-const swarmNotes = ref("");
-
-// migration
-const migrationToHive = ref("");
 const migrationHives = ref<LocalHive[]>([]);
 
-// split / merge / death
-const splitNotes = ref("");
-const mergeNotes = ref("");
-const deathCause = ref("");
-
-// note
-const noteText = ref("");
-
-function buildPayload(): Record<string, unknown> {
-    switch (type.value) {
-        case "inspection": {
-            const p: Record<string, unknown> = {};
-            if (framesTotal.value) p.framesTotal = parseInt(framesTotal.value, 10);
-            if (framesBrood.value) p.framesBrood = parseInt(framesBrood.value, 10);
-            if (framesStores.value) p.framesStores = parseInt(framesStores.value, 10);
-            if (queenSeen.value !== "") p.queenSeen = queenSeen.value === "true";
-            if (queenCells.value) p.queenCells = parseInt(queenCells.value, 10);
-            if (storesLevel.value) p.storesLevel = storesLevel.value;
-            if (temperament.value) p.temperament = temperament.value;
-            if (inspectionNotes.value.trim()) p.notes = inspectionNotes.value.trim();
-            return p;
-        }
-        case "super_change": {
-            const count = parseInt(superCount.value, 10) || 1;
-            const delta = superAction.value === "add" ? count : -count;
-            const p: Record<string, unknown> = { delta };
-            if (superReason.value.trim()) p.reason = superReason.value.trim();
-            return p;
-        }
-        case "treatment": {
-            const p: Record<string, unknown> = { product: treatProduct.value.trim() };
-            if (treatDose.value.trim()) p.dose = treatDose.value.trim();
-            if (treatMethod.value.trim()) p.method = treatMethod.value.trim();
-            if (treatWithdrawalDays.value) p.withdrawalDays = parseInt(treatWithdrawalDays.value, 10);
-            return p;
-        }
-        case "feeding": {
-            const p: Record<string, unknown> = { feedType: feedType.value };
-            if (feedAmountKg.value) p.amountKg = parseFloat(feedAmountKg.value);
-            if (feedConcentration.value.trim()) p.concentration = feedConcentration.value.trim();
-            return p;
-        }
-        case "harvest": {
-            const p: Record<string, unknown> = {};
-            if (harvestAmountKg.value) p.amountKg = parseFloat(harvestAmountKg.value);
-            if (harvestFramesCount.value) p.framesCount = parseFloat(harvestFramesCount.value);
-            if (harvestProduct.value) p.product = harvestProduct.value;
-            return p;
-        }
-        case "swarm": {
-            const p: Record<string, unknown> = {};
-            if (swarmCaptured.value !== "") p.captured = swarmCaptured.value === "true";
-            if (swarmNotes.value.trim()) p.notes = swarmNotes.value.trim();
-            return p;
-        }
-        case "migration":
-            return { toHiveId: migrationToHive.value };
-        case "split": {
-            const p: Record<string, unknown> = {};
-            if (splitNotes.value.trim()) p.notes = splitNotes.value.trim();
-            return p;
-        }
-        case "merge": {
-            const p: Record<string, unknown> = {};
-            if (mergeNotes.value.trim()) p.notes = mergeNotes.value.trim();
-            return p;
-        }
-        case "death": {
-            const p: Record<string, unknown> = {};
-            if (deathCause.value.trim()) p.cause = deathCause.value.trim();
-            return p;
-        }
-        case "note":
-            return { text: noteText.value.trim() };
-        default:
-            return {};
+function payload(): Record<string, unknown> {
+    const p = buildPayload(type.value, f);
+    if (type.value === "super_change") {
+        const count = parseInt(superCount.value, 10) || 1;
+        p.delta = superAction.value === "add" ? count : -count;
     }
+    return p;
 }
 
 function isValid(): boolean {
     if (!type.value) return false;
     if (!colonyId.value && type.value !== "note" && type.value !== "harvest") return false;
-    if (type.value === "treatment" && !treatProduct.value.trim()) return false;
-    if (type.value === "feeding" && !feedType.value) return false;
-    if (type.value === "harvest" && !harvestAmountKg.value && !harvestFramesCount.value) return false;
-    if (type.value === "migration" && !migrationToHive.value) return false;
-    if (type.value === "note" && !noteText.value.trim()) return false;
+    if (type.value === "treatment" && !f.product.trim()) return false;
+    if (type.value === "feeding" && !f.feedType) return false;
+    if (type.value === "harvest" && !f.amountKg && !f.framesCount) return false;
+    if (type.value === "migration" && !f.toHiveId) return false;
+    if (type.value === "note" && !f.text.trim()) return false;
     return true;
 }
 
@@ -292,7 +194,7 @@ async function submit(): Promise<void> {
         colonyId: cid,
         type: type.value as EventType,
         occurredAt: occurredAtDate,
-        payload: buildPayload(),
+        payload: payload(),
         updatedAt: now,
     };
 
@@ -332,54 +234,14 @@ async function submit(): Promise<void> {
 
 function prefillFromEvent(ev: LocalEvent): void {
     type.value = ev.type;
-    colonyId.value = ev.colonyId;
+    colonyId.value = ev.colonyId ?? undefined;
     occurredAt.value = toDatetimeLocal(ev.occurredAt);
+    Object.assign(f, formValues(ev.type, ev.payload));
 
-    const p = ev.payload;
-    const numStr = (v: unknown): string => (typeof v === "number" ? String(v) : "");
-    const strVal = (v: unknown): string => (typeof v === "string" ? v : "");
-
-    switch (ev.type) {
-        case "inspection":
-            framesTotal.value = numStr(p.framesTotal);
-            framesBrood.value = numStr(p.framesBrood);
-            framesStores.value = numStr(p.framesStores);
-            queenCells.value = numStr(p.queenCells);
-            queenSeen.value = p.queenSeen === true ? "true" : p.queenSeen === false ? "false" : "";
-            storesLevel.value = strVal(p.storesLevel);
-            temperament.value = strVal(p.temperament);
-            inspectionNotes.value = strVal(p.notes);
-            break;
-        case "super_change": {
-            const d = typeof p.delta === "number" ? p.delta : 0;
-            superAction.value = d < 0 ? "remove" : "add";
-            superCount.value = String(Math.abs(d) || 1);
-            superReason.value = strVal(p.reason);
-            break;
-        }
-        case "treatment":
-            treatProduct.value = strVal(p.product);
-            treatDose.value = strVal(p.dose);
-            treatMethod.value = strVal(p.method);
-            treatWithdrawalDays.value = numStr(p.withdrawalDays);
-            break;
-        case "feeding":
-            feedType.value = strVal(p.feedType);
-            feedAmountKg.value = numStr(p.amountKg);
-            feedConcentration.value = strVal(p.concentration);
-            break;
-        case "harvest":
-            harvestProduct.value = strVal(p.product) || "honey";
-            harvestAmountKg.value = numStr(p.amountKg);
-            harvestFramesCount.value = numStr(p.framesCount);
-            break;
-        case "swarm":
-            swarmCaptured.value = p.captured === true ? "true" : p.captured === false ? "false" : "";
-            swarmNotes.value = strVal(p.notes);
-            break;
-        case "note":
-            noteText.value = strVal(p.text);
-            break;
+    if (ev.type === "super_change") {
+        const d = typeof ev.payload.delta === "number" ? ev.payload.delta : 0;
+        superAction.value = d < 0 ? "remove" : "add";
+        superCount.value = String(Math.abs(d) || 1);
     }
 }
 
@@ -434,7 +296,7 @@ onMounted(async () => {
                         label="Рамок в гнезде">
                         <BaseInput
                             :id="id"
-                            v-model="framesTotal"
+                            v-model="f.framesTotal"
                             type="number"
                             inputmode="numeric"
                             min="0"
@@ -445,7 +307,7 @@ onMounted(async () => {
                         label="Рамок расплода">
                         <BaseInput
                             :id="id"
-                            v-model="framesBrood"
+                            v-model="f.framesBrood"
                             type="number"
                             inputmode="numeric"
                             min="0"
@@ -456,7 +318,7 @@ onMounted(async () => {
                         label="Рамок корма">
                         <BaseInput
                             :id="id"
-                            v-model="framesStores"
+                            v-model="f.framesStores"
                             type="number"
                             inputmode="numeric"
                             min="0"
@@ -467,7 +329,7 @@ onMounted(async () => {
                         label="Маточники">
                         <BaseInput
                             :id="id"
-                            v-model="queenCells"
+                            v-model="f.queenCells"
                             type="number"
                             inputmode="numeric"
                             min="0"
@@ -476,17 +338,17 @@ onMounted(async () => {
                 </div>
                 <FormField label="Матка">
                     <ChoiceChips
-                        v-model="queenSeen"
+                        v-model="f.queenSeen"
                         :options="QUEEN_SEEN_OPTS" />
                 </FormField>
                 <FormField label="Запасы">
                     <ChoiceChips
-                        v-model="storesLevel"
+                        v-model="f.storesLevel"
                         :options="STORES_OPTS" />
                 </FormField>
                 <FormField label="Нрав">
                     <ChoiceChips
-                        v-model="temperament"
+                        v-model="f.temperament"
                         :options="TEMPERAMENT_OPTS" />
                 </FormField>
                 <FormField
@@ -494,7 +356,7 @@ onMounted(async () => {
                     label="Заметки">
                     <BaseTextarea
                         :id="id"
-                        v-model="inspectionNotes"
+                        v-model="f.notes"
                         placeholder="Наблюдения…" />
                 </FormField>
             </template>
@@ -521,7 +383,7 @@ onMounted(async () => {
                     label="Причина">
                     <BaseInput
                         :id="id"
-                        v-model="superReason"
+                        v-model="f.reason"
                         placeholder="Взяток начался…"
                         autocomplete="off" />
                 </FormField>
@@ -534,7 +396,7 @@ onMounted(async () => {
                     required>
                     <BaseInput
                         :id="id"
-                        v-model="treatProduct"
+                        v-model="f.product"
                         placeholder="Бипин, Апитрит…"
                         autocomplete="off"
                         required />
@@ -544,7 +406,7 @@ onMounted(async () => {
                     label="Дозировка">
                     <BaseInput
                         :id="id"
-                        v-model="treatDose"
+                        v-model="f.dose"
                         placeholder="1 мл на улочку"
                         autocomplete="off" />
                 </FormField>
@@ -553,7 +415,7 @@ onMounted(async () => {
                     label="Способ">
                     <BaseInput
                         :id="id"
-                        v-model="treatMethod"
+                        v-model="f.method"
                         placeholder="Обработка парами…"
                         autocomplete="off" />
                 </FormField>
@@ -562,7 +424,7 @@ onMounted(async () => {
                     label="Срок ожидания (дней)">
                     <BaseInput
                         :id="id"
-                        v-model="treatWithdrawalDays"
+                        v-model="f.withdrawalDays"
                         type="number"
                         inputmode="numeric"
                         min="0"
@@ -577,7 +439,7 @@ onMounted(async () => {
                     required>
                     <BaseSelect
                         :id="id"
-                        v-model="feedType"
+                        v-model="f.feedType"
                         required>
                         <option value="">Выберите тип</option>
                         <option value="syrup">Сироп</option>
@@ -592,7 +454,7 @@ onMounted(async () => {
                     label="Количество (кг)">
                     <BaseInput
                         :id="id"
-                        v-model="feedAmountKg"
+                        v-model="f.amountKg"
                         type="number"
                         inputmode="decimal"
                         min="0"
@@ -604,7 +466,7 @@ onMounted(async () => {
                     label="Концентрация">
                     <BaseInput
                         :id="id"
-                        v-model="feedConcentration"
+                        v-model="f.concentration"
                         placeholder="1:1, 50%…"
                         autocomplete="off" />
                 </FormField>
@@ -616,20 +478,20 @@ onMounted(async () => {
                     label="Продукт">
                     <BaseSelect
                         :id="id"
-                        v-model="harvestProduct">
+                        v-model="f.product">
                         <option value="honey">Мёд</option>
                         <option value="wax">Воск</option>
                         <option value="propolis">Прополис</option>
                         <option value="pollen">Пыльца</option>
                     </BaseSelect>
                 </FormField>
-                <div :class="harvestProduct === 'honey' ? 'grid-2' : undefined">
+                <div :class="f.product === 'honey' ? 'grid-2' : undefined">
                     <FormField
                         v-slot="{ id }"
                         label="Количество (кг)">
                         <BaseInput
                             :id="id"
-                            v-model="harvestAmountKg"
+                            v-model="f.amountKg"
                             type="number"
                             inputmode="decimal"
                             min="0"
@@ -637,12 +499,12 @@ onMounted(async () => {
                             placeholder="0" />
                     </FormField>
                     <FormField
-                        v-if="harvestProduct === 'honey'"
+                        v-if="f.product === 'honey'"
                         v-slot="{ id }"
                         label="Рамок (шт.)">
                         <BaseInput
                             :id="id"
-                            v-model="harvestFramesCount"
+                            v-model="f.framesCount"
                             type="number"
                             inputmode="decimal"
                             min="0"
@@ -694,7 +556,7 @@ onMounted(async () => {
             <template v-else-if="type === 'swarm'">
                 <FormField label="Рой пойман?">
                     <ChoiceChips
-                        v-model="swarmCaptured"
+                        v-model="f.captured"
                         :options="SWARM_OPTS" />
                 </FormField>
                 <FormField
@@ -702,7 +564,7 @@ onMounted(async () => {
                     label="Заметки">
                     <BaseTextarea
                         :id="id"
-                        v-model="swarmNotes"
+                        v-model="f.notes"
                         placeholder="Наблюдения…" />
                 </FormField>
             </template>
@@ -714,7 +576,7 @@ onMounted(async () => {
                     required>
                     <BaseSelect
                         :id="id"
-                        v-model="migrationToHive"
+                        v-model="f.toHiveId"
                         required>
                         <option value="">Выберите улей</option>
                         <option
@@ -738,7 +600,7 @@ onMounted(async () => {
                     label="Заметки">
                     <BaseTextarea
                         :id="id"
-                        v-model="splitNotes"
+                        v-model="f.notes"
                         placeholder="Что отделили, куда…" />
                 </FormField>
                 <p class="form__hint">Семья будет помечена как «разделена».</p>
@@ -750,7 +612,7 @@ onMounted(async () => {
                     label="Заметки">
                     <BaseTextarea
                         :id="id"
-                        v-model="mergeNotes"
+                        v-model="f.notes"
                         placeholder="С кем объединили…" />
                 </FormField>
                 <p class="form__hint">Семья будет помечена как «объединена».</p>
@@ -762,7 +624,7 @@ onMounted(async () => {
                     label="Причина">
                     <BaseTextarea
                         :id="id"
-                        v-model="deathCause"
+                        v-model="f.cause"
                         placeholder="Слёт, болезнь, бескормица…" />
                 </FormField>
                 <p class="form__hint">Семья будет помечена как «погибла».</p>
@@ -775,7 +637,7 @@ onMounted(async () => {
                     required>
                     <BaseTextarea
                         :id="id"
-                        v-model="noteText"
+                        v-model="f.text"
                         placeholder="Текст заметки…"
                         :rows="6"
                         required />

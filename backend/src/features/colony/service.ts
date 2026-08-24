@@ -1,29 +1,13 @@
+import { isoDates } from "@/shared/dto";
 import { NotFoundError } from "@/shared/errors";
 
 import * as repository from "./repository";
-import type { ColonyRow } from "./repository";
 import type { ColonyDto, ColonyInput } from "./schema";
 
-function toDto(row: ColonyRow): ColonyDto {
-    return {
-        id: row.id,
-        apiaryId: row.apiaryId,
-        currentHiveId: row.currentHiveId,
-        label: row.label,
-        establishedAt: row.establishedAt,
-        origin: row.origin,
-        status: row.status,
-        currentQueenId: row.currentQueenId,
-        superCount: row.superCount,
-        lastInspectedAt: row.lastInspectedAt?.toISOString() ?? null,
-        createdAt: row.createdAt.toISOString(),
-        updatedAt: row.updatedAt.toISOString(),
-    };
-}
 
 export async function listColonies(ownerId: string, apiaryId?: string, since?: string): Promise<ColonyDto[]> {
     const rows = await repository.findAll(ownerId, apiaryId, since ? new Date(since) : undefined);
-    return rows.map(toDto);
+    return rows.map(isoDates);
 }
 
 export async function getColony(ownerId: string, id: string): Promise<ColonyDto> {
@@ -31,7 +15,7 @@ export async function getColony(ownerId: string, id: string): Promise<ColonyDto>
     if (!row) {
         throw new NotFoundError(`Colony ${id} not found`);
     }
-    return toDto(row);
+    return isoDates(row);
 }
 
 export async function upsertColony(ownerId: string, id: string, input: ColonyInput): Promise<ColonyDto> {
@@ -41,5 +25,5 @@ export async function upsertColony(ownerId: string, id: string, input: ColonyInp
     }
 
     const row = await repository.upsert({ id, ...input });
-    return toDto(row);
+    return isoDates(row);
 }

@@ -8,7 +8,8 @@ import withNuxt from "./.nuxt/eslint.config.mjs";
 export default withNuxt(
     {
         name: "project/ignores",
-        ignores: ["app/shared/api/schema.d.ts", "pwa-assets.config.ts"],
+        // test/ вне Nuxt-проекта: гоняется через bun test, типизированный линт его не видит
+        ignores: ["app/shared/api/schema.d.ts", "pwa-assets.config.ts", "test/**"],
     },
     ...tseslint.configs.strictTypeChecked,
     {
