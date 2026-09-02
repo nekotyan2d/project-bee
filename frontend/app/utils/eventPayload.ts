@@ -7,7 +7,7 @@ const FIELD_NAMES = [
     "framesCount", "captured", "toHiveId", "cause", "text",
 ] as const;
 
-export type EventForm = Record<(typeof FIELD_NAMES)[number], string>;
+export type EventForm = Record<(typeof FIELD_NAMES)[number], string | number>;
 
 // Поля payload по типу события — зеркало дискриминированного union на бэке
 // (backend/src/features/events/schema.ts). super_change.delta и queen_change
@@ -40,7 +40,7 @@ export function emptyForm(type: string | undefined): EventForm {
 export function buildPayload(type: string | undefined, form: EventForm): Record<string, unknown> {
     const payload: Record<string, unknown> = {};
     for (const [key, kind] of Object.entries(PAYLOAD_FIELDS[type ?? ""] ?? {})) {
-        const raw = form[key as keyof EventForm].trim();
+        const raw = String(form[key as keyof EventForm]).trim();
         if (!raw) continue;
         payload[key] =
             kind === "int" ? parseInt(raw, 10)

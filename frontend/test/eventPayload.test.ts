@@ -9,6 +9,13 @@ test("buildPayload: разбор по типу поля, пустые не по�
     expect(buildPayload("inspection", form)).toEqual({ framesTotal: 12, queenSeen: false, notes: "тихо" });
 });
 
+test("buildPayload: v-model на input[type=number] кладёт в форму число, не строку", () => {
+    const form = emptyForm("harvest");
+    Object.assign(form, { amountKg: 3.5, framesCount: 4 });
+
+    expect(buildPayload("harvest", form)).toEqual({ product: "honey", amountKg: 3.5, framesCount: 4 });
+});
+
 test("emptyForm: у harvest продукт по умолчанию — мёд", () => {
     expect(emptyForm("harvest").product).toBe("honey");
     expect(emptyForm("treatment").product).toBe("");
