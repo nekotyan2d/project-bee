@@ -21,10 +21,6 @@ const regDone = ref(false);
 
 const busyLogout = ref(false);
 
-const pushBusy = ref(false);
-const pushError = ref<string | null>(null);
-const pushDone = ref(false);
-
 onMounted(async () => {
     const result = await me();
     email.value = result?.email ?? null;
@@ -50,20 +46,6 @@ async function submitLogout(): Promise<void> {
     busyLogout.value = true;
     await logout();
     await returnTo("/");
-}
-
-async function pushData(): Promise<void> {
-    pushBusy.value = true;
-    pushError.value = null;
-    pushDone.value = false;
-    try {
-        await useSync().pushAll();
-        pushDone.value = true;
-    } catch (e) {
-        pushError.value = e instanceof Error ? e.message : "Ошибка";
-    } finally {
-        pushBusy.value = false;
-    }
 }
 </script>
 
@@ -91,26 +73,7 @@ async function pushData(): Promise<void> {
                     </InfoGrid>
                     <p class="hint">Данные привязаны к этому аккаунту и доступны на других устройствах после входа.</p>
 
-                    <p
-                        v-if="pushDone"
-                        class="success">
-                        Данные отправлены на сервер.
-                    </p>
-                    <p
-                        v-if="pushError"
-                        class="error">
-                        {{ pushError }}
-                    </p>
-
                     <div class="actions">
-                        <BaseButton
-                            variant="secondary"
-                            :loading="pushBusy"
-                            :disabled="offline"
-                            block
-                            @click="pushData">
-                            Отправить данные на сервер
-                        </BaseButton>
                         <BaseButton
                             variant="secondary"
                             :loading="busyLogout"
