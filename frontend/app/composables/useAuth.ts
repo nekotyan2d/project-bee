@@ -35,6 +35,12 @@ export function useAuth() {
     }
 
     async function register(email: string, password: string): Promise<void> {
+        const existing = getToken();
+        if (existing) {
+            const res = await fetch(`${base}/auth/me`, { headers: { Authorization: `Bearer ${existing}` } });
+            if (res.status === 401 || res.status === 403) clearToken();
+        }
+
         if (!getToken()) {
             const anonRes = await fetch(`${base}/auth/anonymous`, { method: "POST" });
             if (!anonRes.ok) throw new Error("Не удалось подготовить аккаунт");

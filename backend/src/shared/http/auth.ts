@@ -1,8 +1,12 @@
 import fastifyJwt from "@fastify/jwt";
+import { eq } from "drizzle-orm";
 import type { FastifyRequest } from "fastify";
 import fp from "fastify-plugin";
 
 import { env } from "@/shared/config/env";
+import { db } from "@/shared/db/client";
+import { users } from "@/shared/db/schema";
+import { UnauthorizedError } from "@/shared/errors";
 
 declare module "@fastify/jwt" {
     interface FastifyJWT {
@@ -27,6 +31,9 @@ export const authPlugin = fp(async (app) => {
 
     app.decorate("authenticate", async (request: FastifyRequest) => {
         await request.jwtVerify();
-        request.userId = request.user.sub;
+        const [user] = await db.select({ id: users.id }).from(users).where(eq(users.id, request.user.sub)).limit(1);
+        if (!user) throw new UnauthorizedError("User not found");
+
+        request.userId = user.id;
     });
 });
