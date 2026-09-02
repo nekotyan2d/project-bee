@@ -20,6 +20,7 @@ const regError = ref<string | null>(null);
 const regDone = ref(false);
 
 const busyLogout = ref(false);
+const unsent = ref(0);
 
 onMounted(async () => {
     const result = await me();
@@ -44,6 +45,16 @@ async function submitRegister(): Promise<void> {
 
 async function submitLogout(): Promise<void> {
     busyLogout.value = true;
+
+    if (!unsent.value && (await useDb().outbox.count()) > 0) {
+        await useSync().flush();
+        unsent.value = await useDb().outbox.count();
+        if (unsent.value > 0) {
+            busyLogout.value = false;
+            return;
+        }
+    }
+
     await logout();
     await returnTo("/");
 }
@@ -73,6 +84,13 @@ async function submitLogout(): Promise<void> {
                     </InfoGrid>
                     <p class="hint">Данные привязаны к этому аккаунту и доступны на других устройствах после входа.</p>
 
+                    <p
+                        v-if="unsent"
+                        class="error">
+                        Не отправлено на сервер: {{ unsent }}. При выходе эти изменения будут потеряны — нажмите «Выйти»
+                        ещё раз, чтобы подтвердить.
+                    </p>
+
                     <div class="actions">
                         <BaseButton
                             variant="secondary"
@@ -80,7 +98,7 @@ async function submitLogout(): Promise<void> {
                             :disabled="offline"
                             block
                             @click="submitLogout">
-                            Выйти
+                            {{ unsent ? "Выйти и потерять изменения" : "Выйти" }}
                         </BaseButton>
                     </div>
                 </template>
