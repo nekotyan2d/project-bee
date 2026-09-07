@@ -1,6 +1,6 @@
 import type { LocalEvent, LocalHive } from "~/shared/db";
 
-import { FEED_TYPE_LABEL, HARVEST_PRODUCT_LABEL, QUEEN_ACTION_LABEL } from "./eventLabels";
+import { FEED_TYPE_LABEL, FINANCE_CATEGORY_LABEL, formatMoney, HARVEST_PRODUCT_LABEL, QUEEN_ACTION_LABEL } from "./eventLabels";
 
 type EventSummary = {
     icon: string;
@@ -78,6 +78,19 @@ export function getEventSummary(event: LocalEvent, hivesById: Record<string, Loc
                 title: "Гибель семьи",
                 detail: typeof p.cause === "string" ? p.cause : undefined,
             };
+        case "finance": {
+            const income = p.direction === "income";
+            const amount = typeof p.amount === "number" ? formatMoney(p.amount) : "";
+            const what = typeof p.item === "string" && p.item
+                ? p.item
+                : typeof p.category === "string" ? (FINANCE_CATEGORY_LABEL[p.category] ?? p.category) : "";
+            const who = typeof p.counterparty === "string" && p.counterparty ? p.counterparty : "";
+            return {
+                icon: income ? "lucide:trending-up" : "lucide:trending-down",
+                title: `${income ? "Доход" : "Расход"}${amount ? `: ${amount}` : ""}`,
+                detail: [what, who].filter(Boolean).join(" · ") || undefined,
+            };
+        }
         case "note":
             return {
                 icon: "lucide:file-text",

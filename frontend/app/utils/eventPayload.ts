@@ -4,7 +4,8 @@ type FieldKind = "int" | "float" | "bool" | "text";
 const FIELD_NAMES = [
     "framesTotal", "framesBrood", "framesStores", "queenSeen", "queenCells", "storesLevel", "temperament",
     "notes", "reason", "product", "dose", "method", "withdrawalDays", "feedType", "amountKg", "concentration",
-    "framesCount", "captured", "toHiveId", "cause", "text",
+    "framesCount", "captured", "toHiveId", "cause", "text", "direction", "amount", "category",
+    "counterparty", "item",
 ] as const;
 
 export type EventForm = Record<(typeof FIELD_NAMES)[number], string | number>;
@@ -27,9 +28,15 @@ const PAYLOAD_FIELDS: Record<string, Partial<Record<keyof EventForm, FieldKind>>
     merge: { notes: "text" },
     death: { cause: "text" },
     note: { text: "text" },
+    finance: {
+        direction: "text", amount: "float", category: "text", counterparty: "text", item: "text", notes: "text",
+    },
 };
 
-const DEFAULTS: Record<string, Partial<EventForm>> = { harvest: { product: "honey" } };
+const DEFAULTS: Record<string, Partial<EventForm>> = {
+    harvest: { product: "honey" },
+    finance: { direction: "expense", category: "equipment" },
+};
 
 export function emptyForm(type: string | undefined): EventForm {
     const form = Object.fromEntries(FIELD_NAMES.map((name) => [name, ""])) as EventForm;

@@ -25,7 +25,10 @@ const TITLES: Record<string, string> = {
     merge: "Объединение",
     death: "Гибель семьи",
     note: "Заметка",
+    finance: "Финансы",
 };
+
+const APIARY_SCOPED = ["note", "harvest", "finance"];
 
 const QC_NEEDS_QUEEN = ["introduced", "replaced", "superseded"];
 
@@ -77,6 +80,10 @@ const TEMPERAMENT_OPTS = [
     { value: "nervous", label: "Нервный" },
     { value: "aggressive", label: "Агрессивный" },
 ];
+const FINANCE_DIRECTION_OPTS = [
+    { value: "expense", label: "Покупка" },
+    { value: "income", label: "Продажа" },
+];
 const SWARM_OPTS = [
     { value: "", label: "Не отмечено" },
     { value: "true", label: "Поймали" },
@@ -88,6 +95,18 @@ const queenAction = ref<"introduced" | "replaced" | "superseded" | "lost" | "die
 const qcYear = ref("");
 const qcBreed = ref("");
 const queenNeedsNew = computed(() => QC_NEEDS_QUEEN.includes(queenAction.value));
+
+const financeCategories = computed(() =>
+    f.direction === "income" ? FINANCE_INCOME_CATEGORIES : FINANCE_EXPENSE_CATEGORIES,
+);
+watch(
+    () => f.direction,
+    () => {
+        if (type.value === "finance" && !financeCategories.value.includes(String(f.category))) {
+            f.category = financeCategories.value[0] ?? "other";
+        }
+    },
+);
 
 const migrationHives = ref<LocalHive[]>([]);
 
@@ -102,12 +121,13 @@ function payload(): Record<string, unknown> {
 
 function isValid(): boolean {
     if (!type.value) return false;
-    if (!colonyId.value && type.value !== "note" && type.value !== "harvest") return false;
-    if (type.value === "treatment" && !f.product.trim()) return false;
+    if (!colonyId.value && !APIARY_SCOPED.includes(type.value)) return false;
+    if (type.value === "treatment" && !String(f.product).trim()) return false;
     if (type.value === "feeding" && !f.feedType) return false;
     if (type.value === "harvest" && !f.amountKg && !f.framesCount) return false;
     if (type.value === "migration" && !f.toHiveId) return false;
-    if (type.value === "note" && !f.text.trim()) return false;
+    if (type.value === "note" && !String(f.text).trim()) return false;
+    if (type.value === "finance" && !(parseFloat(String(f.amount)) > 0)) return false;
     return true;
 }
 
@@ -205,7 +225,10 @@ async function submit(): Promise<void> {
 
             const colony = cid ? await db.colony.get(cid) : undefined;
             if (colony) {
-                const events = await db.event.where("colonyId").equals(cid as string).toArray();
+                const events = await db.event
+                    .where("colonyId")
+                    .equals(cid as string)
+                    .toArray();
                 const st = deriveColonyState(events);
                 colony.superCount = st.superCount;
                 if (st.lastInspectedAt) colony.lastInspectedAt = st.lastInspectedAt;
@@ -628,6 +651,68 @@ onMounted(async () => {
                         placeholder="Слёт, болезнь, бескормица…" />
                 </FormField>
                 <p class="form__hint">Семья будет помечена как «погибла».</p>
+            </template>
+
+            <template v-else-if="type === 'finance'">
+                <FormField label="Операция">
+                    <ChoiceChips
+                        v-model="f.direction"
+                        :options="FINANCE_DIRECTION_OPTS" />
+                </FormField>
+                <FormField
+                    v-slot="{ id }"
+                    label="Сумма"
+                    required>
+                    <BaseInput
+                        :id="id"
+                        v-model="f.amount"
+                        type="number"
+                        inputmode="decimal"
+                        min="0"
+                        step="0.01"
+                        placeholder="0"
+                        required />
+                </FormField>
+                <FormField
+                    v-slot="{ id }"
+                    label="Категория">
+                    <BaseSelect
+                        :id="id"
+                        v-model="f.category">
+                        <option
+                            v-for="c in financeCategories"
+                            :key="c"
+                            :value="c">
+                            {{ FINANCE_CATEGORY_LABEL[c] }}
+                        </option>
+                    </BaseSelect>
+                </FormField>
+                <FormField
+                    v-slot="{ id }"
+                    :label="f.direction === 'income' ? 'Что продано' : 'Что куплено'">
+                    <BaseInput
+                        :id="id"
+                        v-model="f.item"
+                        placeholder="Мёд, 50 кг"
+                        autocomplete="off" />
+                </FormField>
+                <FormField
+                    v-slot="{ id }"
+                    :label="f.direction === 'income' ? 'Покупатель' : 'Продавец'">
+                    <BaseInput
+                        :id="id"
+                        v-model="f.counterparty"
+                        placeholder="Имя или магазин"
+                        autocomplete="off" />
+                </FormField>
+                <FormField
+                    v-slot="{ id }"
+                    label="Заметки">
+                    <BaseTextarea
+                        :id="id"
+                        v-model="f.notes"
+                        placeholder="Условия, доставка…" />
+                </FormField>
             </template>
 
             <template v-else-if="type === 'note'">

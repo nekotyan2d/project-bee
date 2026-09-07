@@ -12,7 +12,8 @@ export type EventType =
     | "split"
     | "merge"
     | "death"
-    | "note";
+    | "note"
+    | "finance";
 
 export interface LocalApiary {
     id: string;

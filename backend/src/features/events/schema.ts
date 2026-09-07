@@ -74,6 +74,31 @@ const deathPayload = z.object({ cause: z.string().max(500).optional() }).default
 
 const notePayload = z.object({ text: z.string().min(1).max(4000) });
 
+// ponytail: нет количества/единицы — «5 кг» живёт в item. Добавить, когда понадобится ₽/кг.
+export const FINANCE_CATEGORIES = [
+    "equipment",
+    "foundation",
+    "medication",
+    "feed",
+    "hives",
+    "bees",
+    "honey",
+    "wax",
+    "propolis",
+    "pollen",
+    "pollination",
+    "other",
+] as const;
+
+const financePayload = z.object({
+    direction: z.enum(["income", "expense"]),
+    amount: z.number().min(0).max(100_000_000),
+    category: z.enum(FINANCE_CATEGORIES),
+    counterparty: z.string().max(200).optional(),
+    item: z.string().max(200).optional(),
+    notes: z.string().max(2000).optional(),
+});
+
 export const eventInput = z.discriminatedUnion("type", [
     z.object({ ...colonyScoped, type: z.literal("inspection"), payload: inspectionPayload }),
     z.object({ ...colonyScoped, type: z.literal("super_change"), payload: superChangePayload }),
@@ -87,6 +112,7 @@ export const eventInput = z.discriminatedUnion("type", [
     z.object({ ...colonyScoped, type: z.literal("merge"), payload: mergePayload }),
     z.object({ ...colonyScoped, type: z.literal("death"), payload: deathPayload }),
     z.object({ ...apiaryScoped, type: z.literal("note"), payload: notePayload }),
+    z.object({ ...apiaryScoped, type: z.literal("finance"), payload: financePayload }),
 ]);
 
 export const eventBatchInput = z.object({

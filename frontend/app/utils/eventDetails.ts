@@ -1,8 +1,10 @@
 import type { LocalEvent } from "~/shared/db";
 
-import { FEED_TYPE_LABEL, HARVEST_PRODUCT_LABEL, QUEEN_ACTION_LABEL } from "./eventLabels";
+import { FEED_TYPE_LABEL, FINANCE_CATEGORY_LABEL, formatMoney, HARVEST_PRODUCT_LABEL, QUEEN_ACTION_LABEL } from "./eventLabels";
 
-export const EDITABLE_EVENT_TYPES = ["inspection", "super_change", "treatment", "feeding", "harvest", "swarm", "note"];
+export const EDITABLE_EVENT_TYPES = [
+    "inspection", "super_change", "treatment", "feeding", "harvest", "swarm", "note", "finance",
+];
 
 export interface EventField {
     label: string;
@@ -101,6 +103,17 @@ export function getEventFields(event: LocalEvent, ctx: EventFieldsContext = {}):
             break;
         case "note":
             push("Текст", str(p.text), "start");
+            break;
+        case "finance":
+            push("Направление", p.direction === "income" ? "Доход" : "Расход");
+            push("Сумма", typeof p.amount === "number" ? formatMoney(p.amount) : null);
+            push(
+                "Категория",
+                typeof p.category === "string" ? (FINANCE_CATEGORY_LABEL[p.category] ?? p.category) : null,
+            );
+            push("Что", str(p.item), "start");
+            push(p.direction === "income" ? "Покупатель" : "Продавец", str(p.counterparty), "start");
+            push("Заметки", str(p.notes), "start");
             break;
     }
 

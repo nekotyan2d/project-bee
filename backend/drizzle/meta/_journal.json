@@ -43,6 +43,13 @@
       "when": 1781651835846,
       "tag": "0005_careless_karma",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788819015142,
+      "tag": "0006_dizzy_paibok",
+      "breakpoints": true
     }
   ]
 }

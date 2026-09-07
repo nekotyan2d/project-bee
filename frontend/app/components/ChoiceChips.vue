@@ -3,7 +3,7 @@ defineProps<{
     options: { value: string; label: string }[];
 }>();
 
-const model = defineModel<string>();
+const model = defineModel<string | number>();
 </script>
 
 <template>

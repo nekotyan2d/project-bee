@@ -976,6 +976,30 @@ export interface paths {
                             payload: {
                                 text: string;
                             };
+                        } | {
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            apiaryId: string;
+                            /**
+                             * Format: uuid
+                             * @default null
+                             */
+                            colonyId?: string | null;
+                            /** Format: date-time */
+                            occurredAt: string;
+                            /** @enum {string} */
+                            type: "finance";
+                            payload: {
+                                /** @enum {string} */
+                                direction: "income" | "expense";
+                                amount: number;
+                                /** @enum {string} */
+                                category: "equipment" | "foundation" | "medication" | "feed" | "hives" | "bees" | "honey" | "wax" | "propolis" | "pollen" | "pollination" | "other";
+                                counterparty?: string;
+                                item?: string;
+                                notes?: string;
+                            };
                         })[];
                     };
                 };
@@ -996,7 +1020,7 @@ export interface paths {
                                 /** Format: uuid */
                                 colonyId: string | null;
                                 /** @enum {string} */
-                                type: "inspection" | "super_change" | "treatment" | "feeding" | "queen_change" | "harvest" | "swarm" | "migration" | "split" | "merge" | "death" | "note";
+                                type: "inspection" | "super_change" | "treatment" | "feeding" | "queen_change" | "harvest" | "swarm" | "migration" | "split" | "merge" | "death" | "note" | "finance";
                                 /** Format: date-time */
                                 occurredAt: string;
                                 payload: {
@@ -1052,7 +1076,7 @@ export interface paths {
                             /** Format: uuid */
                             colonyId: string | null;
                             /** @enum {string} */
-                            type: "inspection" | "super_change" | "treatment" | "feeding" | "queen_change" | "harvest" | "swarm" | "migration" | "split" | "merge" | "death" | "note";
+                            type: "inspection" | "super_change" | "treatment" | "feeding" | "queen_change" | "harvest" | "swarm" | "migration" | "split" | "merge" | "death" | "note" | "finance";
                             /** Format: date-time */
                             occurredAt: string;
                             payload: {
@@ -1148,7 +1172,7 @@ export interface paths {
                             /** Format: uuid */
                             colonyId: string | null;
                             /** @enum {string} */
-                            type: "inspection" | "super_change" | "treatment" | "feeding" | "queen_change" | "harvest" | "swarm" | "migration" | "split" | "merge" | "death" | "note";
+                            type: "inspection" | "super_change" | "treatment" | "feeding" | "queen_change" | "harvest" | "swarm" | "migration" | "split" | "merge" | "death" | "note" | "finance";
                             /** Format: date-time */
                             occurredAt: string;
                             payload: {

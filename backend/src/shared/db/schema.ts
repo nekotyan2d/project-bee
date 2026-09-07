@@ -26,6 +26,7 @@ export const EVENT_TYPES = [
     "merge",
     "death",
     "note",
+    "finance",
 ] as const;
 
 export type EventType = (typeof EVENT_TYPES)[number];

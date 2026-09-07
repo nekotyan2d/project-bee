@@ -1,0 +1,2 @@
+ALTER TABLE "event" DROP CONSTRAINT "event_type_check";--> statement-breakpoint
+ALTER TABLE "event" ADD CONSTRAINT "event_type_check" CHECK (type in ('inspection', 'super_change', 'treatment', 'feeding', 'queen_change', 'harvest', 'swarm', 'migration', 'split', 'merge', 'death', 'note', 'finance'));
