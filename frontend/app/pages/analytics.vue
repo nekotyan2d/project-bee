@@ -710,16 +710,11 @@ const financeSeason = computed<FinanceSeason | null>(() => {
 .section-tabs {
     display: flex;
     gap: var(--space-2);
-    overflow-x: auto;
-    scrollbar-width: none; // Firefox
-
-    &::-webkit-scrollbar {
-        display: none; // WebKit
-    }
+    flex-wrap: wrap;
 }
 
 .section-tab {
-    flex-shrink: 0; // keep full size, let the row scroll instead of squashing
+    flex-shrink: 0;
     display: inline-flex;
     align-items: center;
     gap: var(--space-1);
