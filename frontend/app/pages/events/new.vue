@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { uuidv7 } from "uuidv7";
 
+import type { SuggestOption } from "~/components/SuggestInput.vue";
 import type { EventType, LocalEvent, LocalHive, LocalQueen } from "~/shared/db";
+import { type HistoryItem, suggestions } from "~/utils/suggestions";
 
 const route = useRoute();
 const eventId = route.query.eventId as string | undefined;
@@ -57,6 +59,59 @@ watch(
         if (type.value === "harvest" && v !== "honey") f.framesCount = "";
     },
 );
+
+const history = shallowRef<HistoryItem[]>([]);
+onMounted(async () => {
+    if (!type.value || isEdit) return;
+    if (type.value === "queen_change") {
+        const queens = await db.queen.filter((q) => !q.deletedAt).toArray();
+        history.value = queens.map((q) => ({ occurredAt: new Date(0), payload: { breed: q.breed } }));
+        return;
+    }
+    const events = await db.event
+        .where("type")
+        .equals(type.value)
+        .filter((e) => !e.deletedAt)
+        .toArray();
+    history.value = events;
+});
+
+interface HintOpts {
+    fill?: string[];
+    hint?: string[];
+    where?: (payload: Record<string, unknown>) => boolean;
+}
+
+const TREATMENT_OPTS: HintOpts = { fill: ["dose", "method", "withdrawalDays"], hint: ["dose", "method"] };
+const financeOpts = (): HintOpts => ({
+    fill: ["counterparty"],
+    hint: ["counterparty"],
+    where: (p) => p.direction === f.direction,
+});
+
+function suggest(field: string, o: HintOpts) {
+    const rows = o.where ? history.value.filter((e) => o.where?.(e.payload)) : history.value;
+    return suggestions(rows, field, o.fill);
+}
+
+function hints(field: string, o: HintOpts = {}): SuggestOption[] {
+    return suggest(field, o).map((s) => ({
+        value: s.value,
+        hint:
+            (o.hint ?? [])
+                .map((k) => s.fill[k])
+                .filter(Boolean)
+                .join(" · ") || undefined,
+    }));
+}
+
+function fillFrom(field: string, value: string, o: HintOpts) {
+    const found = suggest(field, o).find((s) => s.value === value.trim());
+    if (!found) return;
+    for (const [k, v] of Object.entries(found.fill)) {
+        if (!f[k as keyof EventForm]) f[k as keyof EventForm] = v;
+    }
+}
 
 // chip option sets
 const SUPER_ACTION_OPTS = [
@@ -404,9 +459,10 @@ onMounted(async () => {
                 <FormField
                     v-slot="{ id }"
                     label="Причина">
-                    <BaseInput
+                    <SuggestInput
                         :id="id"
                         v-model="f.reason"
+                        :options="hints('reason')"
                         placeholder="Взяток начался…"
                         autocomplete="off" />
                 </FormField>
@@ -417,28 +473,32 @@ onMounted(async () => {
                     v-slot="{ id }"
                     label="Препарат"
                     required>
-                    <BaseInput
+                    <SuggestInput
                         :id="id"
                         v-model="f.product"
+                        :options="hints('product', TREATMENT_OPTS)"
                         placeholder="Бипин, Апитрит…"
                         autocomplete="off"
-                        required />
+                        required
+                        @commit="fillFrom('product', $event, TREATMENT_OPTS)" />
                 </FormField>
                 <FormField
                     v-slot="{ id }"
                     label="Дозировка">
-                    <BaseInput
+                    <SuggestInput
                         :id="id"
                         v-model="f.dose"
+                        :options="hints('dose')"
                         placeholder="1 мл на улочку"
                         autocomplete="off" />
                 </FormField>
                 <FormField
                     v-slot="{ id }"
                     label="Способ">
-                    <BaseInput
+                    <SuggestInput
                         :id="id"
                         v-model="f.method"
+                        :options="hints('method')"
                         placeholder="Обработка парами…"
                         autocomplete="off" />
                 </FormField>
@@ -487,9 +547,10 @@ onMounted(async () => {
                 <FormField
                     v-slot="{ id }"
                     label="Концентрация">
-                    <BaseInput
+                    <SuggestInput
                         :id="id"
                         v-model="f.concentration"
+                        :options="hints('concentration')"
                         placeholder="1:1, 50%…"
                         autocomplete="off" />
                 </FormField>
@@ -567,9 +628,10 @@ onMounted(async () => {
                     <FormField
                         v-slot="{ id }"
                         label="Порода">
-                        <BaseInput
+                        <SuggestInput
                             :id="id"
                             v-model="qcBreed"
+                            :options="hints('breed')"
                             placeholder="Карника, бакфаст…"
                             autocomplete="off" />
                     </FormField>
@@ -690,18 +752,21 @@ onMounted(async () => {
                 <FormField
                     v-slot="{ id }"
                     :label="f.direction === 'income' ? 'Что продано' : 'Что куплено'">
-                    <BaseInput
+                    <SuggestInput
                         :id="id"
                         v-model="f.item"
+                        :options="hints('item', financeOpts())"
                         placeholder="Мёд, 50 кг"
-                        autocomplete="off" />
+                        autocomplete="off"
+                        @commit="fillFrom('item', $event, financeOpts())" />
                 </FormField>
                 <FormField
                     v-slot="{ id }"
                     :label="f.direction === 'income' ? 'Покупатель' : 'Продавец'">
-                    <BaseInput
+                    <SuggestInput
                         :id="id"
                         v-model="f.counterparty"
+                        :options="hints('counterparty', { where: financeOpts().where })"
                         placeholder="Имя или магазин"
                         autocomplete="off" />
                 </FormField>
