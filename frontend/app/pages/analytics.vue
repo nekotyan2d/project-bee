@@ -398,10 +398,11 @@ const financeSeason = computed<FinanceSeason | null>(() => {
                     </div>
 
                     <section class="event-list">
-                        <div
+                        <NuxtLink
                             v-for="row in currentSeason.rows"
                             :key="row.event.id"
-                            class="event-row">
+                            class="event-row"
+                            :to="`/events/${row.event.id}`">
                             <div class="event-row__main">
                                 <span class="event-row__colony">{{ row.colony?.label ?? "Вся пасека" }}</span>
                                 <span class="event-row__value">
@@ -419,7 +420,7 @@ const financeSeason = computed<FinanceSeason | null>(() => {
                                 <span>{{ PRODUCTS[row.product] ?? row.product }}</span>
                                 <span>{{ fmtDate(row.event.occurredAt) }}</span>
                             </div>
-                        </div>
+                        </NuxtLink>
                     </section>
                 </template>
             </template>
@@ -441,10 +442,11 @@ const financeSeason = computed<FinanceSeason | null>(() => {
                     <span>Активные периоды ожидания — откачка мёда запрещена</span>
                 </div>
                 <section class="event-list">
-                    <div
+                    <NuxtLink
                         v-for="row in activeWithdrawals"
                         :key="row.event.id"
-                        class="event-row event-row--warning">
+                        class="event-row event-row--warning"
+                        :to="`/events/${row.event.id}`">
                         <div class="event-row__main">
                             <span class="event-row__colony">{{ row.colony?.label ?? "Без семьи" }}</span>
                             <span class="event-row__badge event-row__badge--danger"> ещё {{ row.daysLeft }} дн. </span>
@@ -453,17 +455,18 @@ const financeSeason = computed<FinanceSeason | null>(() => {
                             <span>{{ row.product }}</span>
                             <span>до {{ row.withdrawalEnd ? fmtDateFull(row.withdrawalEnd) : "" }}</span>
                         </div>
-                    </div>
+                    </NuxtLink>
                 </section>
             </template>
 
             <template v-if="treatmentData.length > 0">
                 <p class="list-header">Журнал обработок</p>
                 <section class="event-list">
-                    <div
+                    <NuxtLink
                         v-for="row in treatmentData"
                         :key="row.event.id"
-                        class="event-row">
+                        class="event-row"
+                        :to="`/events/${row.event.id}`">
                         <div class="event-row__main">
                             <span class="event-row__colony">{{ row.colony?.label ?? "Без семьи" }}</span>
                             <span class="event-row__date">{{ fmtDate(row.event.occurredAt) }}</span>
@@ -481,7 +484,7 @@ const financeSeason = computed<FinanceSeason | null>(() => {
                                 {{ row.daysLeft && row.daysLeft > 0 ? `КМО ${String(row.daysLeft)} дн.` : "КМО истёк" }}
                             </span>
                         </div>
-                    </div>
+                    </NuxtLink>
                 </section>
             </template>
 
@@ -496,10 +499,11 @@ const financeSeason = computed<FinanceSeason | null>(() => {
             <LoadingSpinner v-if="feedingLoading" />
             <template v-else-if="feedingData.length > 0">
                 <section class="event-list">
-                    <div
+                    <NuxtLink
                         v-for="row in feedingData"
                         :key="row.event.id"
-                        class="event-row">
+                        class="event-row"
+                        :to="`/events/${row.event.id}`">
                         <div class="event-row__main">
                             <span class="event-row__colony">{{ row.colony?.label ?? "Без семьи" }}</span>
                             <span class="event-row__date">{{ fmtDate(row.event.occurredAt) }}</span>
@@ -511,7 +515,7 @@ const financeSeason = computed<FinanceSeason | null>(() => {
                             </span>
                             <span v-if="row.amountKg !== null">{{ fmt(row.amountKg) }}</span>
                         </div>
-                    </div>
+                    </NuxtLink>
                 </section>
             </template>
             <EmptyState
