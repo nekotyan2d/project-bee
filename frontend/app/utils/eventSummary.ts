@@ -42,7 +42,7 @@ export function getEventSummary(event: LocalEvent, hivesById: Record<string, Loc
         }
         case "feeding": {
             const ft = typeof p.feedType === "string" ? (FEED_TYPE_LABEL[p.feedType] ?? p.feedType) : "";
-            const kg = typeof p.amountKg === "number" ? ` · ${String(p.amountKg)} кг` : "";
+            const kg = typeof p.amountKg === "number" ? ` · ${String(p.amountKg)} л` : "";
             return { icon: "lucide:droplets", title: "Подкормка", detail: `${ft}${kg}` || undefined };
         }
         case "queen_change": {
@@ -50,7 +50,7 @@ export function getEventSummary(event: LocalEvent, hivesById: Record<string, Loc
             return { icon: "lucide:crown", title: QUEEN_ACTION_LABEL[action] ?? "Смена матки" };
         }
         case "harvest": {
-            const kg = typeof p.amountKg === "number" ? ` · ${String(p.amountKg)} кг` : "";
+            const kg = typeof p.amountKg === "number" ? ` · ${String(p.amountKg)} ${harvestUnit(p.product)}` : "";
             const frames = typeof p.framesCount === "number" ? ` · ${String(p.framesCount)} рам.` : "";
             const product = typeof p.product === "string" ? p.product : "honey";
             return {

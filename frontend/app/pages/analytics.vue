@@ -94,8 +94,8 @@ watch(
     { immediate: true },
 );
 
-function fmt(kg: number): string {
-    return kg % 1 === 0 ? `${String(kg)} кг` : `${kg.toFixed(1)} кг`;
+function fmt(v: number, unit = "кг"): string {
+    return v % 1 === 0 ? `${String(v)} ${unit}` : `${v.toFixed(1)} ${unit}`;
 }
 
 // ── Лечение ────────────────────────────────────────────────────────────────
@@ -386,7 +386,7 @@ const financeSeason = computed<FinanceSeason | null>(() => {
                             :key="product"
                             class="total-card">
                             <span class="total-card__label">{{ PRODUCTS[product] ?? product }}</span>
-                            <span class="total-card__value">{{ fmt(kg) }}</span>
+                            <span class="total-card__value">{{ fmt(kg, harvestUnit(product)) }}</span>
                         </div>
                         <div
                             v-for="(frames, product) in currentSeason.framesByProduct"
@@ -408,7 +408,7 @@ const financeSeason = computed<FinanceSeason | null>(() => {
                                 <span class="event-row__value">
                                     {{
                                         [
-                                            row.amountKg !== null ? fmt(row.amountKg) : null,
+                                            row.amountKg !== null ? fmt(row.amountKg, harvestUnit(row.product)) : null,
                                             row.framesCount !== null ? `${row.framesCount} рам.` : null,
                                         ]
                                             .filter(Boolean)
@@ -513,7 +513,7 @@ const financeSeason = computed<FinanceSeason | null>(() => {
                                 {{ FEED_TYPES[row.feedType] ?? row.feedType
                                 }}{{ row.concentration ? ` · ${row.concentration}` : "" }}
                             </span>
-                            <span v-if="row.amountKg !== null">{{ fmt(row.amountKg) }}</span>
+                            <span v-if="row.amountKg !== null">{{ fmt(row.amountKg, "л") }}</span>
                         </div>
                     </NuxtLink>
                 </section>

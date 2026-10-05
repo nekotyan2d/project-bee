@@ -75,12 +75,12 @@ export function getEventFields(event: LocalEvent, ctx: EventFieldsContext = {}):
             break;
         case "feeding":
             push("Тип корма", typeof p.feedType === "string" ? (FEED_TYPE_LABEL[p.feedType] ?? p.feedType) : null);
-            push("Количество", typeof p.amountKg === "number" ? `${String(p.amountKg)} кг` : null);
+            push("Количество", typeof p.amountKg === "number" ? `${String(p.amountKg)} л` : null);
             push("Концентрация", str(p.concentration));
             break;
         case "harvest":
             push("Продукт", typeof p.product === "string" ? (HARVEST_PRODUCT_LABEL[p.product] ?? p.product) : "мёд");
-            push("Количество", typeof p.amountKg === "number" ? `${String(p.amountKg)} кг` : null);
+            push("Количество", typeof p.amountKg === "number" ? `${String(p.amountKg)} ${harvestUnit(p.product)}` : null);
             push("Рамок", num(p.framesCount));
             break;
         case "queen_change":

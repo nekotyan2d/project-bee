@@ -474,7 +474,7 @@ onMounted(async () => {
                 </FormField>
                 <FormField
                     v-slot="{ id }"
-                    label="Количество (кг)">
+                    label="Количество (л)">
                     <BaseInput
                         :id="id"
                         v-model="f.amountKg"
@@ -511,7 +511,7 @@ onMounted(async () => {
                 <div :class="f.product === 'honey' ? 'grid-2' : undefined">
                     <FormField
                         v-slot="{ id }"
-                        label="Количество (кг)">
+                        :label="`Количество (${harvestUnit(f.product)})`">
                         <BaseInput
                             :id="id"
                             v-model="f.amountKg"
