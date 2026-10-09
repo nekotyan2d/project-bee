@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { uuidv7 } from "uuidv7";
 
-import type { SuggestOption } from "~/components/SuggestInput.vue";
+import type { SuggestOption } from "~/components/ui/SuggestInput.vue";
 import type { EventType, LocalEvent, LocalHive, LocalQueen } from "~/shared/db";
 import { type HistoryItem, suggestions } from "~/utils/suggestions";
 
