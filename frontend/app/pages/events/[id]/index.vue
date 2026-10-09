@@ -72,16 +72,7 @@ async function deleteEvent(): Promise<void> {
             const colony = await db.colony.get(colonyId);
             if (colony) {
                 const events = await db.event.where("colonyId").equals(colonyId).toArray();
-                const s = deriveColonyState(events);
-                colony.superCount = s.superCount;
-                if (s.lastInspectedAt) colony.lastInspectedAt = s.lastInspectedAt;
-                else delete colony.lastInspectedAt;
-                if (s.currentHiveId) colony.currentHiveId = s.currentHiveId;
-                else delete colony.currentHiveId;
-                if (s.currentQueenId) colony.currentQueenId = s.currentQueenId;
-                else delete colony.currentQueenId;
-                colony.updatedAt = now;
-                await db.colony.put(colony);
+                await db.colony.put(applyColonyState(colony, deriveColonyState(events), now));
             }
         }
     });

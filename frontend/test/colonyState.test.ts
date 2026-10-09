@@ -1,8 +1,8 @@
 import { expect, test } from "bun:test";
 
-import type { LocalEvent } from "../app/shared/db";
+import type { LocalColony, LocalEvent } from "../app/shared/db";
 
-import { deriveColonyState } from "../app/utils/colonyState";
+import { applyColonyState, deriveColonyState } from "../app/utils/colonyState";
 
 let seq = 0;
 function ev(type: LocalEvent["type"], date: string, payload: Record<string, unknown> = {}, deleted = false) {
@@ -80,4 +80,43 @@ test("удалённые события не учитываются: перес�
     expect(state.superCount).toBe(2);
     expect(state.lastInspectedAt).toBeUndefined();
     expect(state.currentHiveId).toBeUndefined();
+});
+
+const colonyBase = {
+    id: "c",
+    apiaryId: "a",
+    label: "Семья 1",
+    status: "active",
+    superCount: 5,
+    updatedAt: new Date("2025-01-01"),
+} as LocalColony;
+
+test("applyColonyState: переносит состояние и обновляет updatedAt, не мутируя исходную семью", () => {
+    const now = new Date("2025-08-01");
+    const state = {
+        superCount: 2,
+        lastInspectedAt: new Date("2025-07-01"),
+        currentHiveId: "h1",
+        currentQueenId: "q1",
+    };
+    const next = applyColonyState(colonyBase, state, now);
+
+    expect(next).toMatchObject({ ...state, id: "c", label: "Семья 1", status: "active", updatedAt: now });
+    expect(colonyBase.superCount).toBe(5);
+    expect(colonyBase.currentHiveId).toBeUndefined();
+});
+
+test("applyColonyState: пустое состояние стирает устаревшие улей, матку и дату осмотра", () => {
+    const stale = {
+        ...colonyBase,
+        currentHiveId: "h1",
+        currentQueenId: "q1",
+        lastInspectedAt: new Date("2025-07-01"),
+    };
+    const next = applyColonyState(stale, deriveColonyState([]), new Date());
+
+    expect(next.superCount).toBe(0);
+    expect("currentHiveId" in next).toBe(false);
+    expect("currentQueenId" in next).toBe(false);
+    expect("lastInspectedAt" in next).toBe(false);
 });

@@ -284,18 +284,9 @@ async function submit(): Promise<void> {
                     .where("colonyId")
                     .equals(cid as string)
                     .toArray();
-                const st = deriveColonyState(events);
-                colony.superCount = st.superCount;
-                if (st.lastInspectedAt) colony.lastInspectedAt = st.lastInspectedAt;
-                else delete colony.lastInspectedAt;
-                if (st.currentHiveId) colony.currentHiveId = st.currentHiveId;
-                else delete colony.currentHiveId;
-                if (st.currentQueenId) colony.currentQueenId = st.currentQueenId;
-                else delete colony.currentQueenId;
                 const newStatus = STATUS_BY_TYPE[type.value ?? ""];
-                if (newStatus) colony.status = newStatus;
-                colony.updatedAt = now;
-                await db.colony.put(colony);
+                const next = applyColonyState(colony, deriveColonyState(events), now);
+                await db.colony.put(newStatus ? { ...next, status: newStatus } : next);
             }
         });
     } catch {

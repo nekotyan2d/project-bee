@@ -1,4 +1,4 @@
-import type { LocalEvent } from "~/shared/db";
+import type { LocalColony, LocalEvent } from "~/shared/db";
 
 export interface DerivedColonyState {
     superCount: number;
@@ -48,4 +48,15 @@ export function deriveColonyState(events: LocalEvent[]): DerivedColonyState {
             : undefined;
 
     return { superCount: Math.max(0, superCount), lastInspectedAt, currentHiveId, currentQueenId };
+}
+
+export function applyColonyState(colony: LocalColony, state: DerivedColonyState, now: Date): LocalColony {
+    const next: LocalColony = { ...colony, superCount: state.superCount, updatedAt: now };
+    if (state.lastInspectedAt) next.lastInspectedAt = state.lastInspectedAt;
+    else delete next.lastInspectedAt;
+    if (state.currentHiveId) next.currentHiveId = state.currentHiveId;
+    else delete next.currentHiveId;
+    if (state.currentQueenId) next.currentQueenId = state.currentQueenId;
+    else delete next.currentQueenId;
+    return next;
 }
