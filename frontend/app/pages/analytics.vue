@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { buildFeedingRows } from "~/utils/analytics/feeding";
 import { buildHarvestSeasons, type SeasonData } from "~/utils/analytics/harvest";
 import { loadEventsWithColonies } from "~/utils/analytics/loadEvents";
 import { buildSurvival, EMPTY_SURVIVAL } from "~/utils/analytics/survival";
@@ -14,7 +13,6 @@ type Tab = "harvest" | "treatment" | "feeding" | "survival" | "finance";
 const tab = ref<Tab>("harvest");
 
 const productLabel = (p: string): string => capitalize(HARVEST_PRODUCT_LABEL[p] ?? p);
-const feedLabel = (t: string): string => capitalize(FEED_TYPE_LABEL[t] ?? t);
 
 const { data: harvestData, loading: harvestLoading } = useLiveQuery<SeasonData[]>(async () => {
     const { events, colonies } = await loadEventsWithColonies("harvest");
@@ -48,11 +46,6 @@ const { data: treatmentData, loading: treatmentLoading } = useLiveQuery(async ()
 }, []);
 
 const activeWithdrawals = computed(() => pickActiveWithdrawals(treatmentData.value));
-
-const { data: feedingData, loading: feedingLoading } = useLiveQuery(async () => {
-    const { events, colonies } = await loadEventsWithColonies("feeding");
-    return buildFeedingRows(events, colonies);
-}, []);
 
 const { data: survivalData, loading: survivalLoading } = useLiveQuery(async () => {
     const [colonies, deathEvents] = await Promise.all([
@@ -294,35 +287,7 @@ const financeSeason = computed<FinanceSeason | null>(() => {
                 hint="Добавьте событие «Обработка» на странице семьи" />
         </template>
 
-        <template v-else-if="tab === 'feeding'">
-            <LoadingSpinner v-if="feedingLoading" />
-            <template v-else-if="feedingData.length > 0">
-                <section class="event-list">
-                    <NuxtLink
-                        v-for="row in feedingData"
-                        :key="row.event.id"
-                        class="event-row"
-                        :to="`/events/${row.event.id}`">
-                        <div class="event-row__main">
-                            <span class="event-row__colony">{{ row.colony?.label ?? "Без семьи" }}</span>
-                            <span class="event-row__date">{{ formatDayMonth(row.event.occurredAt) }}</span>
-                        </div>
-                        <div class="event-row__meta">
-                            <span>
-                                {{ feedLabel(row.feedType)
-                                }}{{ row.concentration ? ` · ${row.concentration}` : "" }}
-                            </span>
-                            <span v-if="row.amountKg !== null">{{ formatAmount(row.amountKg, "л") }}</span>
-                        </div>
-                    </NuxtLink>
-                </section>
-            </template>
-            <EmptyState
-                v-else
-                icon="lucide:droplets"
-                text="Нет подкормок"
-                hint="Добавьте событие «Подкормка» на странице семьи" />
-        </template>
+        <FeedingTab v-else-if="tab === 'feeding'" />
         <template v-else-if="tab === 'finance'">
             <div class="section-header">
                 <BaseButton
