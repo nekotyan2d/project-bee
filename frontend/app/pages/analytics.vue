@@ -89,6 +89,7 @@ const financeSeason = computed<FinanceSeason | null>(() => {
 
 <template>
     <AppPage
+        class="analytics"
         title="Аналитика"
         variant="stack">
         <div class="section-tabs">
@@ -508,6 +509,8 @@ const financeSeason = computed<FinanceSeason | null>(() => {
     </AppPage>
 </template>
 
+<style lang="scss" src="~/assets/scss/analytics.scss" />
+
 <style scoped lang="scss">
 .section-tabs {
     display: flex;
@@ -556,83 +559,6 @@ const financeSeason = computed<FinanceSeason | null>(() => {
     }
 }
 
-.section-header {
-    display: flex;
-    justify-content: flex-start;
-}
-
-.season-tabs {
-    display: flex;
-    gap: var(--space-2);
-    flex-wrap: wrap;
-}
-
-.season-tab {
-    padding: var(--space-2) var(--space-4);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-full);
-    background: none;
-    color: var(--color-text-muted);
-    font-size: var(--text-sm);
-    font-weight: 600;
-    cursor: pointer;
-    transition:
-        color var(--transition-fast),
-        border-color var(--transition-fast),
-        background-color var(--transition-fast);
-
-    &--active {
-        background: var(--color-primary);
-        border-color: var(--color-primary);
-        color: var(--color-on-primary);
-    }
-}
-
-.totals {
-    display: flex;
-    gap: var(--space-3);
-    flex-wrap: wrap;
-}
-
-.total-card {
-    flex: 1;
-    min-width: 120px;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
-    padding: var(--space-4);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-
-    &__label {
-        display: flex;
-        align-items: center;
-        gap: var(--space-1);
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    &__icon {
-        flex-shrink: 0;
-
-        &--ok {
-            color: var(--color-success);
-        }
-        &--danger {
-            color: var(--color-danger);
-        }
-    }
-
-    &__value {
-        font-size: var(--text-xl);
-        font-weight: 700;
-        color: var(--color-primary);
-    }
-}
-
 .withdraw-banner {
     display: flex;
     align-items: center;
@@ -647,90 +573,6 @@ const financeSeason = computed<FinanceSeason | null>(() => {
 
     &__icon {
         flex-shrink: 0;
-    }
-}
-
-.list-header {
-    font-size: var(--text-sm);
-    font-weight: 600;
-    color: var(--color-text-muted);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.event-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-}
-
-.event-row {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    padding: var(--space-3) var(--space-4);
-    background: var(--color-surface);
-    border-radius: var(--radius-md);
-    color: inherit;
-    text-decoration: none;
-
-    &--warning {
-        background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface));
-    }
-
-    &__main {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        gap: var(--space-2);
-    }
-
-    &__colony {
-        font-size: var(--text-base);
-        font-weight: 500;
-        flex: 1;
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    &__value {
-        font-size: var(--text-base);
-        font-weight: 700;
-        flex-shrink: 0;
-    }
-
-    &__date {
-        font-size: var(--text-sm);
-        color: var(--color-text-muted);
-        flex-shrink: 0;
-    }
-
-    &__meta {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: var(--text-sm);
-        color: var(--color-text-muted);
-    }
-
-    &__badge {
-        font-size: var(--text-xs);
-        font-weight: 600;
-        padding: 2px var(--space-2);
-        border-radius: var(--radius-full);
-        flex-shrink: 0;
-
-        &--danger {
-            background: color-mix(in srgb, var(--color-danger) 15%, transparent);
-            color: var(--color-danger);
-        }
-
-        &--ok {
-            background: color-mix(in srgb, var(--color-success) 15%, transparent);
-            color: var(--color-success);
-        }
     }
 }
 
@@ -805,13 +647,5 @@ const financeSeason = computed<FinanceSeason | null>(() => {
     &--out {
         color: var(--color-danger);
     }
-}
-
-.total-card__value--danger {
-    color: var(--color-danger);
-}
-
-.total-card__value--ok {
-    color: var(--color-success);
 }
 </style>
