@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import type { LocalColony, LocalEvent } from "~/shared/db";
+import { buildFeedingRows } from "~/utils/analytics/feeding";
+import { buildHarvestSeasons, type SeasonData } from "~/utils/analytics/harvest";
 import { loadEventsWithColonies } from "~/utils/analytics/loadEvents";
+import { buildSurvival, EMPTY_SURVIVAL } from "~/utils/analytics/survival";
+import { activeWithdrawals as pickActiveWithdrawals, buildTreatmentRows } from "~/utils/analytics/treatment";
 import type { FinanceSeason } from "~/utils/finance";
 
 useHead({ title: "Аналитика — Пасека" });
@@ -12,57 +15,9 @@ const tab = ref<Tab>("harvest");
 
 const PRODUCTS: Record<string, string> = { honey: "Мёд", wax: "Воск", propolis: "Прополис" };
 
-type HarvestRow = {
-    event: LocalEvent;
-    colony: LocalColony | undefined;
-    amountKg: number | null;
-    framesCount: number | null;
-    product: string;
-    year: number;
-};
-
-type SeasonData = {
-    year: number;
-    rows: HarvestRow[];
-    totalByProduct: Record<string, number>;
-    framesByProduct: Record<string, number>;
-};
-
 const { data: harvestData, loading: harvestLoading } = useLiveQuery<SeasonData[]>(async () => {
-    const { events, colonies: colonyMap } = await loadEventsWithColonies("harvest");
-
-    if (events.length === 0) return [];
-
-    const rows: HarvestRow[] = events
-        .map((e) => ({
-            event: e,
-            colony: e.colonyId ? colonyMap[e.colonyId] : undefined,
-            amountKg: typeof e.payload.amountKg === "number" ? e.payload.amountKg : null,
-            framesCount: typeof e.payload.framesCount === "number" ? e.payload.framesCount : null,
-            product: typeof e.payload.product === "string" ? e.payload.product : "honey",
-            year: e.occurredAt.getFullYear(),
-        }))
-        .sort((a, b) => b.event.occurredAt.getTime() - a.event.occurredAt.getTime());
-
-    const byYear = new Map<number, HarvestRow[]>();
-    for (const row of rows) {
-        const list = byYear.get(row.year) ?? [];
-        list.push(row);
-        byYear.set(row.year, list);
-    }
-
-    const seasons: SeasonData[] = [];
-    for (const [year, yearRows] of byYear) {
-        const totalByProduct: Record<string, number> = {};
-        const framesByProduct: Record<string, number> = {};
-        for (const r of yearRows) {
-            if (r.amountKg !== null) totalByProduct[r.product] = (totalByProduct[r.product] ?? 0) + r.amountKg;
-            if (r.framesCount !== null) framesByProduct[r.product] = (framesByProduct[r.product] ?? 0) + r.framesCount;
-        }
-        seasons.push({ year, rows: yearRows, totalByProduct, framesByProduct });
-    }
-
-    return seasons.sort((a, b) => b.year - a.year);
+    const { events, colonies } = await loadEventsWithColonies("harvest");
+    return buildHarvestSeasons(events, colonies);
 }, []);
 
 const selectedYear = ref<number | null>(null);
@@ -90,49 +45,12 @@ function fmt(v: number, unit = "кг"): string {
 
 // ── Лечение ────────────────────────────────────────────────────────────────
 
-type TreatmentRow = {
-    event: LocalEvent;
-    colony: LocalColony | undefined;
-    product: string;
-    dose: string;
-    withdrawalDays: number | null;
-    withdrawalEnd: Date | null;
-    daysLeft: number | null;
-};
-
-const TODAY = new Date();
-TODAY.setHours(0, 0, 0, 0);
-
-const { data: treatmentData, loading: treatmentLoading } = useLiveQuery<TreatmentRow[]>(async () => {
-    const { events, colonies: colonyMap } = await loadEventsWithColonies("treatment");
-
-    return events
-        .map((e) => {
-            const withdrawalDays = typeof e.payload.withdrawalDays === "number" ? e.payload.withdrawalDays : null;
-            let withdrawalEnd: Date | null = null;
-            let daysLeft: number | null = null;
-            if (withdrawalDays !== null) {
-                const end = new Date(e.occurredAt);
-                end.setDate(end.getDate() + withdrawalDays);
-                end.setHours(0, 0, 0, 0);
-                withdrawalEnd = end;
-                daysLeft = Math.ceil((end.getTime() - TODAY.getTime()) / 86400000);
-                if (daysLeft < 0) daysLeft = 0;
-            }
-            return {
-                event: e,
-                colony: e.colonyId ? colonyMap[e.colonyId] : undefined,
-                product: typeof e.payload.product === "string" ? e.payload.product : "—",
-                dose: typeof e.payload.dose === "string" ? e.payload.dose : "",
-                withdrawalDays,
-                withdrawalEnd,
-                daysLeft,
-            };
-        })
-        .sort((a, b) => b.event.occurredAt.getTime() - a.event.occurredAt.getTime());
+const { data: treatmentData, loading: treatmentLoading } = useLiveQuery(async () => {
+    const { events, colonies } = await loadEventsWithColonies("treatment");
+    return buildTreatmentRows(events, colonies);
 }, []);
 
-const activeWithdrawals = computed(() => treatmentData.value.filter((r) => r.daysLeft !== null && r.daysLeft > 0));
+const activeWithdrawals = computed(() => pickActiveWithdrawals(treatmentData.value));
 
 function fmtDate(d: Date): string {
     return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
@@ -150,88 +68,23 @@ const FEED_TYPES: Record<string, string> = {
     water: "Вода",
 };
 
-type FeedingRow = {
-    event: LocalEvent;
-    colony: LocalColony | undefined;
-    feedType: string;
-    amountKg: number | null;
-    concentration: string;
-};
-
-const { data: feedingData, loading: feedingLoading } = useLiveQuery<FeedingRow[]>(async () => {
-    const { events, colonies: colonyMap } = await loadEventsWithColonies("feeding");
-
-    return events
-        .map((e) => ({
-            event: e,
-            colony: e.colonyId ? colonyMap[e.colonyId] : undefined,
-            feedType: typeof e.payload.feedType === "string" ? e.payload.feedType : "—",
-            amountKg: typeof e.payload.amountKg === "number" ? e.payload.amountKg : null,
-            concentration: typeof e.payload.concentration === "string" ? e.payload.concentration : "",
-        }))
-        .sort((a, b) => b.event.occurredAt.getTime() - a.event.occurredAt.getTime());
+const { data: feedingData, loading: feedingLoading } = useLiveQuery(async () => {
+    const { events, colonies } = await loadEventsWithColonies("feeding");
+    return buildFeedingRows(events, colonies);
 }, []);
-type SurvivalYear = {
-    year: number;
-    total: number;
-    lost: number;
-    rate: number;
-    colonies: { label: string; diedAt: Date | null }[];
-};
 
-const { data: survivalData, loading: survivalLoading } = useLiveQuery<{
-    years: SurvivalYear[];
-    activeCount: number;
-    deadCount: number;
-}>(
-    async () => {
-        const [allColonies, deathEvents] = await Promise.all([
-            db.colony.toArray(),
-            db.event
-                .where("type")
-                .equals("death")
-                .filter((e) => !e.deletedAt)
-                .toArray(),
-        ]);
+const { data: survivalData, loading: survivalLoading } = useLiveQuery(async () => {
+    const [colonies, deathEvents] = await Promise.all([
+        db.colony.toArray(),
+        db.event
+            .where("type")
+            .equals("death")
+            .filter((e) => !e.deletedAt)
+            .toArray(),
+    ]);
+    return buildSurvival(colonies, deathEvents);
+}, EMPTY_SURVIVAL);
 
-        const deathByColony = new Map<string, Date>();
-        for (const e of deathEvents) {
-            if (e.colonyId) deathByColony.set(e.colonyId, e.occurredAt);
-        }
-
-        const activeCount = allColonies.filter((c) => c.status === "active").length;
-        const deadColonies = allColonies.filter((c) => c.status === "dead");
-
-        const byYear = new Map<number, { label: string; diedAt: Date | null }[]>();
-        for (const c of deadColonies) {
-            const diedAt = deathByColony.get(c.id) ?? null;
-            const year = diedAt ? diedAt.getFullYear() : 0;
-            const list = byYear.get(year) ?? [];
-            list.push({ label: c.label, diedAt });
-            byYear.set(year, list);
-        }
-
-        const years: SurvivalYear[] = [];
-        for (const [year, cols] of byYear) {
-            const lost = cols.length;
-            const total = lost + activeCount;
-            years.push({
-                year,
-                total,
-                lost,
-                rate: total > 0 ? Math.round(((total - lost) / total) * 100) : 100,
-                colonies: cols.sort((a, b) => (b.diedAt?.getTime() ?? 0) - (a.diedAt?.getTime() ?? 0)),
-            });
-        }
-
-        return {
-            years: years.filter((y) => y.year > 0).sort((a, b) => b.year - a.year),
-            activeCount,
-            deadCount: deadColonies.length,
-        };
-    },
-    { years: [], activeCount: 0, deadCount: 0 },
-);
 const { data: financeData, loading: financeLoading } = useLiveQuery<FinanceSeason[]>(
     async () =>
         summarizeFinance(
