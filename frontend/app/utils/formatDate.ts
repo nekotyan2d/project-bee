@@ -1,7 +1,11 @@
+import { capitalize } from "./text";
+
 const dateFormatter = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long", year: "numeric" });
 const dateShortFormatter = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short", year: "numeric" });
 const dateTimeFormatter = new Intl.DateTimeFormat("ru-RU", { dateStyle: "long", timeStyle: "short" });
 const monthFormatter = new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" });
+const dayMonthShortFormatter = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "short" });
+const dayMonthLongFormatter = new Intl.DateTimeFormat("ru-RU", { day: "numeric", month: "long" });
 
 export function formatDateTime(value: Date | string | null | undefined): string {
     if (!value) return "—";
@@ -40,6 +44,14 @@ export function relativeDate(value: Date | string | null | undefined): string {
 
 // «Июнь 2026» — для группировки истории по месяцам.
 export function formatMonth(value: Date | string): string {
-    const s = monthFormatter.format(new Date(value));
-    return s.charAt(0).toUpperCase() + s.slice(1);
+    return capitalize(monthFormatter.format(new Date(value)));
+}
+
+// «5 июн.» / «5 июня» — без года, для списков внутри одного сезона.
+export function formatDayMonth(value: Date): string {
+    return dayMonthShortFormatter.format(value);
+}
+
+export function formatDayMonthLong(value: Date): string {
+    return dayMonthLongFormatter.format(value);
 }

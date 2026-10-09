@@ -13,7 +13,8 @@ const db = useDb();
 type Tab = "harvest" | "treatment" | "feeding" | "survival" | "finance";
 const tab = ref<Tab>("harvest");
 
-const PRODUCTS: Record<string, string> = { honey: "Мёд", wax: "Воск", propolis: "Прополис" };
+const productLabel = (p: string): string => capitalize(HARVEST_PRODUCT_LABEL[p] ?? p);
+const feedLabel = (t: string): string => capitalize(FEED_TYPE_LABEL[t] ?? t);
 
 const { data: harvestData, loading: harvestLoading } = useLiveQuery<SeasonData[]>(async () => {
     const { events, colonies } = await loadEventsWithColonies("harvest");
@@ -39,10 +40,6 @@ watch(
     { immediate: true },
 );
 
-function fmt(v: number, unit = "кг"): string {
-    return v % 1 === 0 ? `${String(v)} ${unit}` : `${v.toFixed(1)} ${unit}`;
-}
-
 // ── Лечение ────────────────────────────────────────────────────────────────
 
 const { data: treatmentData, loading: treatmentLoading } = useLiveQuery(async () => {
@@ -51,22 +48,6 @@ const { data: treatmentData, loading: treatmentLoading } = useLiveQuery(async ()
 }, []);
 
 const activeWithdrawals = computed(() => pickActiveWithdrawals(treatmentData.value));
-
-function fmtDate(d: Date): string {
-    return d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
-}
-
-function fmtDateFull(d: Date): string {
-    return d.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
-}
-
-const FEED_TYPES: Record<string, string> = {
-    syrup: "Сироп",
-    candy: "Канди",
-    honey: "Мёд",
-    pollen_substitute: "Перговый заменитель",
-    water: "Вода",
-};
 
 const { data: feedingData, loading: feedingLoading } = useLiveQuery(async () => {
     const { events, colonies } = await loadEventsWithColonies("feeding");
@@ -202,14 +183,14 @@ const financeSeason = computed<FinanceSeason | null>(() => {
                             v-for="(kg, product) in currentSeason.totalByProduct"
                             :key="product"
                             class="total-card">
-                            <span class="total-card__label">{{ PRODUCTS[product] ?? product }}</span>
-                            <span class="total-card__value">{{ fmt(kg, harvestUnit(product)) }}</span>
+                            <span class="total-card__label">{{ productLabel(product) }}</span>
+                            <span class="total-card__value">{{ formatAmount(kg, harvestUnit(product)) }}</span>
                         </div>
                         <div
                             v-for="(frames, product) in currentSeason.framesByProduct"
                             :key="`frames-${product}`"
                             class="total-card">
-                            <span class="total-card__label">{{ PRODUCTS[product] ?? product }}, рамок</span>
+                            <span class="total-card__label">{{ productLabel(product) }}, рамок</span>
                             <span class="total-card__value">{{ frames }}</span>
                         </div>
                     </div>
@@ -225,7 +206,7 @@ const financeSeason = computed<FinanceSeason | null>(() => {
                                 <span class="event-row__value">
                                     {{
                                         [
-                                            row.amountKg !== null ? fmt(row.amountKg, harvestUnit(row.product)) : null,
+                                            row.amountKg !== null ? formatAmount(row.amountKg, harvestUnit(row.product)) : null,
                                             row.framesCount !== null ? `${row.framesCount} рам.` : null,
                                         ]
                                             .filter(Boolean)
@@ -234,8 +215,8 @@ const financeSeason = computed<FinanceSeason | null>(() => {
                                 </span>
                             </div>
                             <div class="event-row__meta">
-                                <span>{{ PRODUCTS[row.product] ?? row.product }}</span>
-                                <span>{{ fmtDate(row.event.occurredAt) }}</span>
+                                <span>{{ productLabel(row.product) }}</span>
+                                <span>{{ formatDayMonth(row.event.occurredAt) }}</span>
                             </div>
                         </NuxtLink>
                     </section>
@@ -270,7 +251,7 @@ const financeSeason = computed<FinanceSeason | null>(() => {
                         </div>
                         <div class="event-row__meta">
                             <span>{{ row.product }}</span>
-                            <span>до {{ row.withdrawalEnd ? fmtDateFull(row.withdrawalEnd) : "" }}</span>
+                            <span>до {{ row.withdrawalEnd ? formatDayMonthLong(row.withdrawalEnd) : "" }}</span>
                         </div>
                     </NuxtLink>
                 </section>
@@ -286,7 +267,7 @@ const financeSeason = computed<FinanceSeason | null>(() => {
                         :to="`/events/${row.event.id}`">
                         <div class="event-row__main">
                             <span class="event-row__colony">{{ row.colony?.label ?? "Без семьи" }}</span>
-                            <span class="event-row__date">{{ fmtDate(row.event.occurredAt) }}</span>
+                            <span class="event-row__date">{{ formatDayMonth(row.event.occurredAt) }}</span>
                         </div>
                         <div class="event-row__meta">
                             <span>{{ row.product }}{{ row.dose ? ` · ${row.dose}` : "" }}</span>
@@ -323,14 +304,14 @@ const financeSeason = computed<FinanceSeason | null>(() => {
                         :to="`/events/${row.event.id}`">
                         <div class="event-row__main">
                             <span class="event-row__colony">{{ row.colony?.label ?? "Без семьи" }}</span>
-                            <span class="event-row__date">{{ fmtDate(row.event.occurredAt) }}</span>
+                            <span class="event-row__date">{{ formatDayMonth(row.event.occurredAt) }}</span>
                         </div>
                         <div class="event-row__meta">
                             <span>
-                                {{ FEED_TYPES[row.feedType] ?? row.feedType
+                                {{ feedLabel(row.feedType)
                                 }}{{ row.concentration ? ` · ${row.concentration}` : "" }}
                             </span>
-                            <span v-if="row.amountKg !== null">{{ fmt(row.amountKg, "л") }}</span>
+                            <span v-if="row.amountKg !== null">{{ formatAmount(row.amountKg, "л") }}</span>
                         </div>
                     </NuxtLink>
                 </section>
@@ -457,7 +438,7 @@ const financeSeason = computed<FinanceSeason | null>(() => {
                                 <span>{{
                                     row.counterparty || (row.income ? "покупатель не указан" : "продавец не указан")
                                 }}</span>
-                                <span>{{ fmtDate(row.event.occurredAt) }}</span>
+                                <span>{{ formatDayMonth(row.event.occurredAt) }}</span>
                             </div>
                         </NuxtLink>
                     </section>
@@ -511,7 +492,7 @@ const financeSeason = computed<FinanceSeason | null>(() => {
                                 class="event-row">
                                 <div class="event-row__main">
                                     <span class="event-row__colony">{{ c.label }}</span>
-                                    <span class="event-row__date">{{ c.diedAt ? fmtDate(c.diedAt) : "" }}</span>
+                                    <span class="event-row__date">{{ c.diedAt ? formatDayMonth(c.diedAt) : "" }}</span>
                                 </div>
                             </div>
                         </section>
