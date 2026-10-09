@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LocalColony, LocalEvent } from "~/shared/db";
+import { loadEventsWithColonies } from "~/utils/analytics/loadEvents";
 import type { FinanceSeason } from "~/utils/finance";
 
 useHead({ title: "Аналитика — Пасека" });
@@ -28,20 +29,9 @@ type SeasonData = {
 };
 
 const { data: harvestData, loading: harvestLoading } = useLiveQuery<SeasonData[]>(async () => {
-    const events = await db.event
-        .where("type")
-        .equals("harvest")
-        .filter((e) => !e.deletedAt)
-        .toArray();
+    const { events, colonies: colonyMap } = await loadEventsWithColonies("harvest");
 
     if (events.length === 0) return [];
-
-    const colonyIds = [...new Set(events.map((e) => e.colonyId).filter((id): id is string => !!id))];
-    const coloniesArr = await db.colony.bulkGet(colonyIds);
-    const colonyMap: Record<string, LocalColony> = {};
-    for (const c of coloniesArr) {
-        if (c) colonyMap[c.id] = c;
-    }
 
     const rows: HarvestRow[] = events
         .map((e) => ({
@@ -114,20 +104,7 @@ const TODAY = new Date();
 TODAY.setHours(0, 0, 0, 0);
 
 const { data: treatmentData, loading: treatmentLoading } = useLiveQuery<TreatmentRow[]>(async () => {
-    const events = await db.event
-        .where("type")
-        .equals("treatment")
-        .filter((e) => !e.deletedAt)
-        .toArray();
-
-    if (events.length === 0) return [];
-
-    const colonyIds = [...new Set(events.map((e) => e.colonyId).filter((id): id is string => !!id))];
-    const coloniesArr = await db.colony.bulkGet(colonyIds);
-    const colonyMap: Record<string, LocalColony> = {};
-    for (const c of coloniesArr) {
-        if (c) colonyMap[c.id] = c;
-    }
+    const { events, colonies: colonyMap } = await loadEventsWithColonies("treatment");
 
     return events
         .map((e) => {
@@ -182,20 +159,7 @@ type FeedingRow = {
 };
 
 const { data: feedingData, loading: feedingLoading } = useLiveQuery<FeedingRow[]>(async () => {
-    const events = await db.event
-        .where("type")
-        .equals("feeding")
-        .filter((e) => !e.deletedAt)
-        .toArray();
-
-    if (events.length === 0) return [];
-
-    const colonyIds = [...new Set(events.map((e) => e.colonyId).filter((id): id is string => !!id))];
-    const coloniesArr = await db.colony.bulkGet(colonyIds);
-    const colonyMap: Record<string, LocalColony> = {};
-    for (const c of coloniesArr) {
-        if (c) colonyMap[c.id] = c;
-    }
+    const { events, colonies: colonyMap } = await loadEventsWithColonies("feeding");
 
     return events
         .map((e) => ({
