@@ -7,15 +7,12 @@ useHead({ title: "Аналитика — Пасека" });
 type Tab = "harvest" | "treatment" | "feeding" | "survival" | "finance";
 const tab = ref<Tab>("harvest");
 
-// ── Лечение ────────────────────────────────────────────────────────────────
-
 const { data: treatmentData, loading: treatmentLoading } = useLiveQuery(async () => {
     const { events, colonies } = await loadEventsWithColonies("treatment");
     return buildTreatmentRows(events, colonies);
 }, []);
 
 const activeWithdrawals = computed(() => pickActiveWithdrawals(treatmentData.value));
-
 </script>
 
 <template>
@@ -82,69 +79,10 @@ const activeWithdrawals = computed(() => pickActiveWithdrawals(treatmentData.val
         </div>
 
         <HarvestTab v-if="tab === 'harvest'" />
-        <template v-else-if="tab === 'treatment'">
-            <LoadingSpinner v-if="treatmentLoading" />
-            <template v-if="activeWithdrawals.length > 0">
-                <div class="withdraw-banner">
-                    <Icon
-                        name="lucide:alert-triangle"
-                        size="16"
-                        class="withdraw-banner__icon" />
-                    <span>Активные периоды ожидания — откачка мёда запрещена</span>
-                </div>
-                <section class="event-list">
-                    <NuxtLink
-                        v-for="row in activeWithdrawals"
-                        :key="row.event.id"
-                        class="event-row event-row--warning"
-                        :to="`/events/${row.event.id}`">
-                        <div class="event-row__main">
-                            <span class="event-row__colony">{{ row.colony?.label ?? "Без семьи" }}</span>
-                            <span class="event-row__badge event-row__badge--danger"> ещё {{ row.daysLeft }} дн. </span>
-                        </div>
-                        <div class="event-row__meta">
-                            <span>{{ row.product }}</span>
-                            <span>до {{ row.withdrawalEnd ? formatDayMonthLong(row.withdrawalEnd) : "" }}</span>
-                        </div>
-                    </NuxtLink>
-                </section>
-            </template>
-
-            <template v-if="treatmentData.length > 0">
-                <p class="list-header">Журнал обработок</p>
-                <section class="event-list">
-                    <NuxtLink
-                        v-for="row in treatmentData"
-                        :key="row.event.id"
-                        class="event-row"
-                        :to="`/events/${row.event.id}`">
-                        <div class="event-row__main">
-                            <span class="event-row__colony">{{ row.colony?.label ?? "Без семьи" }}</span>
-                            <span class="event-row__date">{{ formatDayMonth(row.event.occurredAt) }}</span>
-                        </div>
-                        <div class="event-row__meta">
-                            <span>{{ row.product }}{{ row.dose ? ` · ${row.dose}` : "" }}</span>
-                            <span
-                                v-if="row.withdrawalDays !== null"
-                                class="event-row__badge"
-                                :class="
-                                    row.daysLeft && row.daysLeft > 0
-                                        ? 'event-row__badge--danger'
-                                        : 'event-row__badge--ok'
-                                ">
-                                {{ row.daysLeft && row.daysLeft > 0 ? `КМО ${String(row.daysLeft)} дн.` : "КМО истёк" }}
-                            </span>
-                        </div>
-                    </NuxtLink>
-                </section>
-            </template>
-
-            <EmptyState
-                v-else-if="treatmentData.length === 0 && !treatmentLoading"
-                icon="lucide:pill"
-                text="Нет обработок"
-                hint="Добавьте событие «Обработка» на странице семьи" />
-        </template>
+        <TreatmentTab
+            v-else-if="tab === 'treatment'"
+            :rows="treatmentData"
+            :loading="treatmentLoading" />
 
         <FeedingTab v-else-if="tab === 'feeding'" />
         <FinanceTab v-else-if="tab === 'finance'" />
@@ -199,23 +137,6 @@ const activeWithdrawals = computed(() => pickActiveWithdrawals(treatmentData.val
         align-items: center;
         justify-content: center;
         line-height: 1;
-    }
-}
-
-.withdraw-banner {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-3) var(--space-4);
-    background: color-mix(in srgb, var(--color-danger) 12%, transparent);
-    border: 1px solid color-mix(in srgb, var(--color-danger) 30%, transparent);
-    border-radius: var(--radius-md);
-    font-size: var(--text-sm);
-    font-weight: 600;
-    color: var(--color-danger);
-
-    &__icon {
-        flex-shrink: 0;
     }
 }
 </style>
