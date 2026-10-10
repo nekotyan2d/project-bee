@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { uuidv7 } from "uuidv7";
 
+import type { QueenAction } from "~/composables/useEventWriter";
 import type { EventType, LocalEvent, LocalHive } from "~/shared/db";
 
 const route = useRoute();
@@ -33,7 +34,7 @@ const superCount = ref("1");
 const suggest = useEventHints(type, f, !isEdit);
 
 // queen_change: поля новой матки, в payload не попадают
-const queenAction = ref<"introduced" | "replaced" | "superseded" | "lost" | "died">("replaced");
+const queenAction = ref<QueenAction>("replaced");
 const qcYear = ref("");
 const qcBreed = ref("");
 const queenNeedsNew = computed(() => QUEEN_SET_ACTIONS.has(queenAction.value));
@@ -175,45 +176,12 @@ onMounted(async () => {
 
             <HarvestFields v-else-if="type === 'harvest'" :model-value="f" />
 
-            <template v-else-if="type === 'queen_change'">
-                <FormField
-                    v-slot="{ id }"
-                    label="Что произошло">
-                    <BaseSelect
-                        :id="id"
-                        v-model="queenAction">
-                        <option value="introduced">Подсадил новую матку</option>
-                        <option value="replaced">Заменил матку</option>
-                        <option value="superseded">Тихая смена</option>
-                        <option value="lost">Матка потеряна</option>
-                        <option value="died">Матка погибла</option>
-                    </BaseSelect>
-                </FormField>
-                <template v-if="queenNeedsNew">
-                    <FormField
-                        v-slot="{ id }"
-                        label="Год вывода матки">
-                        <BaseInput
-                            :id="id"
-                            v-model="qcYear"
-                            type="number"
-                            inputmode="numeric"
-                            :min="MIN_QUEEN_YEAR"
-                            :max="MAX_QUEEN_YEAR"
-                            placeholder="2024" />
-                    </FormField>
-                    <FormField
-                        v-slot="{ id }"
-                        label="Порода">
-                        <SuggestInput
-                            :id="id"
-                            v-model="qcBreed"
-                            :options="suggest.hints('breed')"
-                            placeholder="Карника, бакфаст…"
-                            autocomplete="off" />
-                    </FormField>
-                </template>
-            </template>
+            <QueenChangeFields
+                v-else-if="type === 'queen_change'"
+                v-model:action="queenAction"
+                v-model:year="qcYear"
+                v-model:breed="qcBreed"
+                :suggest="suggest" />
 
             <SwarmFields v-else-if="type === 'swarm'" :model-value="f" />
 
