@@ -1,35 +1,12 @@
 import type { paths } from "~/shared/api/schema";
 import type { LocalApiary, LocalColony, LocalEvent, LocalHive, LocalQueen, OutboxItem, SyncTable } from "~/shared/db";
+import type { Dated, SendResult } from "~/utils/sync";
 
 type BatchBody = paths["/events/batch"]["post"]["requestBody"]["content"]["application/json"];
-
-type Dated = { updatedAt: string; deletedAt?: string | null };
 
 let flushing = false;
 
 const FLUSH_ORDER: SyncTable[] = ["apiary", "hive", "colony", "queen", "event"];
-
-type SendResult = "ok" | "drop" | "retry";
-
-function classify(status: number): SendResult {
-    return status === 401 || status === 403 || status >= 500 ? "retry" : "drop";
-}
-
-function toDate(value: string | null | undefined): Date | null {
-    return value ? new Date(value) : null;
-}
-
-function maxCursor(rows: Dated[], prev?: Date): Date | undefined {
-    let m = prev;
-    for (const r of rows) {
-        for (const ts of [r.updatedAt, r.deletedAt ?? undefined]) {
-            if (!ts) continue;
-            const d = new Date(ts);
-            if (!m || d > m) m = d;
-        }
-    }
-    return m;
-}
 
 export function useSync() {
     const db = useDb();
@@ -60,7 +37,7 @@ export function useSync() {
                         notes: r.notes,
                     },
                 });
-                return res.response.ok ? "ok" : classify(res.response.status);
+                return res.response.ok ? "ok" : classifyStatus(res.response.status);
             }
             case "hive": {
                 const r = await db.hive.get(id);
@@ -78,7 +55,7 @@ export function useSync() {
                         color: r.color,
                     },
                 });
-                return res.response.ok ? "ok" : classify(res.response.status);
+                return res.response.ok ? "ok" : classifyStatus(res.response.status);
             }
             case "colony": {
                 const r = await db.colony.get(id);
@@ -93,7 +70,7 @@ export function useSync() {
                         status: r.status,
                     },
                 });
-                return res.response.ok ? "ok" : classify(res.response.status);
+                return res.response.ok ? "ok" : classifyStatus(res.response.status);
             }
             case "queen": {
                 const r = await db.queen.get(id);
@@ -110,7 +87,7 @@ export function useSync() {
                         status: r.status,
                     },
                 });
-                return res.response.ok ? "ok" : classify(res.response.status);
+                return res.response.ok ? "ok" : classifyStatus(res.response.status);
             }
             case "event": {
                 const r = await db.event.get(id);
@@ -129,7 +106,7 @@ export function useSync() {
                     ],
                 } as unknown as BatchBody;
                 const res = await $api.POST("/events/batch", { body });
-                return res.response.ok ? "ok" : classify(res.response.status);
+                return res.response.ok ? "ok" : classifyStatus(res.response.status);
             }
         }
     }
@@ -153,7 +130,7 @@ export function useSync() {
                 return "ok";
         }
         if (res.response.ok || res.response.status === 404) return "ok";
-        return classify(res.response.status);
+        return classifyStatus(res.response.status);
     }
 
     async function send(item: OutboxItem): Promise<SendResult> {
@@ -224,7 +201,7 @@ export function useSync() {
         const { data } = await $api.GET("/apiaries", { params: { query } });
         if (!data) return;
 
-        const rows: LocalApiary[] = data.map((d) => ({ ...d, deletedAt: toDate(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
+        const rows: LocalApiary[] = data.map((d) => ({ ...d, deletedAt: toDateOrNull(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
         await db.apiary.bulkPut(rows);
 
         for (const d of data) {
@@ -242,7 +219,7 @@ export function useSync() {
         const { data } = await $api.GET("/hives", { params: { query } });
         if (!data) return;
 
-        const rows: LocalHive[] = data.map((d) => ({ ...d, deletedAt: toDate(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
+        const rows: LocalHive[] = data.map((d) => ({ ...d, deletedAt: toDateOrNull(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
         await db.hive.bulkPut(rows);
         await commit("hive", data, prev);
     }
@@ -252,7 +229,7 @@ export function useSync() {
         const { data } = await $api.GET("/colonies", { params: { query } });
         if (!data) return;
 
-        const rows: LocalColony[] = data.map((d) => ({ ...d, lastInspectedAt: toDate(d.lastInspectedAt), updatedAt: new Date(d.updatedAt) }));
+        const rows: LocalColony[] = data.map((d) => ({ ...d, lastInspectedAt: toDateOrNull(d.lastInspectedAt), updatedAt: new Date(d.updatedAt) }));
         await db.colony.bulkPut(rows);
         await commit("colony", data, prev);
     }
@@ -262,7 +239,7 @@ export function useSync() {
         const { data } = await $api.GET("/queens", { params: { query } });
         if (!data) return;
 
-        const rows: LocalQueen[] = data.map((d) => ({ ...d, deletedAt: toDate(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
+        const rows: LocalQueen[] = data.map((d) => ({ ...d, deletedAt: toDateOrNull(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
         await db.queen.bulkPut(rows);
         await commit("queen", data, prev);
     }
@@ -272,7 +249,7 @@ export function useSync() {
         const { data } = await $api.GET("/events", { params: { query } });
         if (!data) return;
 
-        const rows: LocalEvent[] = data.map((d) => ({ ...d, occurredAt: new Date(d.occurredAt), deletedAt: toDate(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
+        const rows: LocalEvent[] = data.map((d) => ({ ...d, occurredAt: new Date(d.occurredAt), deletedAt: toDateOrNull(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
         await db.event.bulkPut(rows);
         await commit("event", data, prev);
     }
