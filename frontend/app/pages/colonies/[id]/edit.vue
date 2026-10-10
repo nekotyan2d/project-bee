@@ -5,7 +5,7 @@ const route = useRoute();
 const id = route.params.id as string;
 
 const db = useDb();
-const { enqueue } = useSync();
+const { updateColony } = useEntityWriter();
 
 useHead({ title: "Редактировать семью — Пасека" });
 
@@ -28,30 +28,26 @@ onMounted(async () => {
 });
 
 async function submit(): Promise<void> {
-    const trimmedLabel = label.value.trim();
-    if (!trimmedLabel || !colony.value) return;
+    if (!label.value.trim() || !colony.value) return;
 
     submitting.value = true;
     error.value = null;
 
-    const now = new Date();
-    const updates: Partial<LocalColony> = {
-        label: trimmedLabel,
-        establishedAt: establishedAt.value || undefined,
-        origin: origin.value.trim() || undefined,
-        status: status.value,
-        updatedAt: now,
-    };
-
     try {
-        await db.colony.update(id, updates);
+        await updateColony(
+            id,
+            colonyFields({
+                label: label.value,
+                establishedAt: establishedAt.value,
+                origin: origin.value,
+                status: status.value,
+            }),
+        );
     } catch {
         error.value = "Не удалось сохранить. Попробуйте ещё раз.";
         submitting.value = false;
         return;
     }
-
-    void enqueue("colony", id, "upsert");
 
     await returnTo(`/colonies/${id}`);
 }

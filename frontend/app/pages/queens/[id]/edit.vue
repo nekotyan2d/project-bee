@@ -5,7 +5,7 @@ const route = useRoute();
 const id = route.params.id as string;
 
 const db = useDb();
-const { enqueue } = useSync();
+const { updateQueen, deleteQueen: removeQueen } = useEntityWriter();
 
 useHead({ title: "Редактировать матку — Пасека" });
 
@@ -36,25 +36,22 @@ async function submit(): Promise<void> {
     submitting.value = true;
     error.value = null;
 
-    const now = new Date();
-    const updates: Partial<LocalQueen> = {
-        year: year.value ? parseInt(year.value, 10) : undefined,
-        breed: breed.value.trim() || undefined,
-        origin: origin.value.trim() || undefined,
-        introducedAt: introducedAt.value || undefined,
-        status: status.value,
-        updatedAt: now,
-    };
-
     try {
-        await db.queen.update(id, updates);
+        await updateQueen(
+            id,
+            queenFields({
+                year: year.value,
+                breed: breed.value,
+                origin: origin.value,
+                introducedAt: introducedAt.value,
+                status: status.value,
+            }),
+        );
     } catch {
         error.value = "Не удалось сохранить. Попробуйте ещё раз.";
         submitting.value = false;
         return;
     }
-
-    void enqueue("queen", id, "upsert");
 
     await returnTo(`/queens/${id}`);
 }
@@ -63,12 +60,9 @@ async function deleteQueen(): Promise<void> {
     if (!queen.value) return;
     deleting.value = true;
 
-    const now = new Date();
     const backTo = queen.value.colonyId ? `/colonies/${queen.value.colonyId}` : "/colonies";
 
-    await db.queen.update(id, { deletedAt: now, updatedAt: now });
-
-    void enqueue("queen", id, "delete");
+    await removeQueen(id);
 
     await returnTo(backTo);
 }

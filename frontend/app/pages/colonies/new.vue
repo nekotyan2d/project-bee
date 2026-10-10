@@ -1,13 +1,9 @@
 <script setup lang="ts">
-import { uuidv7 } from "uuidv7";
-
-import type { LocalColony, LocalEvent, LocalHive, LocalQueen } from "~/shared/db";
-
 const route = useRoute();
 const settleHiveId = route.query.hiveId as string | undefined;
 
 const db = useDb();
-const { enqueue } = useSync();
+const { createColony } = useEntityWriter();
 
 const isSettle = computed(() => !!settleHiveId);
 useHead({ title: isSettle.value ? "Заселить улей — Пасека" : "Новая семья — Пасека" });
@@ -57,8 +53,7 @@ onMounted(async () => {
 });
 
 async function submit(): Promise<void> {
-    const trimmedLabel = label.value.trim();
-    if (!trimmedLabel) return;
+    if (!label.value.trim()) return;
 
     const apiary = await db.apiary.orderBy("updatedAt").first();
     if (!apiary) return;
@@ -66,79 +61,32 @@ async function submit(): Promise<void> {
     submitting.value = true;
     error.value = null;
 
-    const now = new Date();
+    const hive = settleHiveId
+        ? { existingId: settleHiveId }
+        : {
+              fields: hiveFields({
+                  label: hiveLabel.value.trim() || defaultHiveLabel.value,
+                  type: hiveType.value,
+                  frameCount: hiveFrames.value,
+                  color: hiveColor.value,
+                  status: "active",
+              }),
+          };
 
-    // hive: reuse the empty one we're settling into, or create a new one
-    let hive: LocalHive | null = null;
-    let hiveId = settleHiveId;
-    if (!hiveId) {
-        hive = {
-            id: uuidv7(),
-            apiaryId: apiary.id,
-            label: hiveLabel.value.trim() || defaultHiveLabel.value,
-            type: hiveType.value || undefined,
-            frameCount: hiveFrames.value ? parseInt(hiveFrames.value, 10) : undefined,
-            status: "active",
-            color: hiveColor.value || undefined,
-            updatedAt: now,
-        };
-        hiveId = hive.id;
-    }
+    const q = queenFields({ ...emptyQueenForm(), year: queenYear.value, breed: queenBreed.value });
 
-    const queen: LocalQueen | null = addQueen.value
-        ? {
-              id: uuidv7(),
-              colonyId: undefined,
-              year: queenYear.value ? parseInt(queenYear.value, 10) : undefined,
-              breed: queenBreed.value.trim() || undefined,
-              status: "active",
-              updatedAt: now,
-          }
-        : null;
-
-    const colony: LocalColony = {
-        id: uuidv7(),
-        apiaryId: apiary.id,
-        label: trimmedLabel,
-        establishedAt: establishedAt.value || undefined,
-        origin: origin.value.trim() || undefined,
-        status: "active",
-        superCount: 0,
-        currentHiveId: hiveId,
-        currentQueenId: queen?.id,
-        updatedAt: now,
-    };
-    if (queen) queen.colonyId = colony.id;
-
-    const migrationEvent: LocalEvent = {
-        id: uuidv7(),
-        apiaryId: apiary.id,
-        colonyId: colony.id,
-        type: "migration",
-        occurredAt: now,
-        payload: { toHiveId: hiveId },
-        updatedAt: now,
-    };
-
-    const queenChangeEvent: LocalEvent | null = queen
-        ? {
-              id: uuidv7(),
-              apiaryId: apiary.id,
-              colonyId: colony.id,
-              type: "queen_change",
-              occurredAt: now,
-              payload: { action: "introduced", queenId: queen.id },
-              updatedAt: now,
-          }
-        : null;
-
+    let colonyId: string;
     try {
-        await db.transaction("rw", db.hive, db.colony, db.queen, db.event, async () => {
-            if (hive) await db.hive.add(hive);
-            await db.colony.add(colony);
-            await db.event.add(migrationEvent);
-            if (queen) await db.queen.add(queen);
-            if (queenChangeEvent) await db.event.add(queenChangeEvent);
+        colonyId = await createColony({
+            apiaryId: apiary.id,
+            colony: colonyFields({
+                label: label.value,
+                establishedAt: establishedAt.value,
+                origin: origin.value,
+                status: "active",
+            }),
+            hive,
+            queen: addQueen.value ? { year: q.year, breed: q.breed } : undefined,
         });
     } catch {
         error.value = "Не удалось сохранить. Попробуйте ещё раз.";
@@ -146,13 +94,7 @@ async function submit(): Promise<void> {
         return;
     }
 
-    if (hive) void enqueue("hive", hive.id, "upsert");
-    void enqueue("colony", colony.id, "upsert");
-    if (queen) void enqueue("queen", queen.id, "upsert");
-    void enqueue("event", migrationEvent.id, "upsert");
-    if (queenChangeEvent) void enqueue("event", queenChangeEvent.id, "upsert");
-
-    await returnTo(`/colonies/${colony.id}`);
+    await returnTo(`/colonies/${colonyId}`);
 }
 </script>
 

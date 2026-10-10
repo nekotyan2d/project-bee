@@ -1,12 +1,8 @@
 <script setup lang="ts">
-import { uuidv7 } from "uuidv7";
-
-import type { LocalHive } from "~/shared/db";
-
 useHead({ title: "Новый улей — Пасека" });
 
 const db = useDb();
-const { enqueue } = useSync();
+const { createHive } = useEntityWriter();
 
 const label = ref("");
 const defaultLabel = ref("Улей");
@@ -31,8 +27,7 @@ onMounted(async () => {
 });
 
 async function submit(): Promise<void> {
-    const trimmedLabel = label.value.trim();
-    if (!trimmedLabel) return;
+    if (!label.value.trim()) return;
 
     const apiary = await db.apiary.orderBy("updatedAt").first();
     if (!apiary) return;
@@ -40,28 +35,22 @@ async function submit(): Promise<void> {
     submitting.value = true;
     error.value = null;
 
-    const frames = frameCount.value ? parseInt(frameCount.value, 10) : undefined;
-
-    const hive: LocalHive = {
-        id: uuidv7(),
-        apiaryId: apiary.id,
-        label: trimmedLabel,
-        type: type.value || undefined,
-        frameCount: frames,
-        status: "active",
-        color: color.value || undefined,
-        updatedAt: new Date(),
-    };
-
     try {
-        await db.hive.add(hive);
+        await createHive(
+            apiary.id,
+            hiveFields({
+                label: label.value,
+                type: type.value,
+                frameCount: frameCount.value,
+                color: color.value,
+                status: "active",
+            }),
+        );
     } catch {
         error.value = "Не удалось сохранить. Попробуйте ещё раз.";
         submitting.value = false;
         return;
     }
-
-    void enqueue("hive", hive.id, "upsert");
 
     await returnTo("/");
 }

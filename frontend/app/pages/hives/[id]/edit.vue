@@ -5,7 +5,7 @@ const route = useRoute();
 const id = route.params.id as string;
 
 const db = useDb();
-const { enqueue } = useSync();
+const { updateHive, deleteHive: removeHive } = useEntityWriter();
 
 useHead({ title: "Редактировать улей — Пасека" });
 
@@ -31,31 +31,27 @@ onMounted(async () => {
 });
 
 async function submit(): Promise<void> {
-    const trimmedLabel = label.value.trim();
-    if (!trimmedLabel || !hive.value) return;
+    if (!label.value.trim() || !hive.value) return;
 
     submitting.value = true;
     error.value = null;
 
-    const now = new Date();
-    const updates: Partial<LocalHive> = {
-        label: trimmedLabel,
-        type: type.value || undefined,
-        frameCount: frameCount.value ? parseInt(frameCount.value, 10) : undefined,
-        status: status.value,
-        color: color.value || undefined,
-        updatedAt: now,
-    };
-
     try {
-        await db.hive.update(id, updates);
+        await updateHive(
+            id,
+            hiveFields({
+                label: label.value,
+                type: type.value,
+                frameCount: frameCount.value,
+                color: color.value,
+                status: status.value,
+            }),
+        );
     } catch {
         error.value = "Не удалось сохранить. Попробуйте ещё раз.";
         submitting.value = false;
         return;
     }
-
-    void enqueue("hive", id, "upsert");
 
     await returnTo(`/hives/${id}`);
 }
@@ -64,10 +60,7 @@ async function deleteHive(): Promise<void> {
     if (!hive.value) return;
     deleting.value = true;
 
-    const now = new Date();
-    await db.hive.update(id, { deletedAt: now, updatedAt: now });
-
-    void enqueue("hive", id, "delete");
+    await removeHive(id);
 
     await returnTo("/");
 }
