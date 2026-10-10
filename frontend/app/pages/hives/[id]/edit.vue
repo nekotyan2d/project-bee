@@ -19,13 +19,6 @@ const submitting = ref(false);
 const error = ref<string | null>(null);
 const deleting = ref(false);
 
-const HIVE_TYPES = [
-    { value: "dadant", label: "Дадан" },
-    { value: "rut", label: "Рут" },
-    { value: "ukrainian", label: "Украинский" },
-    { value: "multi_hull", label: "Многокорпусный" },
-];
-
 onMounted(async () => {
     const h = await db.hive.get(id);
     if (!h) return;

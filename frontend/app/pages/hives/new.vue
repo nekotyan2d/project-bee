@@ -16,13 +16,6 @@ const color = ref("");
 const submitting = ref(false);
 const error = ref<string | null>(null);
 
-const HIVE_TYPES = [
-    { value: "dadant", label: "Дадан" },
-    { value: "rut", label: "Рут" },
-    { value: "ukrainian", label: "Украинский" },
-    { value: "multi_hull", label: "Многокорпусный" },
-];
-
 onMounted(async () => {
     const apiary = await db.apiary.orderBy("updatedAt").first();
     if (!apiary) return;
