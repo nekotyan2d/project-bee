@@ -1,5 +1,6 @@
 import type { LocalEvent } from "~/shared/db";
 
+import { harvestUnit } from "./constants";
 import { FEED_TYPE_LABEL, FINANCE_CATEGORY_LABEL, formatMoney, HARVEST_PRODUCT_LABEL, QUEEN_ACTION_LABEL } from "./eventLabels";
 
 export const EDITABLE_EVENT_TYPES = [
