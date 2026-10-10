@@ -14,8 +14,7 @@ const label = ref("");
 const establishedAt = ref("");
 const origin = ref("");
 const status = ref("active");
-const submitting = ref(false);
-const error = ref<string | null>(null);
+const { submitting, error, run } = useFormSubmit();
 
 onMounted(async () => {
     const c = await db.colony.get(id);
@@ -30,10 +29,7 @@ onMounted(async () => {
 async function submit(): Promise<void> {
     if (!label.value.trim() || !colony.value) return;
 
-    submitting.value = true;
-    error.value = null;
-
-    try {
+    const saved = await run(async () => {
         await updateColony(
             id,
             colonyFields({
@@ -43,11 +39,8 @@ async function submit(): Promise<void> {
                 status: status.value,
             }),
         );
-    } catch {
-        error.value = "Не удалось сохранить. Попробуйте ещё раз.";
-        submitting.value = false;
-        return;
-    }
+    });
+    if (!saved) return;
 
     await returnTo(`/colonies/${id}`);
 }
@@ -57,10 +50,11 @@ async function submit(): Promise<void> {
     <AppPage
         title="Редактировать семью"
         :back-to="`/colonies/${id}`">
-        <form
+        <FormShell
             v-if="colony"
-            class="form"
-            @submit.prevent="submit">
+            :error="error"
+            :submitting="submitting"
+            @submit="submit">
             <FormField
                 v-slot="{ id: fid }"
                 label="Название"
@@ -104,20 +98,7 @@ async function submit(): Promise<void> {
                     <option value="split">Разделена</option>
                 </BaseSelect>
             </FormField>
-
-            <p
-                v-if="error"
-                class="form__error">
-                {{ error }}
-            </p>
-
-            <BaseButton
-                type="submit"
-                :loading="submitting"
-                block>
-                Сохранить
-            </BaseButton>
-        </form>
+        </FormShell>
 
         <p
             v-else
@@ -128,17 +109,6 @@ async function submit(): Promise<void> {
 </template>
 
 <style scoped lang="scss">
-.form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-
-    &__error {
-        color: var(--color-danger);
-        font-size: var(--text-sm);
-    }
-}
-
 .not-found {
     color: var(--color-text-muted);
     text-align: center;

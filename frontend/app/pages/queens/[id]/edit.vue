@@ -15,8 +15,7 @@ const breed = ref("");
 const origin = ref("");
 const introducedAt = ref("");
 const status = ref("active");
-const submitting = ref(false);
-const error = ref<string | null>(null);
+const { submitting, error, run } = useFormSubmit();
 const deleting = ref(false);
 
 onMounted(async () => {
@@ -33,10 +32,7 @@ onMounted(async () => {
 async function submit(): Promise<void> {
     if (!queen.value) return;
 
-    submitting.value = true;
-    error.value = null;
-
-    try {
+    const saved = await run(async () => {
         await updateQueen(
             id,
             queenFields({
@@ -47,11 +43,8 @@ async function submit(): Promise<void> {
                 status: status.value,
             }),
         );
-    } catch {
-        error.value = "Не удалось сохранить. Попробуйте ещё раз.";
-        submitting.value = false;
-        return;
-    }
+    });
+    if (!saved) return;
 
     await returnTo(`/queens/${id}`);
 }
@@ -72,10 +65,11 @@ async function deleteQueen(): Promise<void> {
     <AppPage
         title="Редактировать матку"
         :back-to="`/queens/${id}`">
-        <form
+        <FormShell
             v-if="queen"
-            class="form"
-            @submit.prevent="submit">
+            :error="error"
+            :submitting="submitting"
+            @submit="submit">
             <FormField
                 v-slot="{ id: fid }"
                 label="Год вывода">
@@ -132,24 +126,13 @@ async function deleteQueen(): Promise<void> {
                 </BaseSelect>
             </FormField>
 
-            <p
-                v-if="error"
-                class="form__error">
-                {{ error }}
-            </p>
-
-            <BaseButton
-                type="submit"
-                :loading="submitting"
-                block>
-                Сохранить
-            </BaseButton>
-
-            <DeleteConfirm
-                label="Удалить матку"
-                :deleting="deleting"
-                @confirm="deleteQueen" />
-        </form>
+            <template #footer>
+                <DeleteConfirm
+                    label="Удалить матку"
+                    :deleting="deleting"
+                    @confirm="deleteQueen" />
+            </template>
+        </FormShell>
 
         <p
             v-else
@@ -160,17 +143,6 @@ async function deleteQueen(): Promise<void> {
 </template>
 
 <style scoped lang="scss">
-.form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-
-    &__error {
-        color: var(--color-danger);
-        font-size: var(--text-sm);
-    }
-}
-
 .not-found {
     color: var(--color-text-muted);
     text-align: center;

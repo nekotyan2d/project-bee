@@ -9,8 +9,7 @@ const defaultLabel = ref("Улей");
 const type = ref("");
 const frameCount = ref("");
 const color = ref("");
-const submitting = ref(false);
-const error = ref<string | null>(null);
+const { submitting, error, run } = useFormSubmit();
 
 onMounted(async () => {
     const apiary = await db.apiary.orderBy("updatedAt").first();
@@ -32,10 +31,7 @@ async function submit(): Promise<void> {
     const apiary = await db.apiary.orderBy("updatedAt").first();
     if (!apiary) return;
 
-    submitting.value = true;
-    error.value = null;
-
-    try {
+    const saved = await run(async () => {
         await createHive(
             apiary.id,
             hiveFields({
@@ -46,11 +42,8 @@ async function submit(): Promise<void> {
                 status: "active",
             }),
         );
-    } catch {
-        error.value = "Не удалось сохранить. Попробуйте ещё раз.";
-        submitting.value = false;
-        return;
-    }
+    });
+    if (!saved) return;
 
     await returnTo("/");
 }
@@ -60,9 +53,10 @@ async function submit(): Promise<void> {
     <AppPage
         title="Новый улей"
         back-to="/">
-        <form
-            class="form"
-            @submit.prevent="submit">
+        <FormShell
+            :error="error"
+            :submitting="submitting"
+            @submit="submit">
             <FormField
                 v-slot="{ id }"
                 label="Название"
@@ -107,32 +101,6 @@ async function submit(): Promise<void> {
                     min="0"
                     placeholder="12" />
             </FormField>
-
-            <p
-                v-if="error"
-                class="form__error">
-                {{ error }}
-            </p>
-
-            <BaseButton
-                type="submit"
-                :loading="submitting"
-                block>
-                Сохранить
-            </BaseButton>
-        </form>
+        </FormShell>
     </AppPage>
 </template>
-
-<style scoped lang="scss">
-.form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-
-    &__error {
-        color: var(--color-danger);
-        font-size: var(--text-sm);
-    }
-}
-</style>

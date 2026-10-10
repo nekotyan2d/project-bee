@@ -29,8 +29,7 @@ const addQueen = ref(false);
 const queenYear = ref("");
 const queenBreed = ref("");
 
-const submitting = ref(false);
-const error = ref<string | null>(null);
+const { submitting, error, run } = useFormSubmit();
 
 // Автоимя улья «Улей №N» — поле остаётся редактируемым.
 onMounted(async () => {
@@ -58,9 +57,6 @@ async function submit(): Promise<void> {
     const apiary = await db.apiary.orderBy("updatedAt").first();
     if (!apiary) return;
 
-    submitting.value = true;
-    error.value = null;
-
     const hive = settleHiveId
         ? { existingId: settleHiveId }
         : {
@@ -75,8 +71,8 @@ async function submit(): Promise<void> {
 
     const q = queenFields({ ...emptyQueenForm(), year: queenYear.value, breed: queenBreed.value });
 
-    let colonyId: string;
-    try {
+    let colonyId = "";
+    const saved = await run(async () => {
         colonyId = await createColony({
             apiaryId: apiary.id,
             colony: colonyFields({
@@ -88,11 +84,8 @@ async function submit(): Promise<void> {
             hive,
             queen: addQueen.value ? { year: q.year, breed: q.breed } : undefined,
         });
-    } catch {
-        error.value = "Не удалось сохранить. Попробуйте ещё раз.";
-        submitting.value = false;
-        return;
-    }
+    });
+    if (!saved) return;
 
     await returnTo(`/colonies/${colonyId}`);
 }
@@ -102,9 +95,11 @@ async function submit(): Promise<void> {
     <AppPage
         :title="isSettle ? 'Заселить улей' : 'Новая семья'"
         back-to="/">
-        <form
-            class="form"
-            @submit.prevent="submit">
+        <FormShell
+            :error="error"
+            :submitting="submitting"
+            :submit-label="isSettle ? 'Заселить' : 'Создать'"
+            @submit="submit">
             <FormField
                 v-slot="{ id }"
                 label="Название семьи"
@@ -237,35 +232,11 @@ async function submit(): Promise<void> {
                         autocomplete="off" />
                 </FormField>
             </template>
-
-            <p
-                v-if="error"
-                class="form__error">
-                {{ error }}
-            </p>
-
-            <BaseButton
-                type="submit"
-                :loading="submitting"
-                block>
-                {{ isSettle ? "Заселить" : "Создать" }}
-            </BaseButton>
-        </form>
+        </FormShell>
     </AppPage>
 </template>
 
 <style scoped lang="scss">
-.form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-
-    &__error {
-        color: var(--color-danger);
-        font-size: var(--text-sm);
-    }
-}
-
 .disclosure {
     display: flex;
     align-items: center;
