@@ -2,7 +2,7 @@
 import { uuidv7 } from "uuidv7";
 
 import type { SuggestOption } from "~/components/ui/SuggestInput.vue";
-import type { EventType, LocalEvent, LocalHive, LocalQueen } from "~/shared/db";
+import type { EventType, LocalEvent, LocalHive } from "~/shared/db";
 import { type HistoryItem, suggestions } from "~/utils/suggestions";
 
 const route = useRoute();
@@ -12,7 +12,7 @@ const colonyId = ref(route.query.colonyId as string | undefined);
 const type = ref(route.query.type as string | undefined);
 
 const db = useDb();
-const { enqueue } = useSync();
+const { saveEvent, saveQueenChange } = useEventWriter();
 
 const TITLES: Record<string, string> = {
     inspection: "Осмотр",
@@ -33,8 +33,6 @@ const TITLES: Record<string, string> = {
 const APIARY_SCOPED = ["note", "harvest", "finance"];
 
 const QC_NEEDS_QUEEN = ["introduced", "replaced", "superseded"];
-
-const STATUS_BY_TYPE: Record<string, string> = { split: "split", merge: "merged", death: "dead" };
 
 const baseTitle = computed(() => TITLES[type.value ?? ""] ?? "Событие");
 const pageTitle = computed(() => (isEdit ? `Изменить: ${baseTitle.value}` : baseTitle.value));
@@ -186,62 +184,6 @@ function isValid(): boolean {
     return true;
 }
 
-async function submitQueenChange(apiaryId: string, cid: string, occurredAtDate: Date, now: Date): Promise<void> {
-    const action = queenAction.value;
-    const needsQueen = queenNeedsNew.value;
-
-    const colony = await db.colony.get(cid);
-    const prevQueenId = colony?.currentQueenId;
-    const prevQueen = prevQueenId && action !== "introduced" ? await db.queen.get(prevQueenId) : undefined;
-
-    const newQueen: LocalQueen | null = needsQueen
-        ? {
-              id: uuidv7(),
-              colonyId: cid,
-              year: qcYear.value ? parseInt(qcYear.value, 10) : undefined,
-              breed: qcBreed.value.trim() || undefined,
-              introducedAt: occurredAt.value ? occurredAt.value.slice(0, 10) : undefined,
-              status: "active",
-              updatedAt: now,
-          }
-        : null;
-
-    const payload = newQueen ? { action, queenId: newQueen.id } : { action };
-    const event: LocalEvent = {
-        id: uuidv7(),
-        apiaryId,
-        colonyId: cid,
-        type: "queen_change",
-        occurredAt: occurredAtDate,
-        payload,
-        updatedAt: now,
-    };
-
-    try {
-        await db.transaction("rw", db.event, db.colony, db.queen, async () => {
-            if (newQueen) await db.queen.add(newQueen);
-            await db.event.add(event);
-            if (prevQueen) await db.queen.update(prevQueen.id, { status: action, updatedAt: now });
-            if (colony) {
-                if (newQueen) colony.currentQueenId = newQueen.id;
-                else delete colony.currentQueenId;
-                colony.updatedAt = now;
-                await db.colony.put(colony);
-            }
-        });
-    } catch {
-        error.value = "Не удалось сохранить. Попробуйте ещё раз.";
-        submitting.value = false;
-        return;
-    }
-
-    if (newQueen) void enqueue("queen", newQueen.id, "upsert");
-    if (prevQueen) void enqueue("queen", prevQueen.id, "upsert");
-    void enqueue("event", event.id, "upsert");
-
-    await returnTo(backTo.value);
-}
-
 async function submit(): Promise<void> {
     if (!isValid()) return;
     const cid = colonyId.value;
@@ -258,45 +200,40 @@ async function submit(): Promise<void> {
     const now = new Date();
     const occurredAtDate = occurredAt.value ? new Date(occurredAt.value) : now;
 
-    if (type.value === "queen_change" && cid) {
-        await submitQueenChange(apiary.id, cid, occurredAtDate, now);
-        return;
-    }
-
-    const event: LocalEvent = {
-        id: isEdit && eventId ? eventId : uuidv7(),
-        apiaryId: apiary.id,
-        colonyId: cid,
-        type: type.value as EventType,
-        occurredAt: occurredAtDate,
-        payload: payload(),
-        updatedAt: now,
-    };
-
     try {
-        await db.transaction("rw", db.event, db.colony, async () => {
-            if (isEdit) await db.event.put(event);
-            else await db.event.add(event);
-
-            const colony = cid ? await db.colony.get(cid) : undefined;
-            if (colony) {
-                const events = await db.event
-                    .where("colonyId")
-                    .equals(cid as string)
-                    .toArray();
-                const newStatus = STATUS_BY_TYPE[type.value ?? ""];
-                const next = applyColonyState(colony, deriveColonyState(events), now);
-                await db.colony.put(newStatus ? { ...next, status: newStatus } : next);
-            }
-        });
+        if (type.value === "queen_change" && cid) {
+            await saveQueenChange({
+                apiaryId: apiary.id,
+                colonyId: cid,
+                occurredAt: occurredAtDate,
+                action: queenAction.value,
+                newQueen: queenNeedsNew.value
+                    ? {
+                          year: qcYear.value ? parseInt(qcYear.value, 10) : undefined,
+                          breed: qcBreed.value.trim() || undefined,
+                          introducedAt: occurredAt.value ? occurredAt.value.slice(0, 10) : undefined,
+                      }
+                    : undefined,
+            });
+        } else {
+            await saveEvent(
+                {
+                    id: isEdit && eventId ? eventId : uuidv7(),
+                    apiaryId: apiary.id,
+                    colonyId: cid,
+                    type: type.value as EventType,
+                    occurredAt: occurredAtDate,
+                    payload: payload(),
+                    updatedAt: now,
+                },
+                isEdit,
+            );
+        }
     } catch {
         error.value = "Не удалось сохранить. Попробуйте ещё раз.";
         submitting.value = false;
         return;
     }
-
-    void enqueue("event", event.id, "upsert");
-    if (cid && STATUS_BY_TYPE[type.value ?? ""]) void enqueue("colony", cid, "upsert");
 
     await returnTo(backTo.value);
 }

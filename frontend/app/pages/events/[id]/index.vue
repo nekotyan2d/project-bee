@@ -5,7 +5,7 @@ const route = useRoute();
 const id = route.params.id as string;
 
 const db = useDb();
-const { enqueue } = useSync();
+const { deleteEvent } = useEventWriter();
 
 type PageData = {
     event: LocalEvent | undefined;
@@ -58,28 +58,14 @@ useHead(() => ({ title: summary.value ? `${summary.value.title} — Пасека
 
 const deleting = ref(false);
 
-async function deleteEvent(): Promise<void> {
+async function removeEvent(): Promise<void> {
     const event = data.value.event;
     if (!event) return;
     deleting.value = true;
 
-    const now = new Date();
-    const colonyId = event.colonyId;
+    await deleteEvent(id);
 
-    await db.transaction("rw", db.event, db.colony, async () => {
-        await db.event.update(id, { deletedAt: now, updatedAt: now });
-        if (colonyId) {
-            const colony = await db.colony.get(colonyId);
-            if (colony) {
-                const events = await db.event.where("colonyId").equals(colonyId).toArray();
-                await db.colony.put(applyColonyState(colony, deriveColonyState(events), now));
-            }
-        }
-    });
-
-    void enqueue("event", id, "delete");
-
-    await returnTo(colonyId ? `/colonies/${colonyId}` : "/");
+    await returnTo(event.colonyId ? `/colonies/${event.colonyId}` : "/");
 }
 </script>
 
@@ -111,7 +97,7 @@ async function deleteEvent(): Promise<void> {
             </InfoGrid>
             <p v-else class="empty">Без подробностей</p>
 
-            <DeleteConfirm label="Удалить событие" :deleting="deleting" @confirm="deleteEvent" />
+            <DeleteConfirm label="Удалить событие" :deleting="deleting" @confirm="removeEvent" />
         </template>
 
         <div v-else class="not-found">

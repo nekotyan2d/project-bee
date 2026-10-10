@@ -60,3 +60,9 @@ export function applyColonyState(colony: LocalColony, state: DerivedColonyState,
     else delete next.currentQueenId;
     return next;
 }
+
+export const STATUS_BY_EVENT_TYPE: Record<string, string | undefined> = {
+    split: "split",
+    merge: "merged",
+    death: "dead",
+};
