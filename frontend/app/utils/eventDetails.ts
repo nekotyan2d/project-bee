@@ -1,10 +1,24 @@
-import type { LocalEvent } from "~/shared/db";
+import type { EventType, LocalEvent } from "~/shared/db";
 
 import { harvestUnit } from "./constants";
-import { FEED_TYPE_LABEL, FINANCE_CATEGORY_LABEL, formatMoney, HARVEST_PRODUCT_LABEL, QUEEN_ACTION_LABEL } from "./eventLabels";
+import {
+    FEED_TYPE_LABEL,
+    FINANCE_CATEGORY_LABEL,
+    formatMoney,
+    HARVEST_PRODUCT_LABEL,
+    QUEEN_ACTION_LABEL,
+} from "./eventLabels";
+import { labelOf, payloadNum, payloadText } from "./payload";
 
 export const EDITABLE_EVENT_TYPES = [
-    "inspection", "super_change", "treatment", "feeding", "harvest", "swarm", "note", "finance",
+    "inspection",
+    "super_change",
+    "treatment",
+    "feeding",
+    "harvest",
+    "swarm",
+    "note",
+    "finance",
 ];
 
 export interface EventField {
@@ -30,93 +44,88 @@ const TEMPERAMENT_LABEL: Record<string, string> = {
     aggressive: "агрессивный",
 };
 
-function num(value: unknown): string | null {
-    return typeof value === "number" ? String(value) : null;
-}
+type Payload = Record<string, unknown>;
+type Entry = [label: string, value: string | null, align?: "start"];
+type Describe = (p: Payload, ctx: EventFieldsContext) => Entry[];
 
-function str(value: unknown): string | null {
-    return typeof value === "string" && value.trim() ? value : null;
-}
+const withUnit = (value: unknown, unit: string): string | null =>
+    typeof value === "number" ? `${String(value)} ${unit}` : null;
+
+const notes = (p: Payload): Entry => ["Заметки", payloadText(p.notes), "start"];
+
+const DESCRIBE: Record<EventType, Describe> = {
+    inspection: (p) => [
+        ["Рамок в гнезде", payloadNum(p.framesTotal)],
+        ["Рамок расплода", payloadNum(p.framesBrood)],
+        ["Рамок корма", payloadNum(p.framesStores)],
+        ["Маточники", payloadNum(p.queenCells)],
+        ["Матка видна", p.queenSeen === true ? "да" : p.queenSeen === false ? "нет" : null],
+        ["Запасы", labelOf(STORES_LEVEL_LABEL, p.storesLevel)],
+        ["Нрав", labelOf(TEMPERAMENT_LABEL, p.temperament)],
+        notes(p),
+    ],
+
+    super_change: (p) => {
+        const delta = typeof p.delta === "number" ? p.delta : 0;
+        return [
+            ["Действие", delta > 0 ? `Поставлено ${String(delta)}` : `Снято ${String(-delta)}`],
+            ["Причина", payloadText(p.reason), "start"],
+        ];
+    },
+
+    treatment: (p) => [
+        ["Препарат", payloadText(p.product)],
+        ["Дозировка", payloadText(p.dose)],
+        ["Способ", payloadText(p.method)],
+        ["Срок ожидания", withUnit(p.withdrawalDays, "дн.")],
+    ],
+
+    feeding: (p) => [
+        ["Тип корма", labelOf(FEED_TYPE_LABEL, p.feedType)],
+        ["Количество", withUnit(p.amountKg, "л")],
+        ["Концентрация", payloadText(p.concentration)],
+    ],
+
+    harvest: (p) => [
+        ["Продукт", labelOf(HARVEST_PRODUCT_LABEL, p.product) ?? "мёд"],
+        ["Количество", withUnit(p.amountKg, harvestUnit(p.product))],
+        ["Рамок", payloadNum(p.framesCount)],
+    ],
+
+    queen_change: (p, ctx) => [
+        ["Действие", labelOf(QUEEN_ACTION_LABEL, p.action)],
+        ["Матка", ctx.queenLabel ?? null],
+    ],
+
+    swarm: (p) => [["Рой", p.captured === true ? "поймали" : p.captured === false ? "ушёл" : null], notes(p)],
+
+    migration: (_p, ctx) => [["Куда", ctx.hiveLabel ?? null]],
+
+    split: (p) => [notes(p)],
+
+    merge: (p) => [notes(p)],
+
+    death: (p) => [["Причина", payloadText(p.cause), "start"]],
+
+    note: (p) => [["Текст", payloadText(p.text), "start"]],
+
+    finance: (p) => [
+        ["Направление", p.direction === "income" ? "Доход" : "Расход"],
+        ["Сумма", typeof p.amount === "number" ? formatMoney(p.amount) : null],
+        ["Категория", labelOf(FINANCE_CATEGORY_LABEL, p.category)],
+        ["Что", payloadText(p.item), "start"],
+        [p.direction === "income" ? "Покупатель" : "Продавец", payloadText(p.counterparty), "start"],
+        notes(p),
+    ],
+};
 
 export function getEventFields(event: LocalEvent, ctx: EventFieldsContext = {}): EventField[] {
-    const p = event.payload;
+    const describe = DESCRIBE[event.type] as Describe | undefined;
+    const entries = describe?.(event.payload, ctx) ?? [];
+
     const fields: EventField[] = [];
-    const push = (label: string, value: string | null, align?: "start") => {
+    for (const [label, value, align] of entries) {
         if (value !== null) fields.push({ label, value, align });
-    };
-
-    switch (event.type) {
-        case "inspection":
-            push("Рамок в гнезде", num(p.framesTotal));
-            push("Рамок расплода", num(p.framesBrood));
-            push("Рамок корма", num(p.framesStores));
-            push("Маточники", num(p.queenCells));
-            push("Матка видна", p.queenSeen === true ? "да" : p.queenSeen === false ? "нет" : null);
-            push(
-                "Запасы",
-                typeof p.storesLevel === "string" ? (STORES_LEVEL_LABEL[p.storesLevel] ?? p.storesLevel) : null,
-            );
-            push(
-                "Нрав",
-                typeof p.temperament === "string" ? (TEMPERAMENT_LABEL[p.temperament] ?? p.temperament) : null,
-            );
-            push("Заметки", str(p.notes), "start");
-            break;
-        case "super_change": {
-            const delta = typeof p.delta === "number" ? p.delta : 0;
-            push("Действие", delta > 0 ? `Поставлено ${String(delta)}` : `Снято ${String(-delta)}`);
-            push("Причина", str(p.reason), "start");
-            break;
-        }
-        case "treatment":
-            push("Препарат", str(p.product));
-            push("Дозировка", str(p.dose));
-            push("Способ", str(p.method));
-            push("Срок ожидания", typeof p.withdrawalDays === "number" ? `${String(p.withdrawalDays)} дн.` : null);
-            break;
-        case "feeding":
-            push("Тип корма", typeof p.feedType === "string" ? (FEED_TYPE_LABEL[p.feedType] ?? p.feedType) : null);
-            push("Количество", typeof p.amountKg === "number" ? `${String(p.amountKg)} л` : null);
-            push("Концентрация", str(p.concentration));
-            break;
-        case "harvest":
-            push("Продукт", typeof p.product === "string" ? (HARVEST_PRODUCT_LABEL[p.product] ?? p.product) : "мёд");
-            push("Количество", typeof p.amountKg === "number" ? `${String(p.amountKg)} ${harvestUnit(p.product)}` : null);
-            push("Рамок", num(p.framesCount));
-            break;
-        case "queen_change":
-            push("Действие", typeof p.action === "string" ? (QUEEN_ACTION_LABEL[p.action] ?? p.action) : null);
-            push("Матка", ctx.queenLabel ?? null);
-            break;
-        case "swarm":
-            push("Рой", p.captured === true ? "поймали" : p.captured === false ? "ушёл" : null);
-            push("Заметки", str(p.notes), "start");
-            break;
-        case "migration":
-            push("Куда", ctx.hiveLabel ?? null);
-            break;
-        case "split":
-        case "merge":
-            push("Заметки", str(p.notes), "start");
-            break;
-        case "death":
-            push("Причина", str(p.cause), "start");
-            break;
-        case "note":
-            push("Текст", str(p.text), "start");
-            break;
-        case "finance":
-            push("Направление", p.direction === "income" ? "Доход" : "Расход");
-            push("Сумма", typeof p.amount === "number" ? formatMoney(p.amount) : null);
-            push(
-                "Категория",
-                typeof p.category === "string" ? (FINANCE_CATEGORY_LABEL[p.category] ?? p.category) : null,
-            );
-            push("Что", str(p.item), "start");
-            push(p.direction === "income" ? "Покупатель" : "Продавец", str(p.counterparty), "start");
-            push("Заметки", str(p.notes), "start");
-            break;
     }
-
     return fields;
 }
