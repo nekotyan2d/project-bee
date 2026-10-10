@@ -1,14 +1,12 @@
 <script setup lang="ts">
+import type { HiveForm } from "~/utils/entityForms";
+
 useHead({ title: "Новый улей — Пасека" });
 
 const db = useDb();
 const { createHive } = useEntityWriter();
 
-const label = ref("");
-const defaultLabel = ref("Улей");
-const type = ref("");
-const frameCount = ref("");
-const color = ref("");
+const form = ref<HiveForm>(emptyHiveForm());
 const { submitting, error, run } = useFormSubmit();
 
 onMounted(async () => {
@@ -21,27 +19,17 @@ onMounted(async () => {
         .filter((h) => !h.deletedAt)
         .count();
 
-    defaultLabel.value = `Улей №${String(count + 1)}`;
-    if (!label.value) label.value = defaultLabel.value;
+    if (!form.value.label) form.value.label = `Улей №${String(count + 1)}`;
 });
 
 async function submit(): Promise<void> {
-    if (!label.value.trim()) return;
+    if (!form.value.label.trim()) return;
 
     const apiary = await db.apiary.orderBy("updatedAt").first();
     if (!apiary) return;
 
     const saved = await run(async () => {
-        await createHive(
-            apiary.id,
-            hiveFields({
-                label: label.value,
-                type: type.value,
-                frameCount: frameCount.value,
-                color: color.value,
-                status: "active",
-            }),
-        );
+        await createHive(apiary.id, hiveFields(form.value));
     });
     if (!saved) return;
 
@@ -57,50 +45,7 @@ async function submit(): Promise<void> {
             :error="error"
             :submitting="submitting"
             @submit="submit">
-            <FormField
-                v-slot="{ id }"
-                label="Название"
-                required>
-                <BaseInput
-                    :id="id"
-                    v-model="label"
-                    placeholder="Улей №1"
-                    autocomplete="off"
-                    autofocus
-                    required />
-            </FormField>
-
-            <FormField
-                v-slot="{ id }"
-                label="Тип">
-                <BaseSelect
-                    :id="id"
-                    v-model="type">
-                    <option value="">Не указан</option>
-                    <option
-                        v-for="t in HIVE_TYPES"
-                        :key="t.value"
-                        :value="t.value">
-                        {{ t.label }}
-                    </option>
-                </BaseSelect>
-            </FormField>
-
-            <FormField label="Цвет">
-                <ColorPicker v-model="color" />
-            </FormField>
-
-            <FormField
-                v-slot="{ id }"
-                label="Вместимость (рамок)">
-                <BaseInput
-                    :id="id"
-                    v-model="frameCount"
-                    type="number"
-                    inputmode="numeric"
-                    min="0"
-                    placeholder="12" />
-            </FormField>
+            <HiveFormFields v-model="form" />
         </FormShell>
     </AppPage>
 </template>
