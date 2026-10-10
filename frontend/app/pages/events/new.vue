@@ -117,11 +117,6 @@ const FINANCE_DIRECTION_OPTS = [
     { value: "expense", label: "Покупка" },
     { value: "income", label: "Продажа" },
 ];
-const SWARM_OPTS = [
-    { value: "", label: "Не отмечено" },
-    { value: "true", label: "Поймали" },
-    { value: "false", label: "Ушёл" },
-];
 
 // queen_change: поля новой матки, в payload не попадают
 const queenAction = ref<"introduced" | "replaced" | "superseded" | "lost" | "died">("replaced");
@@ -534,82 +529,15 @@ onMounted(async () => {
                 </template>
             </template>
 
-            <template v-else-if="type === 'swarm'">
-                <FormField label="Рой пойман?">
-                    <ChoiceChips
-                        v-model="f.captured"
-                        :options="SWARM_OPTS" />
-                </FormField>
-                <FormField
-                    v-slot="{ id }"
-                    label="Заметки">
-                    <BaseTextarea
-                        :id="id"
-                        v-model="f.notes"
-                        placeholder="Наблюдения…" />
-                </FormField>
-            </template>
+            <SwarmFields v-else-if="type === 'swarm'" :model-value="f" />
 
-            <template v-else-if="type === 'migration'">
-                <FormField
-                    v-slot="{ id }"
-                    label="В какой улей"
-                    required>
-                    <BaseSelect
-                        :id="id"
-                        v-model="f.toHiveId"
-                        required>
-                        <option value="">Выберите улей</option>
-                        <option
-                            v-for="h in migrationHives"
-                            :key="h.id"
-                            :value="h.id">
-                            {{ h.label }}
-                        </option>
-                    </BaseSelect>
-                </FormField>
-                <p
-                    v-if="migrationHives.length === 0"
-                    class="form__hint">
-                    Нет других ульев на пасеке.
-                </p>
-            </template>
+            <MigrationFields v-else-if="type === 'migration'" :model-value="f" :hives="migrationHives" />
 
-            <template v-else-if="type === 'split'">
-                <FormField
-                    v-slot="{ id }"
-                    label="Заметки">
-                    <BaseTextarea
-                        :id="id"
-                        v-model="f.notes"
-                        placeholder="Что отделили, куда…" />
-                </FormField>
-                <p class="form__hint">Семья будет помечена как «разделена».</p>
-            </template>
+            <SplitFields v-else-if="type === 'split'" :model-value="f" />
 
-            <template v-else-if="type === 'merge'">
-                <FormField
-                    v-slot="{ id }"
-                    label="Заметки">
-                    <BaseTextarea
-                        :id="id"
-                        v-model="f.notes"
-                        placeholder="С кем объединили…" />
-                </FormField>
-                <p class="form__hint">Семья будет помечена как «объединена».</p>
-            </template>
+            <MergeFields v-else-if="type === 'merge'" :model-value="f" />
 
-            <template v-else-if="type === 'death'">
-                <FormField
-                    v-slot="{ id }"
-                    label="Причина">
-                    <BaseTextarea
-                        :id="id"
-                        v-model="f.cause"
-                        placeholder="Слёт, болезнь, бескормица…" />
-                </FormField>
-                <p class="form__hint">Семья будет помечена как «погибла».</p>
-            </template>
+            <DeathFields v-else-if="type === 'death'" :model-value="f" />
 
             <template v-else-if="type === 'finance'">
                 <FormField label="Операция">
@@ -676,19 +604,7 @@ onMounted(async () => {
                 </FormField>
             </template>
 
-            <template v-else-if="type === 'note'">
-                <FormField
-                    v-slot="{ id }"
-                    label="Заметка"
-                    required>
-                    <BaseTextarea
-                        :id="id"
-                        v-model="f.text"
-                        placeholder="Текст заметки…"
-                        :rows="6"
-                        required />
-                </FormField>
-            </template>
+            <NoteFields v-else-if="type === 'note'" :model-value="f" />
 
             <p
                 v-if="error"
@@ -714,11 +630,6 @@ onMounted(async () => {
 
     &__error {
         color: var(--color-danger);
-        font-size: var(--text-sm);
-    }
-
-    &__hint {
-        color: var(--color-text-muted);
         font-size: var(--text-sm);
     }
 }
