@@ -14,27 +14,7 @@ const type = ref(route.query.type as string | undefined);
 const db = useDb();
 const { saveEvent, saveQueenChange } = useEventWriter();
 
-const TITLES: Record<string, string> = {
-    inspection: "Осмотр",
-    super_change: "Магазины",
-    treatment: "Обработка",
-    feeding: "Подкормка",
-    harvest: "Откачка",
-    queen_change: "Смена матки",
-    swarm: "Роение",
-    migration: "Переезд",
-    split: "Деление",
-    merge: "Объединение",
-    death: "Гибель семьи",
-    note: "Заметка",
-    finance: "Финансы",
-};
-
-const APIARY_SCOPED = ["note", "harvest", "finance"];
-
-const QC_NEEDS_QUEEN = ["introduced", "replaced", "superseded"];
-
-const baseTitle = computed(() => TITLES[type.value ?? ""] ?? "Событие");
+const baseTitle = computed(() => EVENT_FORM_TITLE[type.value ?? ""] ?? "Событие");
 const pageTitle = computed(() => (isEdit ? `Изменить: ${baseTitle.value}` : baseTitle.value));
 const backTo = computed(() => (isEdit ? `/events/${eventId}` : colonyId.value ? `/colonies/${colonyId.value}` : "/"));
 
@@ -147,7 +127,7 @@ const SWARM_OPTS = [
 const queenAction = ref<"introduced" | "replaced" | "superseded" | "lost" | "died">("replaced");
 const qcYear = ref("");
 const qcBreed = ref("");
-const queenNeedsNew = computed(() => QC_NEEDS_QUEEN.includes(queenAction.value));
+const queenNeedsNew = computed(() => QUEEN_SET_ACTIONS.has(queenAction.value));
 
 const financeCategories = computed(() =>
     f.direction === "income" ? FINANCE_INCOME_CATEGORIES : FINANCE_EXPENSE_CATEGORIES,
@@ -172,20 +152,8 @@ function payload(): Record<string, unknown> {
     return p;
 }
 
-function isValid(): boolean {
-    if (!type.value) return false;
-    if (!colonyId.value && !APIARY_SCOPED.includes(type.value)) return false;
-    if (type.value === "treatment" && !String(f.product).trim()) return false;
-    if (type.value === "feeding" && !f.feedType) return false;
-    if (type.value === "harvest" && !f.amountKg && !f.framesCount) return false;
-    if (type.value === "migration" && !f.toHiveId) return false;
-    if (type.value === "note" && !String(f.text).trim()) return false;
-    if (type.value === "finance" && !(parseFloat(String(f.amount)) > 0)) return false;
-    return true;
-}
-
 async function submit(): Promise<void> {
-    if (!isValid()) return;
+    if (!isEventFormValid(type.value, f, colonyId.value)) return;
     const cid = colonyId.value;
 
     submitting.value = true;

@@ -7,7 +7,7 @@ export interface DerivedColonyState {
     currentQueenId: string | undefined;
 }
 
-const QUEEN_SET_ACTIONS = new Set(["introduced", "replaced", "superseded"]);
+export const QUEEN_SET_ACTIONS = new Set(["introduced", "replaced", "superseded"]);
 
 export function deriveColonyState(events: LocalEvent[]): DerivedColonyState {
     let superCount = 0;
