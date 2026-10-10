@@ -1,35 +1,14 @@
 import type { paths } from "~/shared/api/schema";
 import type { LocalApiary, LocalColony, LocalEvent, LocalHive, LocalQueen, OutboxItem, SyncTable } from "~/shared/db";
+import type { Dated, SendResult } from "~/utils/sync";
 
 type BatchBody = paths["/events/batch"]["post"]["requestBody"]["content"]["application/json"];
-
-type Dated = { updatedAt: string; deletedAt?: string | null };
 
 let flushing = false;
 
 const FLUSH_ORDER: SyncTable[] = ["apiary", "hive", "colony", "queen", "event"];
 
-type SendResult = "ok" | "drop" | "retry";
-
-function classify(status: number): SendResult {
-    return status === 401 || status === 403 || status >= 500 ? "retry" : "drop";
-}
-
-function toDate(value: string | null | undefined): Date | null {
-    return value ? new Date(value) : null;
-}
-
-function maxCursor(rows: Dated[], prev?: Date): Date | undefined {
-    let m = prev;
-    for (const r of rows) {
-        for (const ts of [r.updatedAt, r.deletedAt ?? undefined]) {
-            if (!ts) continue;
-            const d = new Date(ts);
-            if (!m || d > m) m = d;
-        }
-    }
-    return m;
-}
+type Sent = { response: Response };
 
 export function useSync() {
     const db = useDb();
@@ -37,35 +16,38 @@ export function useSync() {
     const { getToken } = useAuthToken();
 
     async function pull(): Promise<void> {
-        await Promise.allSettled([pullApiaries(), pullHives(), pullColonies(), pullQueens(), pullEvents()]);
+        await Promise.allSettled(pullers.map((run) => run()));
     }
 
     async function enqueue(table: SyncTable, entityId: string, op: "upsert" | "delete"): Promise<void> {
         if (!getToken()) return;
-        await db.outbox.put({ key: `${table}:${entityId}`, table, entityId, op, queuedAt: new Date() });
+        await db.outbox.put(outboxItem(table, entityId, op));
         void flush();
     }
 
-    async function sendUpsert(table: SyncTable, id: string): Promise<SendResult> {
-        switch (table) {
-            case "apiary": {
+    const pushers: Record<
+        SyncTable,
+        {
+            upsert: (id: string) => Promise<Sent | undefined>;
+            remove?: (id: string) => Promise<Sent>;
+        }
+    > = {
+        apiary: {
+            upsert: async (id) => {
                 const r = await db.apiary.get(id);
-                if (!r) return "ok";
-                const res = await $api.PUT("/apiaries/{id}", {
+                if (!r) return undefined;
+                return $api.PUT("/apiaries/{id}", {
                     params: { path: { id } },
-                    body: {
-                        name: r.name,
-                        latitude: r.latitude,
-                        longitude: r.longitude,
-                        notes: r.notes,
-                    },
+                    body: { name: r.name, latitude: r.latitude, longitude: r.longitude, notes: r.notes },
                 });
-                return res.response.ok ? "ok" : classify(res.response.status);
-            }
-            case "hive": {
+            },
+            remove: (id) => $api.DELETE("/apiaries/{id}", { params: { path: { id } } }),
+        },
+        hive: {
+            upsert: async (id) => {
                 const r = await db.hive.get(id);
-                if (!r) return "ok";
-                const res = await $api.PUT("/hives/{id}", {
+                if (!r) return undefined;
+                return $api.PUT("/hives/{id}", {
                     params: { path: { id } },
                     body: {
                         apiaryId: r.apiaryId,
@@ -78,12 +60,14 @@ export function useSync() {
                         color: r.color,
                     },
                 });
-                return res.response.ok ? "ok" : classify(res.response.status);
-            }
-            case "colony": {
+            },
+            remove: (id) => $api.DELETE("/hives/{id}", { params: { path: { id } } }),
+        },
+        colony: {
+            upsert: async (id) => {
                 const r = await db.colony.get(id);
-                if (!r) return "ok";
-                const res = await $api.PUT("/colonies/{id}", {
+                if (!r) return undefined;
+                return $api.PUT("/colonies/{id}", {
                     params: { path: { id } },
                     body: {
                         apiaryId: r.apiaryId,
@@ -93,12 +77,13 @@ export function useSync() {
                         status: r.status,
                     },
                 });
-                return res.response.ok ? "ok" : classify(res.response.status);
-            }
-            case "queen": {
+            },
+        },
+        queen: {
+            upsert: async (id) => {
                 const r = await db.queen.get(id);
-                if (!r) return "ok";
-                const res = await $api.PUT("/queens/{id}", {
+                if (!r) return undefined;
+                return $api.PUT("/queens/{id}", {
                     params: { path: { id } },
                     body: {
                         colonyId: r.colonyId,
@@ -110,11 +95,13 @@ export function useSync() {
                         status: r.status,
                     },
                 });
-                return res.response.ok ? "ok" : classify(res.response.status);
-            }
-            case "event": {
+            },
+            remove: (id) => $api.DELETE("/queens/{id}", { params: { path: { id } } }),
+        },
+        event: {
+            upsert: async (id) => {
                 const r = await db.event.get(id);
-                if (!r) return "ok";
+                if (!r) return undefined;
 
                 const body = {
                     events: [
@@ -128,32 +115,24 @@ export function useSync() {
                         },
                     ],
                 } as unknown as BatchBody;
-                const res = await $api.POST("/events/batch", { body });
-                return res.response.ok ? "ok" : classify(res.response.status);
-            }
-        }
+                return $api.POST("/events/batch", { body });
+            },
+            remove: (id) => $api.DELETE("/events/{id}", { params: { path: { id } } }),
+        },
+    };
+
+    async function sendUpsert(table: SyncTable, id: string): Promise<SendResult> {
+        const res = await pushers[table].upsert(id);
+        if (!res) return "ok";
+        return res.response.ok ? "ok" : classifyStatus(res.response.status);
     }
 
     async function sendDelete(table: SyncTable, id: string): Promise<SendResult> {
-        let res;
-        switch (table) {
-            case "apiary":
-                res = await $api.DELETE("/apiaries/{id}", { params: { path: { id } } });
-                break;
-            case "hive":
-                res = await $api.DELETE("/hives/{id}", { params: { path: { id } } });
-                break;
-            case "queen":
-                res = await $api.DELETE("/queens/{id}", { params: { path: { id } } });
-                break;
-            case "event":
-                res = await $api.DELETE("/events/{id}", { params: { path: { id } } });
-                break;
-            default:
-                return "ok";
-        }
+        const remove = pushers[table].remove;
+        if (!remove) return "ok";
+        const res = await remove(id);
         if (res.response.ok || res.response.status === 404) return "ok";
-        return classify(res.response.status);
+        return classifyStatus(res.response.status);
     }
 
     async function send(item: OutboxItem): Promise<SendResult> {
@@ -195,87 +174,86 @@ export function useSync() {
             db.event.toArray(),
         ]);
 
-        const items: OutboxItem[] = [];
-        const add = (table: SyncTable, id: string, op: "upsert" | "delete"): void => {
-            items.push({ key: `${table}:${id}`, table, entityId: id, op, queuedAt: new Date() });
-        };
-        for (const a of apiaries) add("apiary", a.id, a.deletedAt ? "delete" : "upsert");
-        for (const h of hives) add("hive", h.id, h.deletedAt ? "delete" : "upsert");
-        for (const c of colonies) add("colony", c.id, "upsert");
-        for (const q of queens) add("queen", q.id, q.deletedAt ? "delete" : "upsert");
-        for (const e of events) add("event", e.id, e.deletedAt ? "delete" : "upsert");
+        const items = pushAllItems({ apiary: apiaries, hive: hives, colony: colonies, queen: queens, event: events });
 
         await db.outbox.bulkPut(items);
         if (!(await flush())) throw new Error("Не удалось отправить данные на сервер");
     }
 
-    async function since(entity: string): Promise<{ query: { since?: string }; prev?: Date }> {
-        const m = await db.syncMeta.get(entity);
-        return { query: m ? { since: m.lastPulledAt.toISOString() } : {}, prev: m?.lastPulledAt };
-    }
-
-    async function commit(entity: string, rows: Dated[], prev?: Date): Promise<void> {
-        const cur = maxCursor(rows, prev);
-        if (cur) await db.syncMeta.put({ entity, lastPulledAt: cur });
-    }
-
-    async function pullApiaries(): Promise<void> {
-        const { query, prev } = await since("apiary");
-        const { data } = await $api.GET("/apiaries", { params: { query } });
+    async function pullEntity<Raw extends Dated, Local>(
+        entity: SyncTable,
+        fetchRows: (query: { since?: string }) => Promise<Raw[] | undefined>,
+        toLocal: (raw: NoInfer<Raw>) => Local,
+        put: (rows: Local[]) => Promise<unknown>,
+        afterPut?: (raw: NoInfer<Raw>[]) => Promise<void>,
+    ): Promise<void> {
+        const meta = await db.syncMeta.get(entity);
+        const data = await fetchRows(meta ? { since: meta.lastPulledAt.toISOString() } : {});
         if (!data) return;
 
-        const rows: LocalApiary[] = data.map((d) => ({ ...d, deletedAt: toDate(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
-        await db.apiary.bulkPut(rows);
+        await put(data.map(toLocal));
+        await afterPut?.(data);
 
-        for (const d of data) {
-            if (!d.deletedAt) continue;
-            await db.hive.where("apiaryId").equals(d.id).delete();
-            await db.colony.where("apiaryId").equals(d.id).delete();
-            await db.event.where("apiaryId").equals(d.id).delete();
+        const cursor = maxCursor(data, meta?.lastPulledAt);
+        if (cursor) await db.syncMeta.put({ entity, lastPulledAt: cursor });
+    }
+
+    async function dropApiaryChildren(apiaries: { id: string; deletedAt?: string | null }[]): Promise<void> {
+        for (const a of apiaries) {
+            if (!a.deletedAt) continue;
+            await db.hive.where("apiaryId").equals(a.id).delete();
+            await db.colony.where("apiaryId").equals(a.id).delete();
+            await db.event.where("apiaryId").equals(a.id).delete();
         }
-
-        await commit("apiary", data, prev);
     }
 
-    async function pullHives(): Promise<void> {
-        const { query, prev } = await since("hive");
-        const { data } = await $api.GET("/hives", { params: { query } });
-        if (!data) return;
-
-        const rows: LocalHive[] = data.map((d) => ({ ...d, deletedAt: toDate(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
-        await db.hive.bulkPut(rows);
-        await commit("hive", data, prev);
-    }
-
-    async function pullColonies(): Promise<void> {
-        const { query, prev } = await since("colony");
-        const { data } = await $api.GET("/colonies", { params: { query } });
-        if (!data) return;
-
-        const rows: LocalColony[] = data.map((d) => ({ ...d, lastInspectedAt: toDate(d.lastInspectedAt), updatedAt: new Date(d.updatedAt) }));
-        await db.colony.bulkPut(rows);
-        await commit("colony", data, prev);
-    }
-
-    async function pullQueens(): Promise<void> {
-        const { query, prev } = await since("queen");
-        const { data } = await $api.GET("/queens", { params: { query } });
-        if (!data) return;
-
-        const rows: LocalQueen[] = data.map((d) => ({ ...d, deletedAt: toDate(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
-        await db.queen.bulkPut(rows);
-        await commit("queen", data, prev);
-    }
-
-    async function pullEvents(): Promise<void> {
-        const { query, prev } = await since("event");
-        const { data } = await $api.GET("/events", { params: { query } });
-        if (!data) return;
-
-        const rows: LocalEvent[] = data.map((d) => ({ ...d, occurredAt: new Date(d.occurredAt), deletedAt: toDate(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
-        await db.event.bulkPut(rows);
-        await commit("event", data, prev);
-    }
+    const pullers: (() => Promise<void>)[] = [
+        () =>
+            pullEntity(
+                "apiary",
+                async (query) => (await $api.GET("/apiaries", { params: { query } })).data,
+                (d): LocalApiary => ({ ...d, deletedAt: toDateOrNull(d.deletedAt), updatedAt: new Date(d.updatedAt) }),
+                (rows) => db.apiary.bulkPut(rows),
+                (rows) => dropApiaryChildren(rows),
+            ),
+        () =>
+            pullEntity(
+                "hive",
+                async (query) => (await $api.GET("/hives", { params: { query } })).data,
+                (d): LocalHive => ({ ...d, deletedAt: toDateOrNull(d.deletedAt), updatedAt: new Date(d.updatedAt) }),
+                (rows) => db.hive.bulkPut(rows),
+            ),
+        () =>
+            pullEntity(
+                "colony",
+                async (query) => (await $api.GET("/colonies", { params: { query } })).data,
+                (d): LocalColony => ({
+                    ...d,
+                    lastInspectedAt: toDateOrNull(d.lastInspectedAt),
+                    updatedAt: new Date(d.updatedAt),
+                }),
+                (rows) => db.colony.bulkPut(rows),
+            ),
+        () =>
+            pullEntity(
+                "queen",
+                async (query) => (await $api.GET("/queens", { params: { query } })).data,
+                (d): LocalQueen => ({ ...d, deletedAt: toDateOrNull(d.deletedAt), updatedAt: new Date(d.updatedAt) }),
+                (rows) => db.queen.bulkPut(rows),
+            ),
+        () =>
+            pullEntity(
+                "event",
+                async (query) => (await $api.GET("/events", { params: { query } })).data,
+                (d): LocalEvent => ({
+                    ...d,
+                    occurredAt: new Date(d.occurredAt),
+                    deletedAt: toDateOrNull(d.deletedAt),
+                    updatedAt: new Date(d.updatedAt),
+                }),
+                (rows) => db.event.bulkPut(rows),
+            ),
+    ];
 
     return { pull, pushAll, enqueue, flush };
 }
