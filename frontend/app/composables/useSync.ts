@@ -8,6 +8,8 @@ let flushing = false;
 
 const FLUSH_ORDER: SyncTable[] = ["apiary", "hive", "colony", "queen", "event"];
 
+type Sent = { response: Response };
+
 export function useSync() {
     const db = useDb();
     const { $api } = useNuxtApp();
@@ -23,26 +25,29 @@ export function useSync() {
         void flush();
     }
 
-    async function sendUpsert(table: SyncTable, id: string): Promise<SendResult> {
-        switch (table) {
-            case "apiary": {
+    const pushers: Record<
+        SyncTable,
+        {
+            upsert: (id: string) => Promise<Sent | undefined>;
+            remove?: (id: string) => Promise<Sent>;
+        }
+    > = {
+        apiary: {
+            upsert: async (id) => {
                 const r = await db.apiary.get(id);
-                if (!r) return "ok";
-                const res = await $api.PUT("/apiaries/{id}", {
+                if (!r) return undefined;
+                return $api.PUT("/apiaries/{id}", {
                     params: { path: { id } },
-                    body: {
-                        name: r.name,
-                        latitude: r.latitude,
-                        longitude: r.longitude,
-                        notes: r.notes,
-                    },
+                    body: { name: r.name, latitude: r.latitude, longitude: r.longitude, notes: r.notes },
                 });
-                return res.response.ok ? "ok" : classifyStatus(res.response.status);
-            }
-            case "hive": {
+            },
+            remove: (id) => $api.DELETE("/apiaries/{id}", { params: { path: { id } } }),
+        },
+        hive: {
+            upsert: async (id) => {
                 const r = await db.hive.get(id);
-                if (!r) return "ok";
-                const res = await $api.PUT("/hives/{id}", {
+                if (!r) return undefined;
+                return $api.PUT("/hives/{id}", {
                     params: { path: { id } },
                     body: {
                         apiaryId: r.apiaryId,
@@ -55,12 +60,14 @@ export function useSync() {
                         color: r.color,
                     },
                 });
-                return res.response.ok ? "ok" : classifyStatus(res.response.status);
-            }
-            case "colony": {
+            },
+            remove: (id) => $api.DELETE("/hives/{id}", { params: { path: { id } } }),
+        },
+        colony: {
+            upsert: async (id) => {
                 const r = await db.colony.get(id);
-                if (!r) return "ok";
-                const res = await $api.PUT("/colonies/{id}", {
+                if (!r) return undefined;
+                return $api.PUT("/colonies/{id}", {
                     params: { path: { id } },
                     body: {
                         apiaryId: r.apiaryId,
@@ -70,12 +77,13 @@ export function useSync() {
                         status: r.status,
                     },
                 });
-                return res.response.ok ? "ok" : classifyStatus(res.response.status);
-            }
-            case "queen": {
+            },
+        },
+        queen: {
+            upsert: async (id) => {
                 const r = await db.queen.get(id);
-                if (!r) return "ok";
-                const res = await $api.PUT("/queens/{id}", {
+                if (!r) return undefined;
+                return $api.PUT("/queens/{id}", {
                     params: { path: { id } },
                     body: {
                         colonyId: r.colonyId,
@@ -87,11 +95,13 @@ export function useSync() {
                         status: r.status,
                     },
                 });
-                return res.response.ok ? "ok" : classifyStatus(res.response.status);
-            }
-            case "event": {
+            },
+            remove: (id) => $api.DELETE("/queens/{id}", { params: { path: { id } } }),
+        },
+        event: {
+            upsert: async (id) => {
                 const r = await db.event.get(id);
-                if (!r) return "ok";
+                if (!r) return undefined;
 
                 const body = {
                     events: [
@@ -105,30 +115,22 @@ export function useSync() {
                         },
                     ],
                 } as unknown as BatchBody;
-                const res = await $api.POST("/events/batch", { body });
-                return res.response.ok ? "ok" : classifyStatus(res.response.status);
-            }
-        }
+                return $api.POST("/events/batch", { body });
+            },
+            remove: (id) => $api.DELETE("/events/{id}", { params: { path: { id } } }),
+        },
+    };
+
+    async function sendUpsert(table: SyncTable, id: string): Promise<SendResult> {
+        const res = await pushers[table].upsert(id);
+        if (!res) return "ok";
+        return res.response.ok ? "ok" : classifyStatus(res.response.status);
     }
 
     async function sendDelete(table: SyncTable, id: string): Promise<SendResult> {
-        let res;
-        switch (table) {
-            case "apiary":
-                res = await $api.DELETE("/apiaries/{id}", { params: { path: { id } } });
-                break;
-            case "hive":
-                res = await $api.DELETE("/hives/{id}", { params: { path: { id } } });
-                break;
-            case "queen":
-                res = await $api.DELETE("/queens/{id}", { params: { path: { id } } });
-                break;
-            case "event":
-                res = await $api.DELETE("/events/{id}", { params: { path: { id } } });
-                break;
-            default:
-                return "ok";
-        }
+        const remove = pushers[table].remove;
+        if (!remove) return "ok";
+        const res = await remove(id);
         if (res.response.ok || res.response.status === 404) return "ok";
         return classifyStatus(res.response.status);
     }
