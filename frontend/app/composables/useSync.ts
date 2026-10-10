@@ -14,7 +14,7 @@ export function useSync() {
     const { getToken } = useAuthToken();
 
     async function pull(): Promise<void> {
-        await Promise.allSettled([pullApiaries(), pullHives(), pullColonies(), pullQueens(), pullEvents()]);
+        await Promise.allSettled(pullers.map((run) => run()));
     }
 
     async function enqueue(table: SyncTable, entityId: string, op: "upsert" | "delete"): Promise<void> {
@@ -178,73 +178,80 @@ export function useSync() {
         if (!(await flush())) throw new Error("Не удалось отправить данные на сервер");
     }
 
-    async function since(entity: string): Promise<{ query: { since?: string }; prev?: Date }> {
-        const m = await db.syncMeta.get(entity);
-        return { query: m ? { since: m.lastPulledAt.toISOString() } : {}, prev: m?.lastPulledAt };
-    }
-
-    async function commit(entity: string, rows: Dated[], prev?: Date): Promise<void> {
-        const cur = maxCursor(rows, prev);
-        if (cur) await db.syncMeta.put({ entity, lastPulledAt: cur });
-    }
-
-    async function pullApiaries(): Promise<void> {
-        const { query, prev } = await since("apiary");
-        const { data } = await $api.GET("/apiaries", { params: { query } });
+    async function pullEntity<Raw extends Dated, Local>(
+        entity: SyncTable,
+        fetchRows: (query: { since?: string }) => Promise<Raw[] | undefined>,
+        toLocal: (raw: NoInfer<Raw>) => Local,
+        put: (rows: Local[]) => Promise<unknown>,
+        afterPut?: (raw: NoInfer<Raw>[]) => Promise<void>,
+    ): Promise<void> {
+        const meta = await db.syncMeta.get(entity);
+        const data = await fetchRows(meta ? { since: meta.lastPulledAt.toISOString() } : {});
         if (!data) return;
 
-        const rows: LocalApiary[] = data.map((d) => ({ ...d, deletedAt: toDateOrNull(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
-        await db.apiary.bulkPut(rows);
+        await put(data.map(toLocal));
+        await afterPut?.(data);
 
-        for (const d of data) {
-            if (!d.deletedAt) continue;
-            await db.hive.where("apiaryId").equals(d.id).delete();
-            await db.colony.where("apiaryId").equals(d.id).delete();
-            await db.event.where("apiaryId").equals(d.id).delete();
+        const cursor = maxCursor(data, meta?.lastPulledAt);
+        if (cursor) await db.syncMeta.put({ entity, lastPulledAt: cursor });
+    }
+
+    async function dropApiaryChildren(apiaries: { id: string; deletedAt?: string | null }[]): Promise<void> {
+        for (const a of apiaries) {
+            if (!a.deletedAt) continue;
+            await db.hive.where("apiaryId").equals(a.id).delete();
+            await db.colony.where("apiaryId").equals(a.id).delete();
+            await db.event.where("apiaryId").equals(a.id).delete();
         }
-
-        await commit("apiary", data, prev);
     }
 
-    async function pullHives(): Promise<void> {
-        const { query, prev } = await since("hive");
-        const { data } = await $api.GET("/hives", { params: { query } });
-        if (!data) return;
-
-        const rows: LocalHive[] = data.map((d) => ({ ...d, deletedAt: toDateOrNull(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
-        await db.hive.bulkPut(rows);
-        await commit("hive", data, prev);
-    }
-
-    async function pullColonies(): Promise<void> {
-        const { query, prev } = await since("colony");
-        const { data } = await $api.GET("/colonies", { params: { query } });
-        if (!data) return;
-
-        const rows: LocalColony[] = data.map((d) => ({ ...d, lastInspectedAt: toDateOrNull(d.lastInspectedAt), updatedAt: new Date(d.updatedAt) }));
-        await db.colony.bulkPut(rows);
-        await commit("colony", data, prev);
-    }
-
-    async function pullQueens(): Promise<void> {
-        const { query, prev } = await since("queen");
-        const { data } = await $api.GET("/queens", { params: { query } });
-        if (!data) return;
-
-        const rows: LocalQueen[] = data.map((d) => ({ ...d, deletedAt: toDateOrNull(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
-        await db.queen.bulkPut(rows);
-        await commit("queen", data, prev);
-    }
-
-    async function pullEvents(): Promise<void> {
-        const { query, prev } = await since("event");
-        const { data } = await $api.GET("/events", { params: { query } });
-        if (!data) return;
-
-        const rows: LocalEvent[] = data.map((d) => ({ ...d, occurredAt: new Date(d.occurredAt), deletedAt: toDateOrNull(d.deletedAt), updatedAt: new Date(d.updatedAt) }));
-        await db.event.bulkPut(rows);
-        await commit("event", data, prev);
-    }
+    const pullers: (() => Promise<void>)[] = [
+        () =>
+            pullEntity(
+                "apiary",
+                async (query) => (await $api.GET("/apiaries", { params: { query } })).data,
+                (d): LocalApiary => ({ ...d, deletedAt: toDateOrNull(d.deletedAt), updatedAt: new Date(d.updatedAt) }),
+                (rows) => db.apiary.bulkPut(rows),
+                (rows) => dropApiaryChildren(rows),
+            ),
+        () =>
+            pullEntity(
+                "hive",
+                async (query) => (await $api.GET("/hives", { params: { query } })).data,
+                (d): LocalHive => ({ ...d, deletedAt: toDateOrNull(d.deletedAt), updatedAt: new Date(d.updatedAt) }),
+                (rows) => db.hive.bulkPut(rows),
+            ),
+        () =>
+            pullEntity(
+                "colony",
+                async (query) => (await $api.GET("/colonies", { params: { query } })).data,
+                (d): LocalColony => ({
+                    ...d,
+                    lastInspectedAt: toDateOrNull(d.lastInspectedAt),
+                    updatedAt: new Date(d.updatedAt),
+                }),
+                (rows) => db.colony.bulkPut(rows),
+            ),
+        () =>
+            pullEntity(
+                "queen",
+                async (query) => (await $api.GET("/queens", { params: { query } })).data,
+                (d): LocalQueen => ({ ...d, deletedAt: toDateOrNull(d.deletedAt), updatedAt: new Date(d.updatedAt) }),
+                (rows) => db.queen.bulkPut(rows),
+            ),
+        () =>
+            pullEntity(
+                "event",
+                async (query) => (await $api.GET("/events", { params: { query } })).data,
+                (d): LocalEvent => ({
+                    ...d,
+                    occurredAt: new Date(d.occurredAt),
+                    deletedAt: toDateOrNull(d.deletedAt),
+                    updatedAt: new Date(d.updatedAt),
+                }),
+                (rows) => db.event.bulkPut(rows),
+            ),
+    ];
 
     return { pull, pushAll, enqueue, flush };
 }
