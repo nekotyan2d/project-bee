@@ -1,68 +1,34 @@
 <script setup lang="ts">
 import type { LocalHive } from "~/shared/db";
+import type { HiveForm } from "~/utils/entityForms";
 
 const route = useRoute();
 const id = route.params.id as string;
 
 const db = useDb();
-const { enqueue } = useSync();
+const { updateHive, deleteHive: removeHive } = useEntityWriter();
 
 useHead({ title: "Редактировать улей — Пасека" });
 
 const hive = ref<LocalHive | null>(null);
-const label = ref("");
-const type = ref("");
-const frameCount = ref("");
-const status = ref("active");
-const color = ref("");
-const submitting = ref(false);
-const error = ref<string | null>(null);
+const form = ref<HiveForm>(emptyHiveForm());
+const { submitting, error, run } = useFormSubmit();
 const deleting = ref(false);
-
-const HIVE_TYPES = [
-    { value: "dadant", label: "Дадан" },
-    { value: "rut", label: "Рут" },
-    { value: "ukrainian", label: "Украинский" },
-    { value: "multi_hull", label: "Многокорпусный" },
-];
 
 onMounted(async () => {
     const h = await db.hive.get(id);
     if (!h) return;
     hive.value = h;
-    label.value = h.label;
-    type.value = h.type ?? "";
-    frameCount.value = h.frameCount ? String(h.frameCount) : "";
-    status.value = h.status;
-    color.value = h.color ?? "";
+    form.value = hiveToForm(h);
 });
 
 async function submit(): Promise<void> {
-    const trimmedLabel = label.value.trim();
-    if (!trimmedLabel || !hive.value) return;
+    if (!form.value.label.trim() || !hive.value) return;
 
-    submitting.value = true;
-    error.value = null;
-
-    const now = new Date();
-    const updates: Partial<LocalHive> = {
-        label: trimmedLabel,
-        type: type.value || undefined,
-        frameCount: frameCount.value ? parseInt(frameCount.value, 10) : undefined,
-        status: status.value,
-        color: color.value || undefined,
-        updatedAt: now,
-    };
-
-    try {
-        await db.hive.update(id, updates);
-    } catch {
-        error.value = "Не удалось сохранить. Попробуйте ещё раз.";
-        submitting.value = false;
-        return;
-    }
-
-    void enqueue("hive", id, "upsert");
+    const saved = await run(async () => {
+        await updateHive(id, hiveFields(form.value));
+    });
+    if (!saved) return;
 
     await returnTo(`/hives/${id}`);
 }
@@ -71,10 +37,7 @@ async function deleteHive(): Promise<void> {
     if (!hive.value) return;
     deleting.value = true;
 
-    const now = new Date();
-    await db.hive.update(id, { deletedAt: now, updatedAt: now });
-
-    void enqueue("hive", id, "delete");
+    await removeHive(id);
 
     await returnTo("/");
 }
@@ -84,83 +47,22 @@ async function deleteHive(): Promise<void> {
     <AppPage
         title="Редактировать улей"
         :back-to="`/hives/${id}`">
-        <form
+        <FormShell
             v-if="hive"
-            class="form"
-            @submit.prevent="submit">
-            <FormField
-                v-slot="{ id: fid }"
-                label="Название"
-                required>
-                <BaseInput
-                    :id="fid"
-                    v-model="label"
-                    placeholder="Улей №1"
-                    autocomplete="off"
-                    required />
-            </FormField>
+            :error="error"
+            :submitting="submitting"
+            @submit="submit">
+            <HiveFormFields
+                v-model="form"
+                edit />
 
-            <FormField
-                v-slot="{ id: fid }"
-                label="Тип">
-                <BaseSelect
-                    :id="fid"
-                    v-model="type">
-                    <option value="">Не указан</option>
-                    <option
-                        v-for="t in HIVE_TYPES"
-                        :key="t.value"
-                        :value="t.value">
-                        {{ t.label }}
-                    </option>
-                </BaseSelect>
-            </FormField>
-
-            <FormField label="Цвет">
-                <ColorPicker v-model="color" />
-            </FormField>
-
-            <FormField
-                v-slot="{ id: fid }"
-                label="Вместимость (рамок)">
-                <BaseInput
-                    :id="fid"
-                    v-model="frameCount"
-                    type="number"
-                    inputmode="numeric"
-                    min="0"
-                    placeholder="12" />
-            </FormField>
-
-            <FormField
-                v-slot="{ id: fid }"
-                label="Статус">
-                <BaseSelect
-                    :id="fid"
-                    v-model="status">
-                    <option value="active">Активен</option>
-                    <option value="inactive">Неактивен</option>
-                </BaseSelect>
-            </FormField>
-
-            <p
-                v-if="error"
-                class="form__error">
-                {{ error }}
-            </p>
-
-            <BaseButton
-                type="submit"
-                :loading="submitting"
-                block>
-                Сохранить
-            </BaseButton>
-
-            <DeleteConfirm
-                label="Удалить улей"
-                :deleting="deleting"
-                @confirm="deleteHive" />
-        </form>
+            <template #footer>
+                <DeleteConfirm
+                    label="Удалить улей"
+                    :deleting="deleting"
+                    @confirm="deleteHive" />
+            </template>
+        </FormShell>
 
         <p
             v-else
@@ -171,17 +73,6 @@ async function deleteHive(): Promise<void> {
 </template>
 
 <style scoped lang="scss">
-.form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-
-    &__error {
-        color: var(--color-danger);
-        font-size: var(--text-sm);
-    }
-}
-
 .not-found {
     color: var(--color-text-muted);
     text-align: center;

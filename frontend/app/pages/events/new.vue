@@ -21,8 +21,7 @@ useHead(() => ({ title: `${pageTitle.value} — Пасека` }));
 
 // shared
 const occurredAt = ref(toDatetimeLocal(new Date()));
-const submitting = ref(false);
-const error = ref<string | null>(null);
+const { submitting, error, run } = useFormSubmit();
 const loading = ref(isEdit);
 
 const f = reactive(emptyForm(type.value));
@@ -54,19 +53,13 @@ async function submit(): Promise<void> {
     if (!isEventFormValid(type.value, f, colonyId.value)) return;
     const cid = colonyId.value;
 
-    submitting.value = true;
-    error.value = null;
-
     const apiary = await db.apiary.orderBy("updatedAt").first();
-    if (!apiary) {
-        submitting.value = false;
-        return;
-    }
+    if (!apiary) return;
 
     const now = new Date();
     const occurredAtDate = occurredAt.value ? new Date(occurredAt.value) : now;
 
-    try {
+    const saved = await run(async () => {
         if (type.value === "queen_change" && cid) {
             await saveQueenChange({
                 apiaryId: apiary.id,
@@ -95,11 +88,8 @@ async function submit(): Promise<void> {
                 isEdit,
             );
         }
-    } catch {
-        error.value = "Не удалось сохранить. Попробуйте ещё раз.";
-        submitting.value = false;
-        return;
-    }
+    });
+    if (!saved) return;
 
     await returnTo(backTo.value);
 }
@@ -147,10 +137,11 @@ onMounted(async () => {
     <AppPage
         :title="pageTitle"
         :back-to="backTo">
-        <form
+        <FormShell
             v-if="!loading"
-            class="form"
-            @submit.prevent="submit">
+            :error="error"
+            :submitting="submitting"
+            @submit="submit">
             <FormField
                 v-slot="{ id }"
                 label="Дата и время">
@@ -196,38 +187,6 @@ onMounted(async () => {
             <FinanceFields v-else-if="type === 'finance'" :model-value="f" :suggest="suggest" />
 
             <NoteFields v-else-if="type === 'note'" :model-value="f" />
-
-            <p
-                v-if="error"
-                class="form__error">
-                {{ error }}
-            </p>
-
-            <BaseButton
-                type="submit"
-                :loading="submitting"
-                block>
-                Сохранить
-            </BaseButton>
-        </form>
+        </FormShell>
     </AppPage>
 </template>
-
-<style scoped lang="scss">
-.form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-
-    &__error {
-        color: var(--color-danger);
-        font-size: var(--text-sm);
-    }
-}
-
-.grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-4);
-}
-</style>

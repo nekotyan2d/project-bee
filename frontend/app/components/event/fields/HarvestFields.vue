@@ -54,3 +54,11 @@ watch(
         </FormField>
     </div>
 </template>
+
+<style scoped lang="scss">
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+}
+</style>

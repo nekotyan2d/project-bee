@@ -1,13 +1,9 @@
 <script setup lang="ts">
-import { uuidv7 } from "uuidv7";
-
-import type { LocalColony, LocalEvent, LocalHive, LocalQueen } from "~/shared/db";
-
 const route = useRoute();
 const settleHiveId = route.query.hiveId as string | undefined;
 
 const db = useDb();
-const { enqueue } = useSync();
+const { createColony } = useEntityWriter();
 
 const isSettle = computed(() => !!settleHiveId);
 useHead({ title: isSettle.value ? "Заселить улей — Пасека" : "Новая семья — Пасека" });
@@ -33,15 +29,7 @@ const addQueen = ref(false);
 const queenYear = ref("");
 const queenBreed = ref("");
 
-const submitting = ref(false);
-const error = ref<string | null>(null);
-
-const HIVE_TYPES = [
-    { value: "dadant", label: "Дадан" },
-    { value: "rut", label: "Рут" },
-    { value: "ukrainian", label: "Украинский" },
-    { value: "multi_hull", label: "Многокорпусный" },
-];
+const { submitting, error, run } = useFormSubmit();
 
 // Автоимя улья «Улей №N» — поле остаётся редактируемым.
 onMounted(async () => {
@@ -64,102 +52,42 @@ onMounted(async () => {
 });
 
 async function submit(): Promise<void> {
-    const trimmedLabel = label.value.trim();
-    if (!trimmedLabel) return;
+    if (!label.value.trim()) return;
 
     const apiary = await db.apiary.orderBy("updatedAt").first();
     if (!apiary) return;
 
-    submitting.value = true;
-    error.value = null;
+    const hive = settleHiveId
+        ? { existingId: settleHiveId }
+        : {
+              fields: hiveFields({
+                  label: hiveLabel.value.trim() || defaultHiveLabel.value,
+                  type: hiveType.value,
+                  frameCount: hiveFrames.value,
+                  color: hiveColor.value,
+                  status: "active",
+              }),
+          };
 
-    const now = new Date();
+    const q = queenFields({ ...emptyQueenForm(), year: queenYear.value, breed: queenBreed.value });
 
-    // hive: reuse the empty one we're settling into, or create a new one
-    let hive: LocalHive | null = null;
-    let hiveId = settleHiveId;
-    if (!hiveId) {
-        hive = {
-            id: uuidv7(),
+    let colonyId = "";
+    const saved = await run(async () => {
+        colonyId = await createColony({
             apiaryId: apiary.id,
-            label: hiveLabel.value.trim() || defaultHiveLabel.value,
-            type: hiveType.value || undefined,
-            frameCount: hiveFrames.value ? parseInt(hiveFrames.value, 10) : undefined,
-            status: "active",
-            color: hiveColor.value || undefined,
-            updatedAt: now,
-        };
-        hiveId = hive.id;
-    }
-
-    const queen: LocalQueen | null = addQueen.value
-        ? {
-              id: uuidv7(),
-              colonyId: undefined,
-              year: queenYear.value ? parseInt(queenYear.value, 10) : undefined,
-              breed: queenBreed.value.trim() || undefined,
-              status: "active",
-              updatedAt: now,
-          }
-        : null;
-
-    const colony: LocalColony = {
-        id: uuidv7(),
-        apiaryId: apiary.id,
-        label: trimmedLabel,
-        establishedAt: establishedAt.value || undefined,
-        origin: origin.value.trim() || undefined,
-        status: "active",
-        superCount: 0,
-        currentHiveId: hiveId,
-        currentQueenId: queen?.id,
-        updatedAt: now,
-    };
-    if (queen) queen.colonyId = colony.id;
-
-    const migrationEvent: LocalEvent = {
-        id: uuidv7(),
-        apiaryId: apiary.id,
-        colonyId: colony.id,
-        type: "migration",
-        occurredAt: now,
-        payload: { toHiveId: hiveId },
-        updatedAt: now,
-    };
-
-    const queenChangeEvent: LocalEvent | null = queen
-        ? {
-              id: uuidv7(),
-              apiaryId: apiary.id,
-              colonyId: colony.id,
-              type: "queen_change",
-              occurredAt: now,
-              payload: { action: "introduced", queenId: queen.id },
-              updatedAt: now,
-          }
-        : null;
-
-    try {
-        await db.transaction("rw", db.hive, db.colony, db.queen, db.event, async () => {
-            if (hive) await db.hive.add(hive);
-            await db.colony.add(colony);
-            await db.event.add(migrationEvent);
-            if (queen) await db.queen.add(queen);
-            if (queenChangeEvent) await db.event.add(queenChangeEvent);
+            colony: colonyFields({
+                label: label.value,
+                establishedAt: establishedAt.value,
+                origin: origin.value,
+                status: "active",
+            }),
+            hive,
+            queen: addQueen.value ? { year: q.year, breed: q.breed } : undefined,
         });
-    } catch {
-        error.value = "Не удалось сохранить. Попробуйте ещё раз.";
-        submitting.value = false;
-        return;
-    }
+    });
+    if (!saved) return;
 
-    if (hive) void enqueue("hive", hive.id, "upsert");
-    void enqueue("colony", colony.id, "upsert");
-    if (queen) void enqueue("queen", queen.id, "upsert");
-    void enqueue("event", migrationEvent.id, "upsert");
-    if (queenChangeEvent) void enqueue("event", queenChangeEvent.id, "upsert");
-
-    await returnTo(`/colonies/${colony.id}`);
+    await returnTo(`/colonies/${colonyId}`);
 }
 </script>
 
@@ -167,9 +95,11 @@ async function submit(): Promise<void> {
     <AppPage
         :title="isSettle ? 'Заселить улей' : 'Новая семья'"
         back-to="/">
-        <form
-            class="form"
-            @submit.prevent="submit">
+        <FormShell
+            :error="error"
+            :submitting="submitting"
+            :submit-label="isSettle ? 'Заселить' : 'Создать'"
+            @submit="submit">
             <FormField
                 v-slot="{ id }"
                 label="Название семьи"
@@ -302,35 +232,11 @@ async function submit(): Promise<void> {
                         autocomplete="off" />
                 </FormField>
             </template>
-
-            <p
-                v-if="error"
-                class="form__error">
-                {{ error }}
-            </p>
-
-            <BaseButton
-                type="submit"
-                :loading="submitting"
-                block>
-                {{ isSettle ? "Заселить" : "Создать" }}
-            </BaseButton>
-        </form>
+        </FormShell>
     </AppPage>
 </template>
 
 <style scoped lang="scss">
-.form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-
-    &__error {
-        color: var(--color-danger);
-        font-size: var(--text-sm);
-    }
-}
-
 .disclosure {
     display: flex;
     align-items: center;

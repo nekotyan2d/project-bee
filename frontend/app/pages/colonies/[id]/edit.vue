@@ -5,7 +5,7 @@ const route = useRoute();
 const id = route.params.id as string;
 
 const db = useDb();
-const { enqueue } = useSync();
+const { updateColony } = useEntityWriter();
 
 useHead({ title: "Редактировать семью — Пасека" });
 
@@ -14,8 +14,7 @@ const label = ref("");
 const establishedAt = ref("");
 const origin = ref("");
 const status = ref("active");
-const submitting = ref(false);
-const error = ref<string | null>(null);
+const { submitting, error, run } = useFormSubmit();
 
 onMounted(async () => {
     const c = await db.colony.get(id);
@@ -28,30 +27,20 @@ onMounted(async () => {
 });
 
 async function submit(): Promise<void> {
-    const trimmedLabel = label.value.trim();
-    if (!trimmedLabel || !colony.value) return;
+    if (!label.value.trim() || !colony.value) return;
 
-    submitting.value = true;
-    error.value = null;
-
-    const now = new Date();
-    const updates: Partial<LocalColony> = {
-        label: trimmedLabel,
-        establishedAt: establishedAt.value || undefined,
-        origin: origin.value.trim() || undefined,
-        status: status.value,
-        updatedAt: now,
-    };
-
-    try {
-        await db.colony.update(id, updates);
-    } catch {
-        error.value = "Не удалось сохранить. Попробуйте ещё раз.";
-        submitting.value = false;
-        return;
-    }
-
-    void enqueue("colony", id, "upsert");
+    const saved = await run(async () => {
+        await updateColony(
+            id,
+            colonyFields({
+                label: label.value,
+                establishedAt: establishedAt.value,
+                origin: origin.value,
+                status: status.value,
+            }),
+        );
+    });
+    if (!saved) return;
 
     await returnTo(`/colonies/${id}`);
 }
@@ -61,10 +50,11 @@ async function submit(): Promise<void> {
     <AppPage
         title="Редактировать семью"
         :back-to="`/colonies/${id}`">
-        <form
+        <FormShell
             v-if="colony"
-            class="form"
-            @submit.prevent="submit">
+            :error="error"
+            :submitting="submitting"
+            @submit="submit">
             <FormField
                 v-slot="{ id: fid }"
                 label="Название"
@@ -108,20 +98,7 @@ async function submit(): Promise<void> {
                     <option value="split">Разделена</option>
                 </BaseSelect>
             </FormField>
-
-            <p
-                v-if="error"
-                class="form__error">
-                {{ error }}
-            </p>
-
-            <BaseButton
-                type="submit"
-                :loading="submitting"
-                block>
-                Сохранить
-            </BaseButton>
-        </form>
+        </FormShell>
 
         <p
             v-else
@@ -132,17 +109,6 @@ async function submit(): Promise<void> {
 </template>
 
 <style scoped lang="scss">
-.form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-
-    &__error {
-        color: var(--color-danger);
-        font-size: var(--text-sm);
-    }
-}
-
 .not-found {
     color: var(--color-text-muted);
     text-align: center;

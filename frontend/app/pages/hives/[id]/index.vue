@@ -1,13 +1,11 @@
 <script setup lang="ts">
-import { uuidv7 } from "uuidv7";
-
-import type { LocalColony, LocalEvent, LocalHive, LocalQueen } from "~/shared/db";
+import type { LocalColony, LocalHive, LocalQueen } from "~/shared/db";
 
 const route = useRoute();
 const id = route.params.id as string;
 
 const db = useDb();
-const { enqueue } = useSync();
+const { assignColonyToHive } = useEntityWriter();
 
 type PageData = {
     hive: LocalHive | undefined;
@@ -56,25 +54,9 @@ async function assignColony(colony: LocalColony): Promise<void> {
     const hive = data.value.hive;
     if (!hive) return;
 
-    const now = new Date();
-    const event: LocalEvent = {
-        id: uuidv7(),
-        apiaryId: colony.apiaryId,
-        colonyId: colony.id,
-        type: "migration",
-        occurredAt: now,
-        payload: { toHiveId: hive.id },
-        updatedAt: now,
-    };
-
-    await db.transaction("rw", db.colony, db.event, async () => {
-        await db.colony.update(colony.id, { currentHiveId: hive.id, updatedAt: now });
-        await db.event.add(event);
-    });
+    await assignColonyToHive(colony, hive.id);
 
     showPicker.value = false;
-
-    void enqueue("event", event.id, "upsert");
 }
 </script>
 
