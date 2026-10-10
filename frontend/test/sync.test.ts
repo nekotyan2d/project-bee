@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 
-import { classifyStatus, maxCursor, toDateOrNull } from "../app/utils/sync";
+import { classifyStatus, maxCursor, outboxItem, pushAllItems, toDateOrNull } from "../app/utils/sync";
 
 test("classifyStatus: авторизация и ошибки сервера повторяем, остальное отбрасываем", () => {
     for (const s of [401, 403, 500, 502, 503]) expect(classifyStatus(s)).toBe("retry");
@@ -30,4 +30,41 @@ test("maxCursor: максимум по updatedAt и deletedAt, без строк
 test("maxCursor: курсор не откатывается назад от prev", () => {
     const prev = new Date("2025-06-01T00:00:00Z");
     expect(maxCursor([{ updatedAt: "2025-01-01T00:00:00Z" }], prev)).toEqual(prev);
+});
+
+test("outboxItem: ключ — таблица:id, повторная постановка перетирает прежний элемент", () => {
+    const now = new Date("2025-06-01T00:00:00Z");
+    expect(outboxItem("hive", "h1", "upsert", now)).toEqual({
+        key: "hive:h1",
+        table: "hive",
+        entityId: "h1",
+        op: "upsert",
+        queuedAt: now,
+    });
+});
+
+test("pushAllItems: удалённое уходит как delete, семьи — всегда upsert", () => {
+    const now = new Date("2025-06-01T00:00:00Z");
+    const items = pushAllItems(
+        {
+            apiary: [{ id: "a1" }],
+            hive: [{ id: "h1" }, { id: "h2", deletedAt: new Date() }],
+            colony: [{ id: "c1" }],
+            queen: [{ id: "q1", deletedAt: new Date() }],
+            event: [{ id: "e1", deletedAt: null }, { id: "e2", deletedAt: new Date() }],
+        },
+        now,
+    );
+
+    const ops = Object.fromEntries(items.map((i) => [i.key, i.op]));
+    expect(ops).toEqual({
+        "apiary:a1": "upsert",
+        "hive:h1": "upsert",
+        "hive:h2": "delete",
+        "colony:c1": "upsert",
+        "queen:q1": "delete",
+        "event:e1": "upsert",
+        "event:e2": "delete",
+    });
+    expect(items.every((i) => i.queuedAt === now)).toBe(true);
 });

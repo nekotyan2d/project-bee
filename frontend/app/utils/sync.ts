@@ -1,3 +1,5 @@
+import type { OutboxItem, SyncTable } from "~/shared/db";
+
 export type SendResult = "ok" | "drop" | "retry";
 
 export type Dated = { updatedAt: string; deletedAt?: string | null };
@@ -20,4 +22,33 @@ export function maxCursor(rows: Dated[], prev?: Date): Date | undefined {
         }
     }
     return m;
+}
+
+type Row = { id: string };
+type SoftDeletable = Row & { deletedAt?: Date | null };
+
+export function outboxItem(table: SyncTable, entityId: string, op: OutboxItem["op"], now = new Date()): OutboxItem {
+    return { key: `${table}:${entityId}`, table, entityId, op, queuedAt: now };
+}
+
+export function pushAllItems(
+    rows: {
+        apiary: SoftDeletable[];
+        hive: SoftDeletable[];
+        colony: Row[];
+        queen: SoftDeletable[];
+        event: SoftDeletable[];
+    },
+    now = new Date(),
+): OutboxItem[] {
+    const items: OutboxItem[] = [];
+    const add = (table: SyncTable, list: SoftDeletable[]): void => {
+        for (const r of list) items.push(outboxItem(table, r.id, r.deletedAt ? "delete" : "upsert", now));
+    };
+    add("apiary", rows.apiary);
+    add("hive", rows.hive);
+    for (const c of rows.colony) items.push(outboxItem("colony", c.id, "upsert", now));
+    add("queen", rows.queen);
+    add("event", rows.event);
+    return items;
 }

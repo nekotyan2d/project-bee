@@ -19,7 +19,7 @@ export function useSync() {
 
     async function enqueue(table: SyncTable, entityId: string, op: "upsert" | "delete"): Promise<void> {
         if (!getToken()) return;
-        await db.outbox.put({ key: `${table}:${entityId}`, table, entityId, op, queuedAt: new Date() });
+        await db.outbox.put(outboxItem(table, entityId, op));
         void flush();
     }
 
@@ -172,15 +172,7 @@ export function useSync() {
             db.event.toArray(),
         ]);
 
-        const items: OutboxItem[] = [];
-        const add = (table: SyncTable, id: string, op: "upsert" | "delete"): void => {
-            items.push({ key: `${table}:${id}`, table, entityId: id, op, queuedAt: new Date() });
-        };
-        for (const a of apiaries) add("apiary", a.id, a.deletedAt ? "delete" : "upsert");
-        for (const h of hives) add("hive", h.id, h.deletedAt ? "delete" : "upsert");
-        for (const c of colonies) add("colony", c.id, "upsert");
-        for (const q of queens) add("queen", q.id, q.deletedAt ? "delete" : "upsert");
-        for (const e of events) add("event", e.id, e.deletedAt ? "delete" : "upsert");
+        const items = pushAllItems({ apiary: apiaries, hive: hives, colony: colonies, queen: queens, event: events });
 
         await db.outbox.bulkPut(items);
         if (!(await flush())) throw new Error("Не удалось отправить данные на сервер");
