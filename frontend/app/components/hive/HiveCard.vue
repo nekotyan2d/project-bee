@@ -28,15 +28,7 @@ const queenLabel = computed(() => {
                     :style="{ background: hiveColorHex(hive.color) }" />
                 {{ hive.label }}
             </span>
-            <span
-                v-if="status && status.level !== 'ok'"
-                class="attention"
-                :data-level="status.level">
-                <Icon
-                    name="lucide:search"
-                    size="13" />
-                {{ status.label }}
-            </span>
+            <AttentionBadge :status="status" />
         </div>
 
         <div class="hive-card__meta">
@@ -146,27 +138,6 @@ const queenLabel = computed(() => {
         font-size: var(--text-sm);
         font-weight: 500;
         color: var(--color-primary);
-    }
-}
-
-.attention {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    flex-shrink: 0;
-    font-size: var(--text-xs);
-    font-weight: 600;
-    padding: 2px var(--space-2);
-    border-radius: var(--radius-full);
-
-    &[data-level="warn"] {
-        background: color-mix(in srgb, var(--color-warning) 18%, transparent);
-        color: var(--color-warning);
-    }
-
-    &[data-level="alert"] {
-        background: color-mix(in srgb, var(--color-danger) 15%, transparent);
-        color: var(--color-danger);
     }
 }
 </style>

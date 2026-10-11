@@ -49,56 +49,9 @@ const { data, loading } = useLiveQuery<PageData>(async () => {
 
 useHead(() => ({ title: data.value.colony ? `${data.value.colony.label} — Пасека` : "Семья — Пасека" }));
 
-const STATUS_LABEL: Record<string, string> = {
-    active: "Активна",
-    dead: "Погибла",
-    merged: "Объединена",
-    split: "Разделена",
-};
-
-const nestFrames = computed<number | null>(() => {
-    for (const e of data.value.events) {
-        if (e.type === "inspection" && typeof e.payload.framesTotal === "number") return e.payload.framesTotal;
-    }
-    return null;
-});
-
-const nestLabel = computed(() => {
-    if (nestFrames.value === null) return "—";
-    const capacity = data.value.hive?.frameCount;
-    return capacity ? `${String(nestFrames.value)} / ${String(capacity)}` : String(nestFrames.value);
-});
-
-const inspStatus = computed(() => (data.value.colony ? inspectionStatus(data.value.colony.lastInspectedAt) : null));
-
-const queenSummary = computed(() => {
-    const q = data.value.queen;
-    if (!q) return null;
-    return [q.year ? String(q.year) : null, q.breed].filter(Boolean).join(" · ") || "Матка";
-});
-
 const EVENT_LIMIT = 15;
 
 const showEventSheet = ref(false);
-
-// Частые/сезонные события — вверху шита; редкий жизненный цикл — ниже.
-const FREQUENT_EVENTS = [
-    { type: "inspection", icon: "lucide:search", label: "Осмотр" },
-    { type: "super_change", icon: "lucide:layers", label: "Магазин" },
-    { type: "treatment", icon: "lucide:flask-conical", label: "Обработка" },
-    { type: "feeding", icon: "lucide:droplets", label: "Подкормка" },
-    { type: "harvest", icon: "lucide:droplet", label: "Откачка" },
-    { type: "note", icon: "lucide:file-text", label: "Заметка" },
-] as const;
-
-const LIFECYCLE_EVENTS = [
-    { type: "queen_change", icon: "lucide:crown", label: "Смена матки" },
-    { type: "swarm", icon: "lucide:wind", label: "Роение" },
-    { type: "migration", icon: "lucide:arrow-right", label: "Переезд" },
-    { type: "split", icon: "lucide:git-fork", label: "Деление" },
-    { type: "merge", icon: "lucide:git-merge", label: "Объединение" },
-    { type: "death", icon: "lucide:x", label: "Гибель" },
-] as const;
 </script>
 
 <template>
@@ -121,104 +74,20 @@ const LIFECYCLE_EVENTS = [
         <LoadingSpinner v-if="loading" />
 
         <template v-else-if="data.colony">
-            <div
-                v-if="data.colony.status !== 'active' || (inspStatus && inspStatus.level !== 'ok')"
-                class="health">
-                <span
-                    v-if="data.colony.status !== 'active'"
-                    class="status-badge"
-                    :data-status="data.colony.status">
-                    {{ STATUS_LABEL[data.colony.status] ?? data.colony.status }}
-                </span>
-                <span
-                    v-if="inspStatus && inspStatus.level !== 'ok'"
-                    class="attention"
-                    :data-level="inspStatus.level">
-                    <Icon
-                        name="lucide:search"
-                        size="13" />
-                    {{ inspStatus.label }}
-                </span>
-            </div>
+            <ColonyHealthBadges :colony="data.colony" />
 
             <PageSection title="Показатели">
-                <div class="metrics">
-                    <NuxtLink
-                        :to="`/events/new/?colonyId=${id}&type=inspection`"
-                        class="metric">
-                        <Icon
-                            name="lucide:search"
-                            size="20"
-                            class="metric__icon" />
-                        <span class="metric__value">{{
-                            daysAgo(data.colony.lastInspectedAt) ?? "Не осматривалась"
-                        }}</span>
-                        <span class="metric__label">Последний осмотр</span>
-                    </NuxtLink>
-                    <NuxtLink
-                        class="metric"
-                        :to="`/events/new/?colonyId=${id}&type=super_change`">
-                        <Icon
-                            name="lucide:layers"
-                            size="20"
-                            class="metric__icon" />
-                        <span class="metric__value">{{ data.colony.superCount }}</span>
-                        <span class="metric__label">Магазинов</span>
-                    </NuxtLink>
-                    <NuxtLink
-                        class="metric"
-                        :to="`/events/new/?colonyId=${id}&type=inspection`">
-                        <Icon
-                            name="lucide:layout-list"
-                            size="20"
-                            class="metric__icon" />
-                        <span class="metric__value">{{ nestLabel }}</span>
-                        <span class="metric__label">Гнездо</span>
-                    </NuxtLink>
-                </div>
+                <ColonyMetrics
+                    :colony="data.colony"
+                    :hive="data.hive"
+                    :events="data.events" />
             </PageSection>
 
             <PageSection title="Сведения">
-                <InfoGrid>
-                    <InfoRow label="Улей">
-                        <NuxtLink
-                            v-if="data.hive"
-                            :to="`/hives/${data.hive.id}`"
-                            class="ref-link">
-                            {{ data.hive.label }}
-                            <Icon
-                                name="lucide:chevron-right"
-                                size="16" />
-                        </NuxtLink>
-                        <template v-else>—</template>
-                    </InfoRow>
-                    <InfoRow label="Матка">
-                        <NuxtLink
-                            v-if="data.queen"
-                            :to="`/queens/${data.queen.id}`"
-                            class="ref-link">
-                            {{ queenSummary }}
-                            <Icon
-                                name="lucide:chevron-right"
-                                size="16" />
-                        </NuxtLink>
-                        <NuxtLink
-                            v-else
-                            :to="`/queens/new?colonyId=${id}`"
-                            class="ref-link">
-                            <Icon
-                                name="lucide:plus"
-                                size="14" />
-                            Добавить
-                        </NuxtLink>
-                    </InfoRow>
-                    <InfoRow label="Основана">{{ formatDate(data.colony.establishedAt) }}</InfoRow>
-                    <InfoRow
-                        v-if="data.colony.origin"
-                        label="Происхождение">
-                        {{ data.colony.origin }}
-                    </InfoRow>
-                </InfoGrid>
+                <ColonyInfo
+                    :colony="data.colony"
+                    :hive="data.hive"
+                    :queen="data.queen" />
             </PageSection>
 
             <PageSection title="История событий">
@@ -240,132 +109,9 @@ const LIFECYCLE_EVENTS = [
                 label="Записать событие"
                 @click="showEventSheet = true" />
 
-            <BaseBottomSheet v-model="showEventSheet">
-                <SheetTitle>Записать событие</SheetTitle>
-                <nav class="event-list">
-                    <SheetItem
-                        v-for="action in FREQUENT_EVENTS"
-                        :key="action.type"
-                        :to="`/events/new?colonyId=${id}&type=${action.type}`"
-                        :icon="action.icon"
-                        :label="action.label"
-                        @click="showEventSheet = false" />
-
-                    <p class="event-list__group">Жизненный цикл</p>
-
-                    <SheetItem
-                        v-for="action in LIFECYCLE_EVENTS"
-                        :key="action.type"
-                        :to="`/events/new?colonyId=${id}&type=${action.type}`"
-                        :icon="action.icon"
-                        :label="action.label"
-                        @click="showEventSheet = false" />
-                </nav>
-            </BaseBottomSheet>
+            <NewEventSheet
+                v-model="showEventSheet"
+                :colony-id="id" />
         </template>
     </AppPage>
 </template>
-
-<style scoped lang="scss">
-.health {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-2);
-}
-
-.attention {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    font-size: var(--text-xs);
-    font-weight: 600;
-    padding: 2px var(--space-2);
-    border-radius: var(--radius-full);
-
-    &[data-level="warn"] {
-        background: color-mix(in srgb, var(--color-warning) 18%, transparent);
-        color: var(--color-warning);
-    }
-
-    &[data-level="alert"] {
-        background: color-mix(in srgb, var(--color-danger) 15%, transparent);
-        color: var(--color-danger);
-    }
-}
-
-.event-list {
-    display: flex;
-    flex-direction: column;
-
-    &__group {
-        font-size: var(--text-sm);
-        font-weight: 600;
-        color: var(--color-text-muted);
-        padding: var(--space-4) var(--space-4) var(--space-2);
-    }
-}
-
-.status-badge {
-    font-size: var(--text-xs);
-    font-weight: 600;
-    padding: 2px var(--space-2);
-    border-radius: var(--radius-full);
-
-    &[data-status="active"] {
-        background: color-mix(in srgb, var(--color-success) 15%, transparent);
-        color: var(--color-success);
-    }
-
-    &[data-status="dead"] {
-        background: color-mix(in srgb, var(--color-danger) 15%, transparent);
-        color: var(--color-danger);
-    }
-
-    &[data-status="merged"],
-    &[data-status="split"] {
-        background: color-mix(in srgb, var(--color-text-muted) 15%, transparent);
-        color: var(--color-text-muted);
-    }
-}
-
-.ref-link {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-1);
-    color: var(--color-primary);
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.metrics {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: var(--space-3);
-}
-
-.metric {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-1);
-    padding: var(--space-4);
-    border-radius: var(--radius-lg);
-    background: var(--color-surface);
-    text-align: center;
-
-    &__icon {
-        color: var(--color-primary);
-    }
-
-    &__value {
-        font-size: var(--text-base);
-        font-weight: 700;
-    }
-
-    &__label {
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-    }
-}
-</style>
