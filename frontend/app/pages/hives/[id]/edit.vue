@@ -14,12 +14,16 @@ const hive = ref<LocalHive | null>(null);
 const form = ref<HiveForm>(emptyHiveForm());
 const { submitting, error, run } = useFormSubmit();
 const deleting = ref(false);
+const occupied = ref(false);
+
+const OCCUPIED_WARNING = "В улье живёт семья: она останется без улья, её можно будет заселить в другой.";
 
 onMounted(async () => {
     const h = await db.hive.get(id);
     if (!h) return;
     hive.value = h;
     form.value = hiveToForm(h);
+    occupied.value = (await db.colony.where("currentHiveId").equals(id).count()) > 0;
 });
 
 async function submit(): Promise<void> {
@@ -60,6 +64,7 @@ async function deleteHive(): Promise<void> {
                 <DeleteConfirm
                     label="Удалить улей"
                     :deleting="deleting"
+                    :warning="occupied ? OCCUPIED_WARNING : undefined"
                     @confirm="deleteHive" />
             </template>
         </FormShell>
