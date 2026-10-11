@@ -12,7 +12,7 @@ const { createQueen } = useEntityWriter();
 const form = ref<QueenForm>(emptyQueenForm());
 const { submitting, error, run } = useFormSubmit();
 
-const backTo = colonyId ? `/colonies/${colonyId}` : "/colonies";
+const backTo = colonyId ? `/colonies/${colonyId}` : "/";
 
 async function submit(): Promise<void> {
     const apiary = await db.apiary.orderBy("updatedAt").first();

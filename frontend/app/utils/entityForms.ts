@@ -7,6 +7,8 @@ export const HIVE_TYPES = [
     { value: "multi_hull", label: "Многокорпусный" },
 ];
 
+export const HIVE_TYPE_LABEL: Record<string, string> = Object.fromEntries(HIVE_TYPES.map((t) => [t.value, t.label]));
+
 const intOrUndefined = (v: string): number | undefined => (v ? parseInt(v, 10) : undefined);
 const textOrUndefined = (v: string): string | undefined => v.trim() || undefined;
 
