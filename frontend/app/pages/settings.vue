@@ -3,9 +3,6 @@ useHead({ title: "Настройки — Пасека" });
 
 const { me, register, logout } = useAuth();
 
-const { version, builtAt } = useRuntimeConfig().public;
-const buildDate = new Date(builtAt).toLocaleString("ru", { dateStyle: "long", timeStyle: "short" });
-
 const loading = ref(true);
 const email = ref<string | null>(null);
 const offline = ref(false);
@@ -64,9 +61,7 @@ async function submitLogout(): Promise<void> {
     <AppPage
         title="Настройки"
         variant="stack">
-        <section class="section">
-            <h2 class="section__title">Аккаунт</h2>
-
+        <PageSection title="Аккаунт">
             <LoadingSpinner v-if="loading" />
             <template v-else>
                 <p
@@ -171,34 +166,15 @@ async function submitLogout(): Promise<void> {
                     </button>
                 </template>
             </template>
-        </section>
-        <section class="section">
-            <h2 class="section__title">Приложение</h2>
-            <InfoGrid>
-                <InfoRow label="Тёмная тема">
-                    <ThemeToggle />
-                </InfoRow>
-                <InfoRow label="Версия">v{{ version }}</InfoRow>
-                <InfoRow label="Сборка">{{ buildDate }}</InfoRow>
-            </InfoGrid>
-        </section>
+        </PageSection>
+
+        <PageSection title="Приложение">
+            <AppInfo />
+        </PageSection>
     </AppPage>
 </template>
 
 <style scoped lang="scss">
-.section {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-
-    &__title {
-        font-size: var(--text-sm);
-        font-weight: 600;
-        color: var(--color-text-muted);
-        padding: 0 var(--space-1);
-    }
-}
-
 .actions {
     display: flex;
     flex-direction: column;
