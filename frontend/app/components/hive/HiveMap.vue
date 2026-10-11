@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { LocalColony, LocalHive, LocalQueen } from "~/shared/db";
+import { CARD_H, CARD_W, centerOffset, placeHives, type Pos, snapAndConstrain } from "~/utils/hiveMapLayout";
 
 const props = defineProps<{
     hives: LocalHive[];
@@ -27,13 +28,6 @@ const colors = computed(() => {
         border: cssVar("--color-border"),
     };
 });
-
-const CARD_W = 90;
-const CARD_H = 72;
-const GRID_COL_W = 110;
-const GRID_ROW_H = 90;
-const COLS = 4;
-const PAD = 16;
 
 type HiveNode = {
     hive: LocalHive;
@@ -75,23 +69,11 @@ onUnmounted(() => resizeObserver?.disconnect());
 const nodes = computed<HiveNode[]>(() => {
     const c = colors.value;
 
-    const placed = props.hives.filter((h) => Number.isFinite(h.x) && Number.isFinite(h.y));
-    const anchorX = placed.length ? Math.min(...placed.map((h) => h.x as number)) : PAD;
-    const anchorY = placed.length ? Math.max(...placed.map((h) => (h.y as number) + CARD_H)) + GAP : PAD;
-    let free = 0;
+    const positions = placeHives(props.hives);
 
-    return props.hives.map((hive) => {
+    return props.hives.map((hive, i) => {
         const colony = props.colonyByHiveId[hive.id];
-        let pos: Pos;
-        if (Number.isFinite(hive.x) && Number.isFinite(hive.y)) {
-            pos = { x: hive.x as number, y: hive.y as number };
-        } else {
-            pos = {
-                x: anchorX + (free % COLS) * GRID_COL_W,
-                y: anchorY + Math.floor(free / COLS) * GRID_ROW_H,
-            };
-            free++;
-        }
+        const pos = positions[i] as Pos;
 
         let fill = c.border;
         let stroke = c.muted;
@@ -120,73 +102,12 @@ const nodes = computed<HiveNode[]>(() => {
     });
 });
 
-const GAP = 12;
-const SNAP_RANGE = 40;
-
-type Pos = { x: number; y: number };
-
-function overlaps(ax: number, ay: number, bx: number, by: number): boolean {
-    return ax < bx + CARD_W + GAP && ax + CARD_W + GAP > bx && ay < by + CARD_H + GAP && ay + CARD_H + GAP > by;
-}
-
-function snapAndConstrain(draggingId: string, raw: Pos): Pos {
-    const others = nodes.value.filter((n) => n.hive.id !== draggingId);
-
-    let best = { ...raw };
-    let bestDist = SNAP_RANGE;
-
-    for (const o of others) {
-        const candidates: Pos[] = [
-            { x: o.x + CARD_W + GAP, y: o.y },
-            { x: o.x - CARD_W - GAP, y: o.y },
-            { x: o.x, y: o.y + CARD_H + GAP },
-            { x: o.x, y: o.y - CARD_H - GAP },
-            { x: o.x + CARD_W + GAP, y: o.y + CARD_H + GAP },
-            { x: o.x - CARD_W - GAP, y: o.y - CARD_H - GAP },
-            { x: o.x + CARD_W + GAP, y: o.y - CARD_H - GAP },
-            { x: o.x - CARD_W - GAP, y: o.y + CARD_H + GAP },
-        ];
-        for (const c of candidates) {
-            const d = Math.hypot(c.x - raw.x, c.y - raw.y);
-            if (d < bestDist) {
-                bestDist = d;
-                best = c;
-            }
-        }
-    }
-
-    for (const o of others) {
-        if (!overlaps(best.x, best.y, o.x, o.y)) continue;
-        const dx = best.x + CARD_W / 2 - (o.x + CARD_W / 2);
-        const dy = best.y + CARD_H / 2 - (o.y + CARD_H / 2);
-        if (Math.abs(dx) >= Math.abs(dy)) {
-            best = { ...best, x: dx >= 0 ? o.x + CARD_W + GAP : o.x - CARD_W - GAP };
-        } else {
-            best = { ...best, y: dy >= 0 ? o.y + CARD_H + GAP : o.y - CARD_H - GAP };
-        }
-    }
-
-    if (others.length > 0) {
-        const M = GRID_COL_W * 1.5;
-        const oMinX = Math.min(...others.map((o) => o.x));
-        const oMinY = Math.min(...others.map((o) => o.y));
-        const oMaxX = Math.max(...others.map((o) => o.x + CARD_W));
-        const oMaxY = Math.max(...others.map((o) => o.y + CARD_H));
-        best = {
-            x: Math.min(Math.max(best.x, oMinX - M), oMaxX - CARD_W + M),
-            y: Math.min(Math.max(best.y, oMinY - M), oMaxY - CARD_H + M),
-        };
-    }
-
-    return best;
-}
-
 type KonvaEvt = { target: { x: () => number; y: () => number; position: (p: Pos) => void } };
 
 function onDragMoveHive(node: HiveNode, evt: KonvaEvt): void {
     const raw = { x: evt.target.x(), y: evt.target.y() };
-    const adjusted = snapAndConstrain(node.hive.id, raw);
-    evt.target.position(adjusted);
+    const others = nodes.value.filter((n) => n.hive.id !== node.hive.id);
+    evt.target.position(snapAndConstrain(others, raw));
 }
 
 async function onDragEnd(node: HiveNode, evt: KonvaEvt): Promise<void> {
@@ -206,13 +127,7 @@ const stageRef = ref<KonvaStage | null>(null);
 const centered = ref(false);
 watchEffect(() => {
     if (centered.value || nodes.value.length === 0 || !stageRef.value) return;
-    const ns = nodes.value;
-    const minX = Math.min(...ns.map((n) => n.x));
-    const minY = Math.min(...ns.map((n) => n.y));
-    const maxX = Math.max(...ns.map((n) => n.x + CARD_W));
-    const maxY = Math.max(...ns.map((n) => n.y + CARD_H));
-    const posX = Math.round(stageW.value / 2 - (minX + maxX) / 2);
-    const posY = Math.round(stageH.value / 2 - (minY + maxY) / 2);
+    const { x: posX, y: posY } = centerOffset(nodes.value, stageW.value, stageH.value);
     if (!Number.isFinite(posX) || !Number.isFinite(posY)) return;
     const stage = stageRef.value.getNode();
     stage.position({ x: posX, y: posY });
