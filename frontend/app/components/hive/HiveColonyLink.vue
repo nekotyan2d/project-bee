@@ -34,7 +34,7 @@ defineProps<{
                     name="lucide:layers"
                     size="14" />
                 {{ colony.superCount }}
-                {{ colony.superCount === 1 ? "магазин" : "магазина" }}
+                {{ pluralRu(colony.superCount, "магазин", "магазина", "магазинов") }}
             </span>
             <span
                 v-if="queen"
