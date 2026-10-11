@@ -1,75 +1,26 @@
-# Nuxt Minimal Starter
+# Фронтенд платформы для ведения пасеки
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+Nuxt 4 (SPA) + PWA. Данные хранятся на устройстве (Dexie / IndexedDB), синхронизируются с бэкендом.
 
-## Setup
-
-Make sure to install dependencies:
+## Запуск
 
 ```bash
-# npm
-npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
 bun install
+bun run dev          # http://localhost:3000, API по умолчанию http://localhost:8000
 ```
 
-## Development Server
+## Скрипты
 
-Start the development server on `http://localhost:3000`:
+| Команда                              | Что делает                                                                                    |
+| ------------------------------------ | --------------------------------------------------------------------------------------------- |
+| `bun run dev`                        | dev-сервер                                                                                    |
+| `bun run build` / `bun run generate` | сборка                                                                                        |
+| `bun run lint` / `bun run lint:fix`  | eslint                                                                                        |
+| `bun run typecheck`                  | проверка типов (`nuxt typecheck`)                                                             |
+| `bun run test`                       | тесты чистой логики (`bun test test/`)                                                        |
+| `bun run gen:api`                    | перегенерировать `app/shared/api/schema.d.ts` из OpenAPI бэкенда (бэкенд должен быть запущен) |
 
-```bash
-# npm
-npm run dev
+## Документация
 
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
-```
-
-## Production
-
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+- [Архитектура фронтенда](../docs/frontend-architecture.md): карта папок и правила изменений.
+- [Архитектурные решения (ADR)](../docs/adr/README.md): почему сделано так.
