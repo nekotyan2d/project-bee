@@ -1,17 +1,24 @@
 <script setup lang="ts">
 import type { EventForm } from "~/utils/eventPayload";
 
+defineProps<{
+    field: "notes" | "cause";
+    label: string;
+    placeholder: string;
+    hint: string;
+}>();
+
 const form = defineModel<EventForm>({ required: true });
 </script>
 
 <template>
     <FormField
         v-slot="{ id }"
-        label="Причина">
+        :label="label">
         <BaseTextarea
             :id="id"
-            v-model="form.cause"
-            placeholder="Слёт, болезнь, бескормица…" />
+            v-model="form[field]"
+            :placeholder="placeholder" />
     </FormField>
-    <FormHint>Семья будет помечена как «погибла».</FormHint>
+    <FormHint>{{ hint }}</FormHint>
 </template>

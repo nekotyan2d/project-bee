@@ -9,6 +9,9 @@ const offline = ref(false);
 
 const mode = ref<"register" | "login">("register");
 
+const { version, builtAt } = useRuntimeConfig().public;
+const buildDate = new Date(builtAt).toLocaleString("ru", { dateStyle: "long", timeStyle: "short" });
+
 onMounted(async () => {
     const result = await me();
     email.value = result?.email ?? null;
@@ -66,7 +69,13 @@ onMounted(async () => {
         </PageSection>
 
         <PageSection title="Приложение">
-            <AppInfo />
+            <InfoGrid>
+                <InfoRow label="Тёмная тема">
+                    <ThemeToggle />
+                </InfoRow>
+                <InfoRow label="Версия">v{{ version }}</InfoRow>
+                <InfoRow label="Сборка">{{ buildDate }}</InfoRow>
+            </InfoGrid>
         </PageSection>
     </AppPage>
 </template>
