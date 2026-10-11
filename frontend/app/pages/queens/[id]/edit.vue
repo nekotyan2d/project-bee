@@ -37,7 +37,7 @@ async function deleteQueen(): Promise<void> {
     if (!queen.value) return;
     deleting.value = true;
 
-    const backTo = queen.value.colonyId ? `/colonies/${queen.value.colonyId}` : "/colonies";
+    const backTo = queen.value.colonyId ? `/colonies/${queen.value.colonyId}` : "/";
 
     await removeQueen(id);
 
