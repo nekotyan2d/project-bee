@@ -48,10 +48,6 @@ const { data, loading } = useLiveQuery<QueryData>(async () => {
     return { apiary, hives, colonyByHiveId, queenById, notes: notes.reverse() };
 }, EMPTY);
 
-function resolveQueen(colony: LocalColony | undefined): LocalQueen | undefined {
-    return colony?.currentQueenId ? data.value.queenById[colony.currentQueenId] : undefined;
-}
-
 const showCreateSheet = ref(false);
 const showNotesSheet = ref(false);
 
@@ -103,18 +99,11 @@ watch(viewMode, (mode) => {
                 :hives="data.hives"
                 :colony-by-hive-id="data.colonyByHiveId"
                 :queen-by-id="data.queenById" />
-            <ul
+            <HiveList
                 v-else
-                class="hive-list">
-                <li
-                    v-for="hive in data.hives"
-                    :key="hive.id">
-                    <HiveCard
-                        :hive="hive"
-                        :colony="data.colonyByHiveId[hive.id]"
-                        :queen="resolveQueen(data.colonyByHiveId[hive.id])" />
-                </li>
-            </ul>
+                :hives="data.hives"
+                :colony-by-hive-id="data.colonyByHiveId"
+                :queen-by-id="data.queenById" />
         </template>
 
         <EmptyState
@@ -129,96 +118,11 @@ watch(viewMode, (mode) => {
                 above-bottom-bar
                 @click="showCreateSheet = true" />
 
-            <BaseBottomSheet v-model="showCreateSheet">
-                <SheetTitle>Добавить</SheetTitle>
-                <nav class="create-list">
-                    <SheetItem
-                        to="/colonies/new"
-                        icon="lucide:users"
-                        label="Новая семья"
-                        hint="Поселить семью в улей"
-                        arrow
-                        @click="showCreateSheet = false" />
-                    <SheetItem
-                        to="/hives/new"
-                        icon="lucide:box"
-                        label="Пустой улей"
-                        hint="Без семьи — заселить позже"
-                        arrow
-                        @click="showCreateSheet = false" />
-                </nav>
-            </BaseBottomSheet>
+            <CreateSheet v-model="showCreateSheet" />
 
-            <BaseBottomSheet v-model="showNotesSheet">
-                <div class="notes-sheet__header">
-                    <SheetTitle>Заметки</SheetTitle>
-                    <NuxtLink
-                        to="/events/new?type=note"
-                        class="notes-sheet__add"
-                        aria-label="Новая заметка"
-                        @click="showNotesSheet = false">
-                        <Icon
-                            name="lucide:plus"
-                            size="18" />
-                    </NuxtLink>
-                </div>
-                <div class="notes-sheet__body">
-                    <EventTimeline
-                        :events="data.notes"
-                        empty-text="Заметок пока нет"
-                        @navigate="showNotesSheet = false" />
-                </div>
-            </BaseBottomSheet>
+            <NotesSheet
+                v-model="showNotesSheet"
+                :notes="data.notes" />
         </template>
     </AppPage>
 </template>
-
-<style scoped lang="scss">
-.hive-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    padding: 0;
-    margin: 0;
-}
-
-.notes-sheet {
-    &__header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding-right: var(--space-4);
-    }
-
-    &__add {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        border-radius: var(--radius-full);
-        background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-        color: var(--color-primary);
-        transition: background-color var(--transition-fast);
-
-        &:active {
-            background: color-mix(in srgb, var(--color-primary) 20%, transparent);
-        }
-    }
-
-    &__body {
-        padding: 0 var(--space-4) var(--space-4);
-
-        :deep(.timeline) {
-            background: var(--color-surface-2);
-        }
-    }
-}
-
-.create-list {
-    display: flex;
-    flex-direction: column;
-}
-
-</style>
