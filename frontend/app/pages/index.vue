@@ -48,10 +48,6 @@ const { data, loading } = useLiveQuery<QueryData>(async () => {
     return { apiary, hives, colonyByHiveId, queenById, notes: notes.reverse() };
 }, EMPTY);
 
-function resolveQueen(colony: LocalColony | undefined): LocalQueen | undefined {
-    return colony?.currentQueenId ? data.value.queenById[colony.currentQueenId] : undefined;
-}
-
 const showCreateSheet = ref(false);
 const showNotesSheet = ref(false);
 
@@ -103,18 +99,11 @@ watch(viewMode, (mode) => {
                 :hives="data.hives"
                 :colony-by-hive-id="data.colonyByHiveId"
                 :queen-by-id="data.queenById" />
-            <ul
+            <HiveList
                 v-else
-                class="hive-list">
-                <li
-                    v-for="hive in data.hives"
-                    :key="hive.id">
-                    <HiveCard
-                        :hive="hive"
-                        :colony="data.colonyByHiveId[hive.id]"
-                        :queen="resolveQueen(data.colonyByHiveId[hive.id])" />
-                </li>
-            </ul>
+                :hives="data.hives"
+                :colony-by-hive-id="data.colonyByHiveId"
+                :queen-by-id="data.queenById" />
         </template>
 
         <EmptyState
@@ -124,206 +113,16 @@ watch(viewMode, (mode) => {
             hint="Нажмите «+», чтобы добавить первую семью" />
 
         <template #overlay>
-            <button
-                type="button"
-                class="fab"
-                aria-label="Добавить"
-                @click="showCreateSheet = true">
-                <Icon
-                    name="lucide:plus"
-                    size="24" />
-            </button>
+            <FabButton
+                label="Добавить"
+                above-bottom-bar
+                @click="showCreateSheet = true" />
 
-            <BaseBottomSheet v-model="showCreateSheet">
-                <p class="picker-title">Добавить</p>
-                <nav class="create-list">
-                    <NuxtLink
-                        to="/colonies/new"
-                        class="create-item"
-                        @click="showCreateSheet = false">
-                        <span class="create-item__icon">
-                            <Icon
-                                name="lucide:users"
-                                size="18" />
-                        </span>
-                        <span class="create-item__body">
-                            <span class="create-item__label">Новая семья</span>
-                            <span class="create-item__hint">Поселить семью в улей</span>
-                        </span>
-                        <Icon
-                            name="lucide:chevron-right"
-                            size="16"
-                            class="create-item__arrow" />
-                    </NuxtLink>
-                    <NuxtLink
-                        to="/hives/new"
-                        class="create-item"
-                        @click="showCreateSheet = false">
-                        <span class="create-item__icon">
-                            <Icon
-                                name="lucide:box"
-                                size="18" />
-                        </span>
-                        <span class="create-item__body">
-                            <span class="create-item__label">Пустой улей</span>
-                            <span class="create-item__hint">Без семьи — заселить позже</span>
-                        </span>
-                        <Icon
-                            name="lucide:chevron-right"
-                            size="16"
-                            class="create-item__arrow" />
-                    </NuxtLink>
-                </nav>
-            </BaseBottomSheet>
+            <CreateSheet v-model="showCreateSheet" />
 
-            <BaseBottomSheet v-model="showNotesSheet">
-                <div class="notes-sheet__header">
-                    <p class="picker-title">Заметки</p>
-                    <NuxtLink
-                        to="/events/new?type=note"
-                        class="notes-sheet__add"
-                        aria-label="Новая заметка"
-                        @click="showNotesSheet = false">
-                        <Icon
-                            name="lucide:plus"
-                            size="18" />
-                    </NuxtLink>
-                </div>
-                <div class="notes-sheet__body">
-                    <EventTimeline
-                        :events="data.notes"
-                        empty-text="Заметок пока нет"
-                        @navigate="showNotesSheet = false" />
-                </div>
-            </BaseBottomSheet>
+            <NotesSheet
+                v-model="showNotesSheet"
+                :notes="data.notes" />
         </template>
     </AppPage>
 </template>
-
-<style scoped lang="scss">
-.hive-list {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    padding: 0;
-    margin: 0;
-}
-
-.notes-sheet {
-    &__header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding-right: var(--space-4);
-    }
-
-    &__add {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        border-radius: var(--radius-full);
-        background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-        color: var(--color-primary);
-        transition: background-color var(--transition-fast);
-
-        &:active {
-            background: color-mix(in srgb, var(--color-primary) 20%, transparent);
-        }
-    }
-
-    &__body {
-        padding: 0 var(--space-4) var(--space-4);
-
-        :deep(.timeline) {
-            background: var(--color-surface-2);
-        }
-    }
-}
-
-.picker-title {
-    font-size: var(--text-base);
-    font-weight: 600;
-    color: var(--color-text-muted);
-    padding: 0 var(--space-4) var(--space-2);
-}
-
-.create-list {
-    display: flex;
-    flex-direction: column;
-}
-
-.create-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-3) var(--space-4);
-    text-decoration: none;
-    color: var(--color-text);
-    min-height: var(--tap-min);
-    transition: background-color var(--transition-fast);
-
-    &:active {
-        background: var(--color-surface-2);
-    }
-
-    &__icon {
-        width: 36px;
-        height: 36px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: var(--radius-md);
-        background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-        color: var(--color-primary);
-        flex-shrink: 0;
-    }
-
-    &__body {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-
-    &__label {
-        font-size: var(--text-base);
-        font-weight: 500;
-    }
-
-    &__hint {
-        font-size: var(--text-xs);
-        color: var(--color-text-muted);
-    }
-
-    &__arrow {
-        color: var(--color-text-muted);
-        flex-shrink: 0;
-    }
-}
-
-.fab {
-    position: fixed;
-    bottom: calc(var(--space-3) + var(--bottombar-height) + var(--safe-bottom));
-    right: var(--space-5);
-    width: 56px;
-    height: 56px;
-    border: none;
-    border-radius: var(--radius-lg);
-    background: var(--color-primary-container);
-    color: var(--color-on-primary-container);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: var(--shadow-lg);
-    transition: background-color var(--transition-fast);
-    cursor: pointer;
-    z-index: 10;
-
-    &:active {
-        background: color-mix(in srgb, var(--color-primary-container) 88%, var(--color-on-primary-container) 12%);
-    }
-}
-</style>

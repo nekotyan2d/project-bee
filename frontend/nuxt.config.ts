@@ -5,6 +5,7 @@ export default defineNuxtConfig({
     compatibilityDate: "2025-07-15",
     devtools: { enabled: true },
     modules: ["@nuxt/eslint", "@nuxtjs/color-mode", "@nuxt/icon", "@nuxt/fonts", "@vite-pwa/nuxt"],
+    components: [{ path: "~/components", pathPrefix: false }],
     css: ["~/assets/scss/app.scss"],
     ssr: false,
     nitro: {

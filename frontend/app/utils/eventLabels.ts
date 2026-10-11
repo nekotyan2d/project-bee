@@ -42,3 +42,19 @@ export const QUEEN_ACTION_LABEL: Record<string, string> = {
     lost: "Матка потеряна",
     died: "Матка погибла",
 };
+
+export const EVENT_FORM_TITLE: Record<string, string> = {
+    inspection: "Осмотр",
+    super_change: "Магазины",
+    treatment: "Обработка",
+    feeding: "Подкормка",
+    harvest: "Откачка",
+    queen_change: "Смена матки",
+    swarm: "Роение",
+    migration: "Переезд",
+    split: "Деление",
+    merge: "Объединение",
+    death: "Гибель семьи",
+    note: "Заметка",
+    finance: "Финансы",
+};
