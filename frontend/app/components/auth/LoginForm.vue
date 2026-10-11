@@ -40,9 +40,11 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-    <form
-        class="form"
-        @submit.prevent="submit">
+    <FormShell
+        :error="error"
+        :submitting="busy"
+        :submit-label="needsConfirm && confirmed ? 'Всё равно войти' : 'Войти'"
+        @submit="submit">
         <FormField
             v-slot="{ id }"
             label="Почта"
@@ -67,36 +69,14 @@ async function submit(): Promise<void> {
         </FormField>
         <p
             v-if="needsConfirm && confirmed"
-            class="form__warning">
+            class="warning">
             На этом устройстве есть несохранённые данные — вход заменит их данными аккаунта. Они будут потеряны.
         </p>
-        <p
-            v-if="error"
-            class="form__error">
-            {{ error }}
-        </p>
-        <BaseButton
-            type="submit"
-            :loading="busy"
-            block>
-            {{ needsConfirm && confirmed ? "Всё равно войти" : "Войти" }}
-        </BaseButton>
-    </form>
+    </FormShell>
 </template>
 
 <style scoped lang="scss">
-.form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-}
-
-.form__error {
-    color: var(--color-danger);
-    font-size: var(--text-sm);
-}
-
-.form__warning {
+.warning {
     color: var(--color-warning);
     font-size: var(--text-sm);
 }
