@@ -102,11 +102,9 @@ const nodes = computed<HiveNode[]>(() => {
         if (hex) {
             fill = hex;
             stroke = hex;
-
-            const contrastWithWhite = getContrastRatio(hex, "#fff");
-            const contrastWithBlack = getContrastRatio(hex, "#000");
-            textColor = contrastWithWhite >= contrastWithBlack ? "#fff" : "#000";
-            textMuted = contrastWithWhite >= contrastWithBlack ? "rgba(255,255,255,0.75)" : "rgba(0,0,0,0.75)";
+            const readable = readableTextColors(hex);
+            textColor = readable.text;
+            textMuted = readable.muted;
         }
 
         let statusColor: string | null = null;
@@ -200,25 +198,6 @@ async function onDragEnd(node: HiveNode, evt: KonvaEvt): Promise<void> {
 
 function onClick(node: HiveNode): void {
     void router.push(node.colony ? `/colonies/${node.colony.id}` : `/hives/${node.hive.id}`);
-}
-
-function getRelativeLuminance(hex: string): number {
-    const { r, g, b } = hexToRgb(hex);
-
-    const lin = (c: number): number => {
-        const s = c / 255;
-        return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-    };
-
-    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-}
-
-function getContrastRatio(hex1: string, hex2: string): number {
-    const l1 = getRelativeLuminance(hex1);
-    const l2 = getRelativeLuminance(hex2);
-    const lighter = Math.max(l1, l2);
-    const darker = Math.min(l1, l2);
-    return (lighter + 0.05) / (darker + 0.05);
 }
 
 type KonvaStage = { getNode(): { position(p: Pos): void; batchDraw(): void } };
