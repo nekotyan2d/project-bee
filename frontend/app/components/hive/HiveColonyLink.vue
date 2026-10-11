@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import type { LocalColony, LocalQueen } from "~/shared/db";
 
-defineProps<{
+const props = defineProps<{
     colony: LocalColony;
     queen?: LocalQueen;
 }>();
+
+const plural = new Intl.PluralRules("ru");
+const SUPERS_WORD: Record<string, string> = { one: "магазин", few: "магазина" };
+const supersWord = computed(() => SUPERS_WORD[plural.select(props.colony.superCount)] ?? "магазинов");
 </script>
 
 <template>
@@ -34,7 +38,7 @@ defineProps<{
                     name="lucide:layers"
                     size="14" />
                 {{ colony.superCount }}
-                {{ colony.superCount === 1 ? "магазин" : "магазина" }}
+                {{ supersWord }}
             </span>
             <span
                 v-if="queen"

@@ -77,7 +77,7 @@ export interface LocalEvent {
     deletedAt?: Date | null;
 }
 
-export interface SyncMeta {
+interface SyncMeta {
     entity: string;
     lastPulledAt: Date;
 }

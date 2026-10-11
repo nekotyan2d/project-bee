@@ -38,7 +38,7 @@ const STATUS_LABEL: Record<string, string> = {
     superseded: "Тихая замена",
 };
 
-const backTo = computed(() => (data.value.queen?.colonyId ? `/colonies/${data.value.queen.colonyId}` : "/colonies"));
+const backTo = computed(() => (data.value.queen?.colonyId ? `/colonies/${data.value.queen.colonyId}` : "/"));
 
 const age = computed(() => {
     const yr = data.value.queen?.year;
@@ -131,12 +131,9 @@ const age = computed(() => {
             </section>
         </template>
 
-        <div
+        <NotFoundState
             v-else
-            class="not-found">
-            <p>Матка не найдена</p>
-            <NuxtLink to="/colonies">К семьям</NuxtLink>
-        </div>
+            text="Матка не найдена" />
     </AppPage>
 </template>
 
@@ -182,13 +179,4 @@ const age = computed(() => {
     }
 }
 
-.not-found {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-3);
-    color: var(--color-text-muted);
-}
 </style>
