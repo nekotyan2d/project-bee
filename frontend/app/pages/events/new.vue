@@ -178,11 +178,29 @@ onMounted(async () => {
 
             <MigrationFields v-else-if="type === 'migration'" :model-value="f" :hives="migrationHives" />
 
-            <SplitFields v-else-if="type === 'split'" :model-value="f" />
+            <StatusNoteField
+                v-else-if="type === 'split'"
+                :model-value="f"
+                field="notes"
+                label="Заметки"
+                placeholder="Что отделили, куда…"
+                hint="Семья будет помечена как «разделена»." />
 
-            <MergeFields v-else-if="type === 'merge'" :model-value="f" />
+            <StatusNoteField
+                v-else-if="type === 'merge'"
+                :model-value="f"
+                field="notes"
+                label="Заметки"
+                placeholder="С кем объединили…"
+                hint="Семья будет помечена как «объединена»." />
 
-            <DeathFields v-else-if="type === 'death'" :model-value="f" />
+            <StatusNoteField
+                v-else-if="type === 'death'"
+                :model-value="f"
+                field="cause"
+                label="Причина"
+                placeholder="Слёт, болезнь, бескормица…"
+                hint="Семья будет помечена как «погибла»." />
 
             <FinanceFields v-else-if="type === 'finance'" :model-value="f" :suggest="suggest" />
 
