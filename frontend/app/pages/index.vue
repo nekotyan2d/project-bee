@@ -48,6 +48,10 @@ const { data, loading } = useLiveQuery<QueryData>(async () => {
     return { apiary, hives, colonyByHiveId, queenById, notes: notes.reverse() };
 }, EMPTY);
 
+function queenOf(colony: LocalColony | undefined): LocalQueen | undefined {
+    return colony?.currentQueenId ? data.value.queenById[colony.currentQueenId] : undefined;
+}
+
 const showCreateSheet = ref(false);
 const showNotesSheet = ref(false);
 
@@ -99,11 +103,18 @@ watch(viewMode, (mode) => {
                 :hives="data.hives"
                 :colony-by-hive-id="data.colonyByHiveId"
                 :queen-by-id="data.queenById" />
-            <HiveList
+            <ul
                 v-else
-                :hives="data.hives"
-                :colony-by-hive-id="data.colonyByHiveId"
-                :queen-by-id="data.queenById" />
+                class="hive-list">
+                <li
+                    v-for="hive in data.hives"
+                    :key="hive.id">
+                    <HiveCard
+                        :hive="hive"
+                        :colony="data.colonyByHiveId[hive.id]"
+                        :queen="queenOf(data.colonyByHiveId[hive.id])" />
+                </li>
+            </ul>
         </template>
 
         <EmptyState
@@ -126,3 +137,14 @@ watch(viewMode, (mode) => {
         </template>
     </AppPage>
 </template>
+
+<style scoped lang="scss">
+.hive-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    padding: 0;
+    margin: 0;
+}
+</style>

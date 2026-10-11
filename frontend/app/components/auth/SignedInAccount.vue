@@ -4,7 +4,28 @@ defineProps<{
     offline?: boolean;
 }>();
 
-const { busy, unsent, run: logout } = useSafeLogout();
+const db = useDb();
+const { flush } = useSync();
+const { logout: signOut } = useAuth();
+
+const busy = ref(false);
+const unsent = ref(0);
+
+async function logout(): Promise<void> {
+    busy.value = true;
+
+    if (!unsent.value && (await db.outbox.count()) > 0) {
+        await flush();
+        unsent.value = await db.outbox.count();
+        if (unsent.value > 0) {
+            busy.value = false;
+            return;
+        }
+    }
+
+    await signOut();
+    await returnTo("/");
+}
 </script>
 
 <template>
