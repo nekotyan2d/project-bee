@@ -8,8 +8,7 @@ const props = defineProps<{
     queenById: Record<string, LocalQueen>;
 }>();
 
-const db = useDb();
-const { enqueue } = useSync();
+const { moveHive } = useEntityWriter();
 const router = useRouter();
 const colorMode = useColorMode();
 
@@ -111,10 +110,7 @@ function onDragMoveHive(node: HiveNode, evt: KonvaEvt): void {
 }
 
 async function onDragEnd(node: HiveNode, evt: KonvaEvt): Promise<void> {
-    const x = Math.round(evt.target.x());
-    const y = Math.round(evt.target.y());
-    await db.hive.update(node.hive.id, { x, y, updatedAt: new Date() });
-    void enqueue("hive", node.hive.id, "upsert");
+    await moveHive(node.hive.id, Math.round(evt.target.x()), Math.round(evt.target.y()));
 }
 
 function onClick(node: HiveNode): void {

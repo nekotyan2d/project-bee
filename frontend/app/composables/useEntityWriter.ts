@@ -50,6 +50,11 @@ export function useEntityWriter() {
         void enqueue("hive", id, "upsert");
     }
 
+    async function moveHive(id: string, x: number, y: number): Promise<void> {
+        await db.hive.update(id, { x, y, updatedAt: new Date() });
+        void enqueue("hive", id, "upsert");
+    }
+
     async function deleteHive(id: string): Promise<void> {
         const now = new Date();
         await db.hive.update(id, { deletedAt: now, updatedAt: now });
@@ -153,6 +158,7 @@ export function useEntityWriter() {
     return {
         createHive,
         updateHive,
+        moveHive,
         deleteHive,
         createQueen,
         updateQueen,
