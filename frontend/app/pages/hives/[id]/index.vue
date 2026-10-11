@@ -23,15 +23,21 @@ const { data, loading } = useLiveQuery<PageData>(async () => {
     const colony = await db.colony.where("currentHiveId").equals(id).first();
     const queen = colony?.currentQueenId ? await db.queen.get(colony.currentQueenId) : undefined;
 
-    const unassigned = colony
-        ? []
-        : await db.colony
-              .where("apiaryId")
-              .equals(hive.apiaryId)
-              .filter((c) => !c.currentHiveId && c.status === "active")
-              .toArray();
+    let unassigned: LocalColony[] = [];
+    if (!colony) {
+        const [colonies, hives] = await Promise.all([
+            db.colony.where("apiaryId").equals(hive.apiaryId).toArray(),
+            db.hive
+                .where("apiaryId")
+                .equals(hive.apiaryId)
+                .filter((h) => !h.deletedAt)
+                .toArray(),
+        ]);
+        const liveHiveIds = new Set(hives.map((h) => h.id));
+        unassigned = colonies.filter((c) => needsHive(c, liveHiveIds));
+    }
 
-    return { hive, colony, queen, unassigned };
+    return { hive, colony, queen: queen?.deletedAt ? undefined : queen, unassigned };
 }, EMPTY);
 
 useHead(() => ({ title: data.value.hive ? `${data.value.hive.label} — Пасека` : "Улей — Пасека" }));
