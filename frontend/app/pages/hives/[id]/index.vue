@@ -86,7 +86,7 @@ async function assignColony(colony: LocalColony): Promise<void> {
         <LoadingSpinner v-if="loading" />
 
         <template v-else-if="data.hive">
-            <section class="section">
+            <PageSection>
                 <InfoGrid>
                     <InfoRow label="Статус">{{ STATUS_LABEL[data.hive.status] ?? data.hive.status }}</InfoRow>
                     <InfoRow
@@ -107,10 +107,9 @@ async function assignColony(colony: LocalColony): Promise<void> {
                             :style="{ background: hiveColorHex(data.hive.color) || data.hive.color }" />
                     </InfoRow>
                 </InfoGrid>
-            </section>
+            </PageSection>
 
-            <section class="section">
-                <h2 class="section__title">Семья</h2>
+            <PageSection title="Семья">
 
                 <template v-if="data.colony">
                     <NuxtLink
@@ -154,7 +153,7 @@ async function assignColony(colony: LocalColony): Promise<void> {
                 </template>
 
                 <template v-else>
-                    <p class="section__empty">Улей пустой</p>
+                    <p class="empty-note">Улей пустой</p>
 
                     <div class="actions">
                         <NuxtLink
@@ -195,34 +194,19 @@ async function assignColony(colony: LocalColony): Promise<void> {
                         </li>
                     </ul>
                 </template>
-            </section>
+            </PageSection>
         </template>
 
-        <div
+        <NotFoundState
             v-else
-            class="not-found">
-            <p>Улей не найден</p>
-            <NuxtLink to="/">На главную</NuxtLink>
-        </div>
+            text="Улей не найден" />
     </AppPage>
 </template>
 
 <style scoped lang="scss">
-.section {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-
-    &__title {
-        font-size: var(--text-sm);
-        font-weight: 600;
-        color: var(--color-text-muted);
-    }
-
-    &__empty {
-        font-size: var(--text-sm);
-        color: var(--color-text-muted);
-    }
+.empty-note {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
 }
 
 .color-dot {
@@ -348,13 +332,4 @@ async function assignColony(colony: LocalColony): Promise<void> {
     }
 }
 
-.not-found {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-3);
-    color: var(--color-text-muted);
-}
 </style>

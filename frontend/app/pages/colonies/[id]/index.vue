@@ -141,9 +141,7 @@ const LIFECYCLE_EVENTS = [
                 </span>
             </div>
 
-            <!-- Metrics -->
-            <section class="section">
-                <h2 class="section__title">Показатели</h2>
+            <PageSection title="Показатели">
                 <div class="metrics">
                     <NuxtLink
                         :to="`/events/new/?colonyId=${id}&type=inspection`"
@@ -178,10 +176,9 @@ const LIFECYCLE_EVENTS = [
                         <span class="metric__label">Гнездо</span>
                     </NuxtLink>
                 </div>
-            </section>
+            </PageSection>
 
-            <section class="section">
-                <h2 class="section__title">Сведения</h2>
+            <PageSection title="Сведения">
                 <InfoGrid>
                     <InfoRow label="Улей">
                         <NuxtLink
@@ -222,70 +219,47 @@ const LIFECYCLE_EVENTS = [
                         {{ data.colony.origin }}
                     </InfoRow>
                 </InfoGrid>
-            </section>
+            </PageSection>
 
-            <section class="section">
-                <h2 class="section__title">История событий</h2>
-
+            <PageSection title="История событий">
                 <EventTimeline
                     :events="data.events"
                     :hives-by-id="data.hivesById"
                     :limit="EVENT_LIMIT" />
-            </section>
+            </PageSection>
         </template>
 
-        <div
+        <NotFoundState
             v-else
-            class="not-found">
-            <p>Семья не найдена</p>
-            <NuxtLink to="/">На главную</NuxtLink>
-        </div>
+            text="Семья не найдена" />
 
         <template
             v-if="data.colony"
             #overlay>
-            <button
-                type="button"
-                class="fab"
-                aria-label="Записать событие"
-                @click="showEventSheet = true">
-                <Icon
-                    name="lucide:plus"
-                    size="24" />
-            </button>
+            <FabButton
+                label="Записать событие"
+                @click="showEventSheet = true" />
 
             <BaseBottomSheet v-model="showEventSheet">
-                <p class="sheet-title">Записать событие</p>
+                <SheetTitle>Записать событие</SheetTitle>
                 <nav class="event-list">
-                    <NuxtLink
+                    <SheetItem
                         v-for="action in FREQUENT_EVENTS"
                         :key="action.type"
                         :to="`/events/new?colonyId=${id}&type=${action.type}`"
-                        class="event-item"
-                        @click="showEventSheet = false">
-                        <span class="event-item__icon">
-                            <Icon
-                                :name="action.icon"
-                                size="18" />
-                        </span>
-                        <span class="event-item__label">{{ action.label }}</span>
-                    </NuxtLink>
+                        :icon="action.icon"
+                        :label="action.label"
+                        @click="showEventSheet = false" />
 
                     <p class="event-list__group">Жизненный цикл</p>
 
-                    <NuxtLink
+                    <SheetItem
                         v-for="action in LIFECYCLE_EVENTS"
                         :key="action.type"
                         :to="`/events/new?colonyId=${id}&type=${action.type}`"
-                        class="event-item"
-                        @click="showEventSheet = false">
-                        <span class="event-item__icon">
-                            <Icon
-                                :name="action.icon"
-                                size="18" />
-                        </span>
-                        <span class="event-item__label">{{ action.label }}</span>
-                    </NuxtLink>
+                        :icon="action.icon"
+                        :label="action.label"
+                        @click="showEventSheet = false" />
                 </nav>
             </BaseBottomSheet>
         </template>
@@ -320,36 +294,6 @@ const LIFECYCLE_EVENTS = [
     }
 }
 
-.fab {
-    position: fixed;
-    bottom: calc(var(--space-5) + var(--safe-bottom));
-    right: var(--space-5);
-    width: 56px;
-    height: 56px;
-    border: none;
-    border-radius: var(--radius-lg);
-    background: var(--color-primary-container);
-    color: var(--color-on-primary-container);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: var(--shadow-lg);
-    transition: background-color var(--transition-fast);
-    cursor: pointer;
-    z-index: 10;
-
-    &:active {
-        background: color-mix(in srgb, var(--color-primary-container) 88%, var(--color-on-primary-container) 12%);
-    }
-}
-
-.sheet-title {
-    font-size: var(--text-base);
-    font-weight: 600;
-    color: var(--color-text-muted);
-    padding: 0 var(--space-4) var(--space-2);
-}
-
 .event-list {
     display: flex;
     flex-direction: column;
@@ -359,50 +303,6 @@ const LIFECYCLE_EVENTS = [
         font-weight: 600;
         color: var(--color-text-muted);
         padding: var(--space-4) var(--space-4) var(--space-2);
-    }
-}
-
-.event-item {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    padding: var(--space-3) var(--space-4);
-    text-decoration: none;
-    color: var(--color-text);
-    min-height: var(--tap-min);
-    transition: background-color var(--transition-fast);
-
-    &:active {
-        background: var(--color-surface-2);
-    }
-
-    &__icon {
-        width: 36px;
-        height: 36px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: var(--radius-md);
-        background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-        color: var(--color-primary);
-        flex-shrink: 0;
-    }
-
-    &__label {
-        font-size: var(--text-base);
-        font-weight: 500;
-    }
-}
-
-.section {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-
-    &__title {
-        font-size: var(--text-sm);
-        font-weight: 600;
-        color: var(--color-text-muted);
     }
 }
 
@@ -467,15 +367,5 @@ const LIFECYCLE_EVENTS = [
         font-size: var(--text-xs);
         color: var(--color-text-muted);
     }
-}
-
-.not-found {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-3);
-    color: var(--color-text-muted);
 }
 </style>
