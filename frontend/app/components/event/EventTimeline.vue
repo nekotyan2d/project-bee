@@ -44,7 +44,10 @@ const hiddenCount = computed(() =>
             :key="group.key"
             class="timeline-group">
             <h3 class="timeline-group__month">{{ group.label }}</h3>
-            <ol class="timeline">
+            <TransitionGroup
+                tag="ol"
+                name="list"
+                class="timeline">
                 <li
                     v-for="{ event, summary } in group.rows"
                     :key="event.id">
@@ -72,7 +75,7 @@ const hiddenCount = computed(() =>
                         </time>
                     </NuxtLink>
                 </li>
-            </ol>
+            </TransitionGroup>
         </div>
 
         <button
