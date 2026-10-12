@@ -46,50 +46,57 @@ const currentSeason = computed<SeasonData | null>(() => {
             </button>
         </div>
 
-        <template v-if="currentSeason">
-            <div class="totals">
-                <div
-                    v-for="(kg, product) in currentSeason.totalByProduct"
-                    :key="product"
-                    class="total-card">
-                    <span class="total-card__label">{{ productLabel(product) }}</span>
-                    <span class="total-card__value">{{ formatAmount(kg, harvestUnit(product)) }}</span>
+        <Transition
+            name="swap"
+            mode="out-in">
+            <div
+                v-if="currentSeason"
+                :key="currentSeason.year"
+                class="tab-body">
+                <div class="totals">
+                    <div
+                        v-for="(kg, product) in currentSeason.totalByProduct"
+                        :key="product"
+                        class="total-card">
+                        <span class="total-card__label">{{ productLabel(product) }}</span>
+                        <span class="total-card__value">{{ formatAmount(kg, harvestUnit(product)) }}</span>
+                    </div>
+                    <div
+                        v-for="(frames, product) in currentSeason.framesByProduct"
+                        :key="`frames-${product}`"
+                        class="total-card">
+                        <span class="total-card__label">{{ productLabel(product) }}, рамок</span>
+                        <span class="total-card__value">{{ frames }}</span>
+                    </div>
                 </div>
-                <div
-                    v-for="(frames, product) in currentSeason.framesByProduct"
-                    :key="`frames-${product}`"
-                    class="total-card">
-                    <span class="total-card__label">{{ productLabel(product) }}, рамок</span>
-                    <span class="total-card__value">{{ frames }}</span>
-                </div>
-            </div>
 
-            <section class="event-list">
-                <NuxtLink
-                    v-for="row in currentSeason.rows"
-                    :key="row.event.id"
-                    class="event-row"
-                    :to="`/events/${row.event.id}`">
-                    <div class="event-row__main">
-                        <span class="event-row__colony">{{ row.colony?.label ?? "Вся пасека" }}</span>
-                        <span class="event-row__value">
-                            {{
-                                [
-                                    row.amountKg !== null ? formatAmount(row.amountKg, harvestUnit(row.product)) : null,
-                                    row.framesCount !== null ? `${row.framesCount} рам.` : null,
-                                ]
-                                    .filter(Boolean)
-                                    .join(" · ")
-                            }}
-                        </span>
-                    </div>
-                    <div class="event-row__meta">
-                        <span>{{ productLabel(row.product) }}</span>
-                        <span>{{ formatDayMonth(row.event.occurredAt) }}</span>
-                    </div>
-                </NuxtLink>
-            </section>
-        </template>
+                <section class="event-list">
+                    <NuxtLink
+                        v-for="row in currentSeason.rows"
+                        :key="row.event.id"
+                        class="event-row"
+                        :to="`/events/${row.event.id}`">
+                        <div class="event-row__main">
+                            <span class="event-row__colony">{{ row.colony?.label ?? "Вся пасека" }}</span>
+                            <span class="event-row__value">
+                                {{
+                                    [
+                                        row.amountKg !== null ? formatAmount(row.amountKg, harvestUnit(row.product)) : null,
+                                        row.framesCount !== null ? `${row.framesCount} рам.` : null,
+                                    ]
+                                        .filter(Boolean)
+                                        .join(" · ")
+                                }}
+                            </span>
+                        </div>
+                        <div class="event-row__meta">
+                            <span>{{ productLabel(row.product) }}</span>
+                            <span>{{ formatDayMonth(row.event.occurredAt) }}</span>
+                        </div>
+                    </NuxtLink>
+                </section>
+            </div>
+        </Transition>
     </template>
     <EmptyState
         v-else
