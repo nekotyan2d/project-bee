@@ -7,59 +7,66 @@ defineProps<{
 
 const emit = defineEmits<{ confirm: [] }>();
 
-const confirmDelete = ref(false);
+const open = ref(false);
 </script>
 
 <template>
     <div class="danger-zone">
-        <template v-if="!confirmDelete">
-            <BaseButton
-                variant="danger-outline"
-                block
-                @click="confirmDelete = true">
-                {{ label }}
-            </BaseButton>
-        </template>
-        <template v-else>
-            <p
-                v-if="warning"
-                class="danger-zone__warning danger-zone__warning--consequence">
-                {{ warning }}
-            </p>
-            <p class="danger-zone__warning">Удаление нельзя отменить.</p>
-            <BaseButton
-                variant="danger-outline"
-                block
-                :disabled="deleting"
-                @click="emit('confirm')">
-                {{ deleting ? "Удаление…" : "Подтвердить удаление" }}
-            </BaseButton>
-            <BaseButton
-                variant="secondary"
-                block
-                @click="confirmDelete = false">
-                Отмена
-            </BaseButton>
-        </template>
+        <BaseButton
+            variant="danger-outline"
+            block
+            @click="open = true">
+            {{ label }}
+        </BaseButton>
+
+        <BaseBottomSheet v-model="open">
+            <SheetTitle>{{ label }}?</SheetTitle>
+            <div class="confirm">
+                <p
+                    v-if="warning"
+                    class="confirm__warning">
+                    {{ warning }}
+                </p>
+                <p class="confirm__note">Удаление нельзя отменить.</p>
+                <BaseButton
+                    variant="danger"
+                    block
+                    :loading="deleting"
+                    @click="emit('confirm')">
+                    Подтвердить удаление
+                </BaseButton>
+                <BaseButton
+                    variant="secondary"
+                    block
+                    :disabled="deleting"
+                    @click="open = false">
+                    Отмена
+                </BaseButton>
+            </div>
+        </BaseBottomSheet>
     </div>
 </template>
 
 <style scoped lang="scss">
 .danger-zone {
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--color-border);
+}
+
+.confirm {
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    padding-top: var(--space-4);
-    border-top: 1px solid var(--color-border);
+    padding: 0 var(--space-4);
 
     &__warning {
         font-size: var(--text-sm);
-        color: var(--color-text-muted);
+        font-weight: 600;
+    }
 
-        &--consequence {
-            color: var(--color-text);
-            font-weight: 600;
-        }
+    &__note {
+        font-size: var(--text-sm);
+        color: var(--color-text-muted);
     }
 }
 </style>

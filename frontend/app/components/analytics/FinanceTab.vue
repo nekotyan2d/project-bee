@@ -53,98 +53,106 @@ const season = computed<FinanceSeason | null>(() => {
             </button>
         </div>
 
-        <div class="totals">
-            <div class="total-card">
-                <span class="total-card__label">
-                    <Icon
-                        class="total-card__icon total-card__icon--ok"
-                        name="lucide:trending-up"
-                        size="14" />
-                    Доход
-                </span>
-                <span class="total-card__value total-card__value--ok">
-                    {{ formatMoney(season.income) }}
-                </span>
-            </div>
-            <div class="total-card">
-                <span class="total-card__label">
-                    <Icon
-                        class="total-card__icon total-card__icon--danger"
-                        name="lucide:trending-down"
-                        size="14" />
-                    Расход
-                </span>
-                <span class="total-card__value total-card__value--danger">
-                    {{ formatMoney(season.expense) }}
-                </span>
-            </div>
-            <div class="total-card">
-                <span class="total-card__label">
-                    <Icon
-                        class="total-card__icon"
-                        name="lucide:equal"
-                        size="14" />
-                    Итого
-                </span>
-                <span
-                    class="total-card__value"
-                    :class="{
-                        'total-card__value--danger': season.income < season.expense,
-                    }">
-                    {{ formatMoney(season.income - season.expense) }}
-                </span>
-            </div>
-        </div>
-
-        <section class="event-list">
+        <Transition
+            name="swap"
+            mode="out-in">
             <div
-                v-for="c in season.byCategory"
-                :key="`${c.income ? 'i' : 'e'}:${c.category}`"
-                class="event-row">
-                <div class="event-row__main">
-                    <span class="event-row__colony">
+                :key="season.year"
+                class="tab-body">
+            <div class="totals">
+                <div class="total-card">
+                    <span class="total-card__label">
                         <Icon
-                            class="finance-arrow"
-                            :class="c.income ? 'finance-arrow--in' : 'finance-arrow--out'"
-                            :name="c.income ? 'lucide:trending-up' : 'lucide:trending-down'"
+                            class="total-card__icon total-card__icon--ok"
+                            name="lucide:trending-up"
                             size="14" />
-                        {{ FINANCE_CATEGORY_LABEL[c.category] ?? c.category }}
+                        Доход
                     </span>
-                    <span class="event-row__value">{{ formatMoney(c.sum) }}</span>
+                    <span class="total-card__value total-card__value--ok">
+                        {{ formatMoney(season.income) }}
+                    </span>
+                </div>
+                <div class="total-card">
+                    <span class="total-card__label">
+                        <Icon
+                            class="total-card__icon total-card__icon--danger"
+                            name="lucide:trending-down"
+                            size="14" />
+                        Расход
+                    </span>
+                    <span class="total-card__value total-card__value--danger">
+                        {{ formatMoney(season.expense) }}
+                    </span>
+                </div>
+                <div class="total-card">
+                    <span class="total-card__label">
+                        <Icon
+                            class="total-card__icon"
+                            name="lucide:equal"
+                            size="14" />
+                        Итого
+                    </span>
+                    <span
+                        class="total-card__value"
+                        :class="{
+                            'total-card__value--danger': season.income < season.expense,
+                        }">
+                        {{ formatMoney(season.income - season.expense) }}
+                    </span>
                 </div>
             </div>
-        </section>
 
-        <div
-            v-for="month in season.months"
-            :key="month.key"
-            class="finance-month">
-            <h3 class="finance-month__title">{{ month.label }}</h3>
             <section class="event-list">
-                <NuxtLink
-                    v-for="row in month.rows"
-                    :key="row.event.id"
-                    class="event-row"
-                    :to="`/events/${row.event.id}`">
+                <div
+                    v-for="c in season.byCategory"
+                    :key="`${c.income ? 'i' : 'e'}:${c.category}`"
+                    class="event-row">
                     <div class="event-row__main">
                         <span class="event-row__colony">
-                            {{ row.item || FINANCE_CATEGORY_LABEL[row.category] || row.category }}
+                            <Icon
+                                class="finance-arrow"
+                                :class="c.income ? 'finance-arrow--in' : 'finance-arrow--out'"
+                                :name="c.income ? 'lucide:trending-up' : 'lucide:trending-down'"
+                                size="14" />
+                            {{ FINANCE_CATEGORY_LABEL[c.category] ?? c.category }}
                         </span>
-                        <span
-                            class="event-row__value"
-                            :class="{ 'total-card__value--danger': !row.income }">
-                            {{ row.income ? "+" : "−" }}{{ formatMoney(row.amount) }}
-                        </span>
+                        <span class="event-row__value">{{ formatMoney(c.sum) }}</span>
                     </div>
-                    <div class="event-row__meta">
-                        <span>{{
-                            row.counterparty || (row.income ? "покупатель не указан" : "продавец не указан")
-                        }}</span>
-                        <span>{{ formatDayMonth(row.event.occurredAt) }}</span>
-                    </div>
-                </NuxtLink>
+                </div>
             </section>
-        </div>
+
+            <div
+                v-for="month in season.months"
+                :key="month.key"
+                class="finance-month">
+                <h3 class="finance-month__title">{{ month.label }}</h3>
+                <section class="event-list">
+                    <NuxtLink
+                        v-for="row in month.rows"
+                        :key="row.event.id"
+                        class="event-row"
+                        :to="`/events/${row.event.id}`">
+                        <div class="event-row__main">
+                            <span class="event-row__colony">
+                                {{ row.item || FINANCE_CATEGORY_LABEL[row.category] || row.category }}
+                            </span>
+                            <span
+                                class="event-row__value"
+                                :class="{ 'total-card__value--danger': !row.income }">
+                                {{ row.income ? "+" : "−" }}{{ formatMoney(row.amount) }}
+                            </span>
+                        </div>
+                        <div class="event-row__meta">
+                            <span>{{
+                                row.counterparty || (row.income ? "покупатель не указан" : "продавец не указан")
+                            }}</span>
+                            <span>{{ formatDayMonth(row.event.occurredAt) }}</span>
+                        </div>
+                    </NuxtLink>
+                </section>
+            </div>
+            </div>
+        </Transition>
     </template>
     <EmptyState
         v-else

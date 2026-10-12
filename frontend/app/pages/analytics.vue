@@ -7,6 +7,16 @@ useHead({ title: "Аналитика — Пасека" });
 type Tab = "harvest" | "treatment" | "feeding" | "survival" | "finance";
 const tab = ref<Tab>("harvest");
 
+const TAB_ORDER: Tab[] = ["harvest", "treatment", "feeding", "finance", "survival"];
+const tabTransition = ref<"tab-forward" | "tab-back">("tab-forward");
+watch(
+    tab,
+    (next, prev) => {
+        tabTransition.value = TAB_ORDER.indexOf(next) > TAB_ORDER.indexOf(prev) ? "tab-forward" : "tab-back";
+    },
+    { flush: "sync" },
+);
+
 const { data: treatmentData, loading: treatmentLoading } = useLiveQuery(async () => {
     const { events, colonies } = await loadEventsWithColonies("treatment");
     return buildTreatmentRows(events, colonies);
@@ -78,15 +88,23 @@ const activeWithdrawals = computed(() => pickActiveWithdrawals(treatmentData.val
             </button>
         </div>
 
-        <HarvestTab v-if="tab === 'harvest'" />
-        <TreatmentTab
-            v-else-if="tab === 'treatment'"
-            :rows="treatmentData"
-            :loading="treatmentLoading" />
+        <Transition
+            :name="tabTransition"
+            mode="out-in">
+            <div
+                :key="tab"
+                class="tab-body">
+                <HarvestTab v-if="tab === 'harvest'" />
+                <TreatmentTab
+                    v-else-if="tab === 'treatment'"
+                    :rows="treatmentData"
+                    :loading="treatmentLoading" />
 
-        <FeedingTab v-else-if="tab === 'feeding'" />
-        <FinanceTab v-else-if="tab === 'finance'" />
-        <SurvivalTab v-else-if="tab === 'survival'" />
+                <FeedingTab v-else-if="tab === 'feeding'" />
+                <FinanceTab v-else-if="tab === 'finance'" />
+                <SurvivalTab v-else-if="tab === 'survival'" />
+            </div>
+        </Transition>
     </AppPage>
 </template>
 

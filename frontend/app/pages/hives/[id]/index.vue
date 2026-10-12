@@ -6,6 +6,7 @@ const id = route.params.id as string;
 
 const db = useDb();
 const { assignColonyToHive } = useEntityWriter();
+const { show } = useToast();
 
 type PageData = {
     hive: LocalHive | undefined;
@@ -44,6 +45,7 @@ useHead(() => ({ title: data.value.hive ? `${data.value.hive.label} — Пасе
 
 async function assignColony(colony: LocalColony): Promise<void> {
     await assignColonyToHive(colony, id);
+    show("Семья заселена");
 }
 </script>
 

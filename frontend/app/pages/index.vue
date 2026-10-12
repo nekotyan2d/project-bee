@@ -103,8 +103,10 @@ watch(viewMode, (mode) => {
                 :hives="data.hives"
                 :colony-by-hive-id="data.colonyByHiveId"
                 :queen-by-id="data.queenById" />
-            <ul
+            <TransitionGroup
                 v-else
+                tag="ul"
+                name="list"
                 class="hive-list">
                 <li
                     v-for="hive in data.hives"
@@ -114,7 +116,7 @@ watch(viewMode, (mode) => {
                         :colony="data.colonyByHiveId[hive.id]"
                         :queen="queenOf(data.colonyByHiveId[hive.id])" />
                 </li>
-            </ul>
+            </TransitionGroup>
         </template>
 
         <EmptyState

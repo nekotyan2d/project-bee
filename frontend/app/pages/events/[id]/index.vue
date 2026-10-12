@@ -6,6 +6,7 @@ const id = route.params.id as string;
 
 const db = useDb();
 const { deleteEvent } = useEventWriter();
+const { show } = useToast();
 
 type PageData = {
     event: LocalEvent | undefined;
@@ -64,6 +65,7 @@ async function removeEvent(): Promise<void> {
     deleting.value = true;
 
     await deleteEvent(id);
+    show("Событие удалено");
 
     await returnTo(event.colonyId ? `/colonies/${event.colonyId}` : "/");
 }

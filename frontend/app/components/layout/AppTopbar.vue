@@ -41,6 +41,7 @@ function goBack(): void {
 
 <style scoped lang="scss">
 .topbar {
+    view-transition-name: topbar;
     position: sticky;
     top: 0;
     z-index: 10;

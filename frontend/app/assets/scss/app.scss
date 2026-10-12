@@ -70,5 +70,121 @@ ol {
     *::after {
         transition-duration: 0.01ms !important;
         animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
     }
+}
+
+.swap-enter-active,
+.swap-leave-active {
+    transition: opacity var(--motion-normal);
+}
+
+.swap-enter-from,
+.swap-leave-to {
+    opacity: 0;
+}
+
+.list-enter-active,
+.list-leave-active {
+    transition:
+        opacity var(--motion-normal),
+        transform var(--motion-normal);
+}
+
+.list-enter-from,
+.list-leave-to {
+    opacity: 0;
+    transform: translateY(-6px);
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-fill-mode: both;
+    mix-blend-mode: normal;
+}
+
+html[data-nav="forward"]::view-transition-old(root) {
+    animation:
+        nav-shift-to-start var(--axis-duration) var(--motion-emphasized) both,
+        nav-fade-out var(--axis-fade-out) linear both;
+}
+
+html[data-nav="forward"]::view-transition-new(root) {
+    animation:
+        nav-shift-from-end var(--axis-duration) var(--motion-emphasized) both,
+        nav-fade-in var(--axis-fade-in) linear var(--axis-fade-out) both;
+}
+
+html[data-nav="back"]::view-transition-old(root) {
+    animation:
+        nav-shift-to-end var(--axis-duration) var(--motion-emphasized) both,
+        nav-fade-out var(--axis-fade-out) linear both;
+}
+
+html[data-nav="back"]::view-transition-new(root) {
+    animation:
+        nav-shift-from-start var(--axis-duration) var(--motion-emphasized) both,
+        nav-fade-in var(--axis-fade-in) linear var(--axis-fade-out) both;
+}
+
+@keyframes nav-fade-out {
+    to {
+        opacity: 0;
+    }
+}
+
+@keyframes nav-fade-in {
+    from {
+        opacity: 0;
+    }
+}
+
+@keyframes nav-shift-to-start {
+    to {
+        transform: translateX(calc(var(--axis-shift) * -1));
+    }
+}
+
+@keyframes nav-shift-from-end {
+    from {
+        transform: translateX(var(--axis-shift));
+    }
+}
+
+@keyframes nav-shift-to-end {
+    to {
+        transform: translateX(var(--axis-shift));
+    }
+}
+
+@keyframes nav-shift-from-start {
+    from {
+        transform: translateX(calc(var(--axis-shift) * -1));
+    }
+}
+
+.tab-forward-leave-active,
+.tab-back-leave-active {
+    transition:
+        opacity var(--axis-fade-out) linear,
+        transform var(--axis-fade-out) linear;
+}
+
+.tab-forward-enter-active,
+.tab-back-enter-active {
+    transition:
+        opacity var(--axis-fade-in) linear,
+        transform var(--axis-fade-in) var(--motion-emphasized);
+}
+
+.tab-forward-leave-to,
+.tab-back-enter-from {
+    opacity: 0;
+    transform: translateX(calc(var(--axis-shift) * -1));
+}
+
+.tab-forward-enter-from,
+.tab-back-leave-to {
+    opacity: 0;
+    transform: translateX(var(--axis-shift));
 }

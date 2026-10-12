@@ -31,6 +31,7 @@ const isActive = (to: string): boolean => (to === "/" ? route.path === "/" : rou
 
 <style scoped lang="scss">
 .bottom-bar {
+    view-transition-name: bottombar;
     position: fixed;
     bottom: 0;
     left: 0;
