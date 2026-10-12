@@ -6,6 +6,10 @@ watch(modelValue, (open) => {
         document.body.style.overflow = open ? "hidden" : "";
     }
 });
+
+onBeforeUnmount(() => {
+    if (import.meta.client) document.body.style.overflow = "";
+});
 </script>
 
 <template>
