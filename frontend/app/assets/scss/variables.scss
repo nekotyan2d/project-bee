@@ -61,6 +61,12 @@
 
     // Motion
     --transition-fast: 120ms ease;
+    --motion-normal: 200ms ease;
+    --motion-emphasized: cubic-bezier(0.2, 0, 0, 1);
+    --axis-shift: 30px;
+    --axis-duration: 300ms;
+    --axis-fade-out: 90ms;
+    --axis-fade-in: 210ms;
 
     // Layout
     --topbar-height: 68px;
