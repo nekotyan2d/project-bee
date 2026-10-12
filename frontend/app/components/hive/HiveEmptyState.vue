@@ -19,44 +19,46 @@ function assign(colony: LocalColony): void {
 <template>
     <p class="empty-note">Улей пустой</p>
 
-    <div class="actions">
-        <NuxtLink
-            :to="`/colonies/new?hiveId=${hiveId}`"
-            class="action-btn">
-            <Icon
-                name="lucide:plus"
-                size="18" />
-            Новая семья
-        </NuxtLink>
-        <BaseButton
-            v-if="unassigned.length > 0"
-            variant="secondary"
-            @click="showPicker = !showPicker">
-            <Icon
-                name="lucide:link"
-                size="20" />
-            Привязать семью
-        </BaseButton>
-    </div>
-
-    <ul
-        v-if="showPicker"
-        class="picker">
-        <li
-            v-for="colony in unassigned"
-            :key="colony.id">
-            <button
-                class="picker__item"
-                type="button"
-                @click="assign(colony)">
-                <span class="picker__label">{{ colony.label }}</span>
+    <div>
+        <div class="actions">
+            <NuxtLink
+                :to="`/colonies/new?hiveId=${hiveId}`"
+                class="action-btn">
                 <Icon
-                    name="lucide:chevron-right"
-                    size="16"
-                    class="picker__arrow" />
-            </button>
-        </li>
-    </ul>
+                    name="lucide:plus"
+                    size="18" />
+                Новая семья
+            </NuxtLink>
+            <BaseButton
+                v-if="unassigned.length > 0"
+                variant="secondary"
+                @click="showPicker = !showPicker">
+                <Icon
+                    name="lucide:link"
+                    size="20" />
+                Привязать семью
+            </BaseButton>
+        </div>
+
+        <Collapse :open="showPicker">
+            <ul class="picker">
+                <li
+                    v-for="colony in unassigned"
+                    :key="colony.id">
+                    <button
+                        class="picker__item"
+                        type="button"
+                        @click="assign(colony)">
+                        <span class="picker__label">{{ colony.label }}</span>
+                        <Icon
+                            name="lucide:chevron-right"
+                            size="16"
+                            class="picker__arrow" />
+                    </button>
+                </li>
+            </ul>
+        </Collapse>
+    </div>
 </template>
 
 <style scoped lang="scss">
@@ -95,6 +97,7 @@ function assign(colony: LocalColony): void {
     list-style: none;
     padding: 0;
     margin: 0;
+    margin-top: var(--space-3);
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     overflow: hidden;

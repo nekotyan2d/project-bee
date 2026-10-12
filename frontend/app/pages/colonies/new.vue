@@ -124,119 +124,132 @@ async function submit(): Promise<void> {
                     autocomplete="off" />
             </FormField>
 
-            <button
-                type="button"
-                class="disclosure"
-                :class="{ 'disclosure--open': showDetails }"
-                @click="showDetails = !showDetails">
-                <Icon
-                    name="lucide:sliders-horizontal"
-                    size="18" />
-                <span>Подробнее</span>
-                <Icon
-                    name="lucide:chevron-down"
-                    size="18"
-                    class="disclosure__chevron" />
-            </button>
+            <div class="disclosure-group">
+                <button
+                    type="button"
+                    class="disclosure"
+                    :class="{ 'disclosure--open': showDetails }"
+                    @click="showDetails = !showDetails">
+                    <Icon
+                        name="lucide:sliders-horizontal"
+                        size="18" />
+                    <span>Подробнее</span>
+                    <Icon
+                        name="lucide:chevron-down"
+                        size="18"
+                        class="disclosure__chevron" />
+                </button>
+                <Collapse :open="showDetails">
+                    <div class="disclosure-body">
+                        <template v-if="!isSettle">
+                            <p class="group-title">Улей</p>
+                            <FormField
+                                v-slot="{ id }"
+                                label="Тип улья">
+                                <BaseSelect
+                                    :id="id"
+                                    v-model="hiveType">
+                                    <option value="">Не указан</option>
+                                    <option
+                                        v-for="t in HIVE_TYPES"
+                                        :key="t.value"
+                                        :value="t.value">
+                                        {{ t.label }}
+                                    </option>
+                                </BaseSelect>
+                            </FormField>
+                            <FormField
+                                v-slot="{ id }"
+                                label="Вместимость (рамок)">
+                                <BaseInput
+                                    :id="id"
+                                    v-model="hiveFrames"
+                                    type="number"
+                                    inputmode="numeric"
+                                    min="0"
+                                    placeholder="12" />
+                            </FormField>
+                            <FormField label="Цвет улья">
+                                <ColorPicker v-model="hiveColor" />
+                            </FormField>
+                        </template>
 
-            <template v-if="showDetails">
-                <template v-if="!isSettle">
-                    <p class="group-title">Улей</p>
-                    <FormField
-                        v-slot="{ id }"
-                        label="Тип улья">
-                        <BaseSelect
-                            :id="id"
-                            v-model="hiveType">
-                            <option value="">Не указан</option>
-                            <option
-                                v-for="t in HIVE_TYPES"
-                                :key="t.value"
-                                :value="t.value">
-                                {{ t.label }}
-                            </option>
-                        </BaseSelect>
-                    </FormField>
-                    <FormField
-                        v-slot="{ id }"
-                        label="Вместимость (рамок)">
-                        <BaseInput
-                            :id="id"
-                            v-model="hiveFrames"
-                            type="number"
-                            inputmode="numeric"
-                            min="0"
-                            placeholder="12" />
-                    </FormField>
-                    <FormField label="Цвет улья">
-                        <ColorPicker v-model="hiveColor" />
-                    </FormField>
-                </template>
+                        <p class="group-title">Семья</p>
+                        <FormField
+                            v-slot="{ id }"
+                            label="Происхождение">
+                            <BaseInput
+                                :id="id"
+                                v-model="origin"
+                                placeholder="Рой, отводок, покупная…"
+                                autocomplete="off" />
+                        </FormField>
 
-                <p class="group-title">Семья</p>
-                <FormField
-                    v-slot="{ id }"
-                    label="Происхождение">
-                    <BaseInput
-                        :id="id"
-                        v-model="origin"
-                        placeholder="Рой, отводок, покупная…"
-                        autocomplete="off" />
-                </FormField>
+                        <FormField
+                            v-slot="{ id }"
+                            label="Дата основания">
+                            <BaseInput
+                                :id="id"
+                                v-model="establishedAt"
+                                type="date" />
+                        </FormField>
+                    </div>
+                </Collapse>
+            </div>
 
-                <FormField
-                    v-slot="{ id }"
-                    label="Дата основания">
-                    <BaseInput
-                        :id="id"
-                        v-model="establishedAt"
-                        type="date" />
-                </FormField>
-            </template>
-
-            <button
-                type="button"
-                class="disclosure"
-                :class="{ 'disclosure--open': addQueen }"
-                @click="addQueen = !addQueen">
-                <Icon
-                    name="lucide:crown"
-                    size="18" />
-                <span>Добавить матку</span>
-                <Icon
-                    name="lucide:chevron-down"
-                    size="18"
-                    class="disclosure__chevron" />
-            </button>
-
-            <template v-if="addQueen">
-                <FormField
-                    v-slot="{ id }"
-                    label="Год вывода матки">
-                    <BaseInput
-                        :id="id"
-                        v-model="queenYear"
-                        type="number"
-                        inputmode="numeric"
-                        :min="MIN_QUEEN_YEAR"
-                        :max="MAX_QUEEN_YEAR"
-                        placeholder="2024" />
-                </FormField>
-                <FormField
-                    v-slot="{ id }"
-                    label="Порода">
-                    <BaseInput
-                        :id="id"
-                        v-model="queenBreed"
-                        placeholder="Карника, бакфаст…"
-                        autocomplete="off" />
-                </FormField>
-            </template>
+            <div class="disclosure-group">
+                <button
+                    type="button"
+                    class="disclosure"
+                    :class="{ 'disclosure--open': addQueen }"
+                    @click="addQueen = !addQueen">
+                    <Icon
+                        name="lucide:crown"
+                        size="18" />
+                    <span>Добавить матку</span>
+                    <Icon
+                        name="lucide:chevron-down"
+                        size="18"
+                        class="disclosure__chevron" />
+                </button>
+                <Collapse :open="addQueen">
+                    <div class="disclosure-body">
+                        <FormField
+                            v-slot="{ id }"
+                            label="Год вывода матки">
+                            <BaseInput
+                                :id="id"
+                                v-model="queenYear"
+                                type="number"
+                                inputmode="numeric"
+                                :min="MIN_QUEEN_YEAR"
+                                :max="MAX_QUEEN_YEAR"
+                                placeholder="2024" />
+                        </FormField>
+                        <FormField
+                            v-slot="{ id }"
+                            label="Порода">
+                            <BaseInput
+                                :id="id"
+                                v-model="queenBreed"
+                                placeholder="Карника, бакфаст…"
+                                autocomplete="off" />
+                        </FormField>
+                    </div>
+                </Collapse>
+            </div>
         </FormShell>
     </AppPage>
 </template>
 
 <style scoped lang="scss">
+.disclosure-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding-top: var(--space-4);
+}
+
 .disclosure {
     display: flex;
     align-items: center;
