@@ -13,6 +13,7 @@ useHead({ title: "Редактировать улей — Пасека" });
 const hive = ref<LocalHive | null>(null);
 const form = ref<HiveForm>(emptyHiveForm());
 const { submitting, error, run } = useFormSubmit();
+const { show } = useToast();
 const deleting = ref(false);
 const occupied = ref(false);
 
@@ -31,7 +32,7 @@ async function submit(): Promise<void> {
 
     const saved = await run(async () => {
         await updateHive(id, hiveFields(form.value));
-    });
+    }, "Изменения сохранены");
     if (!saved) return;
 
     await returnTo(`/hives/${id}`);
@@ -42,6 +43,7 @@ async function deleteHive(): Promise<void> {
     deleting.value = true;
 
     await removeHive(id);
+    show("Улей удалён");
 
     await returnTo("/");
 }

@@ -13,6 +13,7 @@ useHead({ title: "Редактировать матку — Пасека" });
 const queen = ref<LocalQueen | null>(null);
 const form = ref<QueenForm>(emptyQueenForm());
 const { submitting, error, run } = useFormSubmit();
+const { show } = useToast();
 const deleting = ref(false);
 
 onMounted(async () => {
@@ -27,7 +28,7 @@ async function submit(): Promise<void> {
 
     const saved = await run(async () => {
         await updateQueen(id, queenFields(form.value));
-    });
+    }, "Изменения сохранены");
     if (!saved) return;
 
     await returnTo(`/queens/${id}`);
@@ -40,6 +41,7 @@ async function deleteQueen(): Promise<void> {
     const backTo = queen.value.colonyId ? `/colonies/${queen.value.colonyId}` : "/";
 
     await removeQueen(id);
+    show("Матка удалена");
 
     await returnTo(backTo);
 }

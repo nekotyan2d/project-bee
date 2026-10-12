@@ -20,7 +20,7 @@ async function submit(): Promise<void> {
 
     const saved = await run(async () => {
         await createQueen(apiary.id, queenFields(form.value), colonyId);
-    });
+    }, "Матка добавлена");
     if (!saved) return;
 
     await returnTo(backTo);

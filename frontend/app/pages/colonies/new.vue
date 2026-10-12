@@ -84,7 +84,7 @@ async function submit(): Promise<void> {
             hive,
             queen: addQueen.value ? { year: q.year, breed: q.breed } : undefined,
         });
-    });
+    }, "Семья добавлена");
     if (!saved) return;
 
     await returnTo(`/colonies/${colonyId}`);

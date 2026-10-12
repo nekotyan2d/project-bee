@@ -88,7 +88,7 @@ async function submit(): Promise<void> {
                 isEdit,
             );
         }
-    });
+    }, isEdit ? "Изменения сохранены" : "Событие записано");
     if (!saved) return;
 
     await returnTo(backTo.value);

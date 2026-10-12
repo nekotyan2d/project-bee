@@ -30,7 +30,7 @@ async function submit(): Promise<void> {
 
     const saved = await run(async () => {
         await createHive(apiary.id, hiveFields(form.value));
-    });
+    }, "Улей добавлен");
     if (!saved) return;
 
     await returnTo("/");

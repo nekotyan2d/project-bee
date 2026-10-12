@@ -39,7 +39,7 @@ async function submit(): Promise<void> {
                 status: status.value,
             }),
         );
-    });
+    }, "Изменения сохранены");
     if (!saved) return;
 
     await returnTo(`/colonies/${id}`);
