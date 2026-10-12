@@ -25,7 +25,9 @@ onMounted(async () => {
         title="Настройки"
         variant="stack">
         <PageSection title="Аккаунт">
-            <LoadingSpinner v-if="loading" />
+            <LoadingSpinner
+                v-if="loading"
+                immediate />
             <template v-else>
                 <p
                     v-if="offline"
