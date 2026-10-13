@@ -91,6 +91,11 @@ async function submit(): Promise<void> {
     }, isEdit ? "Изменения сохранены" : "Событие записано");
     if (!saved) return;
 
+    const back = (window.history.state as { back?: string | null } | null)?.back;
+    if (!isEdit && back) {
+        useRouter().back();
+        return;
+    }
     await returnTo(backTo.value);
 }
 
