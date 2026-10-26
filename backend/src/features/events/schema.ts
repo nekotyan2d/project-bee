@@ -116,7 +116,11 @@ export const eventInput = z.discriminatedUnion("type", [
 ]);
 
 export const eventBatchInput = z.object({
-    events: z.array(eventInput).min(1).max(500),
+    events: z
+        .array(eventInput)
+        .min(1)
+        .max(500)
+        .refine((events) => new Set(events.map((e) => e.id)).size === events.length, "event ids must be unique"),
 });
 
 export const eventDto = z.object({
