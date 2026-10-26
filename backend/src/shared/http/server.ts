@@ -1,4 +1,5 @@
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 import Fastify from "fastify";
 import {
     serializerCompiler,
@@ -15,6 +16,7 @@ import { swaggerPlugin } from "@/shared/http/swagger";
 export async function createServer() {
     const app = Fastify({
         logger: { level: env.NODE_ENV === "production" ? "info" : "debug" },
+        trustProxy: env.TRUST_PROXY || false,
     }).withTypeProvider<ZodTypeProvider>();
 
     app.setValidatorCompiler(validatorCompiler);
@@ -25,6 +27,7 @@ export async function createServer() {
         origin: env.CORS_ORIGIN,
         methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     });
+    await app.register(rateLimit, { global: false });
     await app.register(authPlugin);
     await app.register(swaggerPlugin);
 

@@ -2,6 +2,8 @@ import { ConflictError, UnauthorizedError } from "@/shared/errors";
 
 import * as repository from "./repository";
 
+const dummyHash = Bun.password.hash("timing-equalizer");
+
 export function createAnonymousUser(): Promise<string> {
     return repository.createUser();
 }
@@ -29,7 +31,8 @@ export async function register(userId: string, email: string, password: string):
 
 export async function login(email: string, password: string): Promise<string> {
     const user = await repository.findByEmail(email);
-    if (!user?.passwordHash || !(await Bun.password.verify(password, user.passwordHash))) {
+    const ok = await Bun.password.verify(password, user?.passwordHash ?? (await dummyHash));
+    if (!user?.passwordHash || !ok) {
         throw new UnauthorizedError("Invalid email or password");
     }
     return user.id;

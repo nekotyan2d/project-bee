@@ -24,6 +24,9 @@ export async function upsertApiary(
     input: ApiaryInput,
 ): Promise<ApiaryDto> {
     const row = await repository.upsert({ id, ownerId, ...input });
+    if (!row) {
+        throw new NotFoundError(`Apiary ${id} not found`);
+    }
     return isoDates(row);
 }
 

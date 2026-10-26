@@ -24,7 +24,10 @@ export async function upsertHive(ownerId: string, id: string, input: HiveInput):
         throw new NotFoundError(`Apiary ${input.apiaryId} not found`);
     }
 
-    const row = await repository.upsert({ id, ...input });
+    const row = await repository.upsert(ownerId, { id, ...input });
+    if (!row) {
+        throw new NotFoundError(`Hive ${id} not found`);
+    }
     return isoDates(row);
 }
 

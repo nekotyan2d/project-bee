@@ -37,6 +37,9 @@ export async function upsertQueen(ownerId: string, id: string, input: QueenInput
     }
 
     const row = await repository.upsert({ id, ownerId, ...input });
+    if (!row) {
+        throw new NotFoundError(`Queen ${id} not found`);
+    }
     return isoDates(row);
 }
 

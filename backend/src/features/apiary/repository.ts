@@ -34,7 +34,7 @@ export async function findById(ownerId: string, id: string): Promise<ApiaryRow |
     return row;
 }
 
-export async function upsert(values: UpsertApiaryValues): Promise<ApiaryRow> {
+export async function upsert(values: UpsertApiaryValues): Promise<ApiaryRow | undefined> {
     const { id, ownerId, ...fields } = values;
 
     const [row] = await db
@@ -43,12 +43,9 @@ export async function upsert(values: UpsertApiaryValues): Promise<ApiaryRow> {
         .onConflictDoUpdate({
             target: apiary.id,
             set: { ...fields, deletedAt: null, updatedAt: sql`now()` },
+            setWhere: eq(apiary.ownerId, ownerId),
         })
         .returning();
-
-    if (!row) {
-        throw new Error("Upsert returned no row");
-    }
 
     return row;
 }

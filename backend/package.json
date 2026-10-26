@@ -16,26 +16,33 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/bun": "latest",
-    "drizzle-kit": "^0.31.10",
-    "eslint": "^10.5.0",
+    "drizzle-kit": "^0.31.11",
+    "eslint": "^10.13.0",
     "eslint-import-resolver-typescript": "^4.4.5",
     "eslint-plugin-boundaries": "^6.0.2",
-    "eslint-plugin-perfectionist": "^5.9.0",
-    "globals": "^17.6.0",
-    "typescript-eslint": "^8.61.0"
+    "eslint-plugin-perfectionist": "^5.13.0",
+    "globals": "^17.13.0",
+    "typescript-eslint": "^8.72.1"
   },
   "peerDependencies": {
     "typescript": "^6.0.3"
   },
   "dependencies": {
-    "@fastify/cors": "^11.2.0",
-    "@fastify/jwt": "^10.1.0",
-    "@fastify/swagger": "^9.7.0",
-    "@fastify/swagger-ui": "^6.0.0",
-    "drizzle-orm": "^0.45.2",
-    "fastify": "^5.8.5",
+    "@fastify/cors": "^11.3.1",
+    "@fastify/jwt": "^10.2.5",
+    "@fastify/rate-limit": "^11.2.1",
+    "@fastify/swagger": "^9.9.2",
+    "@fastify/swagger-ui": "^6.1.2",
+    "drizzle-orm": "^0.45.4",
+    "fastify": "^5.12.7",
     "fastify-type-provider-zod": "^6.1.0",
     "postgres": "^3.4.9",
-    "zod": "^4.4.3"
+    "zod": "^4.6.7"
+  },
+  "overrides": {
+    "brace-expansion": "^5.0.12",
+    "fast-uri": "^3.1.9",
+    "find-my-way": "^9.10.0",
+    "handlebars": "^4.7.10"
   }
 }

@@ -39,7 +39,7 @@ export async function findById(ownerId: string, id: string): Promise<QueenRow | 
     return row;
 }
 
-export async function upsert(values: UpsertQueenValues): Promise<QueenRow> {
+export async function upsert(values: UpsertQueenValues): Promise<QueenRow | undefined> {
     const { id, ownerId, ...fields } = values;
 
     const [row] = await db
@@ -48,12 +48,9 @@ export async function upsert(values: UpsertQueenValues): Promise<QueenRow> {
         .onConflictDoUpdate({
             target: queen.id,
             set: { ...fields, deletedAt: null, updatedAt: sql`now()` },
+            setWhere: eq(queen.ownerId, ownerId),
         })
         .returning();
-
-    if (!row) {
-        throw new Error("Upsert returned no row");
-    }
 
     return row;
 }
