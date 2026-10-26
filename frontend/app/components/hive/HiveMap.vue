@@ -16,17 +16,15 @@ function cssVar(name: string): string {
     return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
-const colors = computed(() => {
-    void colorMode.value;
-    return {
-        text: cssVar("--color-text"),
-        muted: cssVar("--color-text-muted"),
-        success: cssVar("--color-success"),
-        warning: cssVar("--color-warning"),
-        danger: cssVar("--color-danger"),
-        border: cssVar("--color-border"),
-    };
-});
+const colors = computed(() => ({
+    mode: colorMode.value,
+    text: cssVar("--color-text"),
+    muted: cssVar("--color-text-muted"),
+    success: cssVar("--color-success"),
+    warning: cssVar("--color-warning"),
+    danger: cssVar("--color-danger"),
+    border: cssVar("--color-border"),
+}));
 
 type HiveNode = {
     hive: LocalHive;
