@@ -9,4 +9,6 @@ COPY . .
 ENV NODE_ENV=production
 EXPOSE 3000
 
+USER bun
+
 CMD ["sh", "-c", "bun run db:migrate && bun run src/app.ts"]
