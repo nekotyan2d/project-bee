@@ -49,7 +49,7 @@ export async function findById(ownerId: string, id: string): Promise<HiveRow | u
     return row;
 }
 
-export async function upsert(values: UpsertHiveValues): Promise<HiveRow> {
+export async function upsert(ownerId: string, values: UpsertHiveValues): Promise<HiveRow | undefined> {
     const { id, ...fields } = values;
 
     const [row] = await db
@@ -58,12 +58,9 @@ export async function upsert(values: UpsertHiveValues): Promise<HiveRow> {
         .onConflictDoUpdate({
             target: hive.id,
             set: { ...fields, deletedAt: null, updatedAt: sql`now()` },
+            setWhere: inArray(hive.apiaryId, ownedApiaryIds(ownerId)),
         })
         .returning();
-
-    if (!row) {
-        throw new Error("Upsert returned no row");
-    }
 
     return row;
 }

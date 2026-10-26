@@ -53,7 +53,7 @@ export async function softDelete(tx: Tx, ownerId: string, id: string): Promise<E
     return row;
 }
 
-export function upsertMany(tx: Tx, values: NewEvent[]): Promise<EventRow[]> {
+export function upsertMany(tx: Tx, ownerId: string, values: NewEvent[]): Promise<EventRow[]> {
     return tx
         .insert(event)
         .values(values)
@@ -68,6 +68,7 @@ export function upsertMany(tx: Tx, values: NewEvent[]): Promise<EventRow[]> {
                 deletedAt: null,
                 updatedAt: sql`now()`,
             },
+            setWhere: inArray(event.apiaryId, ownedApiaryIds(ownerId)),
         })
         .returning();
 }

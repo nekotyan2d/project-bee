@@ -118,7 +118,10 @@ export async function applyBatch(ownerId: string, events: EventInput[]): Promise
     }
 
     const stored = await repository.runInTransaction(async (tx) => {
-        const rows = await repository.upsertMany(tx, values);
+        const rows = await repository.upsertMany(tx, ownerId, values);
+        if (rows.length !== values.length) {
+            throw new ValidationError("Event id belongs to another owner");
+        }
         for (const colonyId of affectedColonies) {
             const colonyEvents = await repository.findColonyEvents(tx, colonyId);
             await repository.updateColonyDenormalized(tx, colonyId, deriveColonyState(colonyEvents));
