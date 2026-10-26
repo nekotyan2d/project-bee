@@ -13,6 +13,7 @@ const envSchema = z.object({
     POSTGRES_DB: z.string().default('bee'),
     JWT_SECRET: z.string().min(32),
     CORS_ORIGIN: z.string().default('http://localhost:3000'),
+    TRUST_PROXY: z.string().default(""),
 });
 
 const parsed = envSchema.safeParse(process.env);

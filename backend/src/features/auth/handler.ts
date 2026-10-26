@@ -7,6 +7,7 @@ export const authRoutes: FastifyPluginAsyncZod = (app) => {
     app.post(
         "/auth/anonymous",
         {
+            config: { rateLimit: { max: 10, timeWindow: "1 hour" } },
             schema: {
                 tags: ["auth"],
                 response: { 201: anonymousResponse },
@@ -22,6 +23,7 @@ export const authRoutes: FastifyPluginAsyncZod = (app) => {
     app.post(
         "/auth/register",
         {
+            config: { rateLimit: { max: 10, timeWindow: "15 minutes" } },
             onRequest: app.authenticate,
             schema: {
                 tags: ["auth"],
@@ -39,6 +41,7 @@ export const authRoutes: FastifyPluginAsyncZod = (app) => {
     app.post(
         "/auth/login",
         {
+            config: { rateLimit: { max: 10, timeWindow: "15 minutes" } },
             schema: {
                 tags: ["auth"],
                 body: credentialsInput,

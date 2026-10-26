@@ -28,6 +28,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-bee}
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET (>=32 chars) in .env}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      TRUST_PROXY: ${TRUST_PROXY:-uniquelocal}
     depends_on:
       db:
         condition: service_healthy
